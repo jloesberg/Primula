@@ -10,6 +10,9 @@ library(lme4)
 library(lmtest)
 library(ggeffects)
 library("ggiraphExtra")
+library(effects)
+library(wesanderson)
+FF <- wes_palettes$FantasticFox1
 
 # Problem with model fit for binomial models
 # Big problem with N - just filter out all NA's?
@@ -27,11 +30,13 @@ source("./scripts/dode_allyears_cleaned.R")
 primula <- left_join(Dodecatheon_lag, climate, by = "year")
 
 remove(climate, Dodecatheon_lag)
-
+primula$log <- NA
 # dealing with extra problem tags:
 ### tag 35 in 2019 didnt have an entry for pflower or no.flowers, I'm not certain whether it flowered or not. so, just taking it out
 primula <- primula %>% filter(tag != "35") %>% 
-  mutate(plot = as.character(plot))
+  mutate(plot = as.character(plot),
+         log.ros.areaTminus1 = log(ros.areaTminus1),
+         log.ros.area = log(ros.area))
 
 ## Now to build the models. 
 
@@ -174,7 +179,7 @@ gm35lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.min.temp.1yearlag + 
 gm36lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
 # summer precip
 gm26 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm27 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm27 <- lmer(log.ros.area ~ log.ros.areaTminus1 + trt*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm28 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm29 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm30 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
@@ -214,26 +219,63 @@ primula %>% ggplot(aes(log(ros.areaTminus1), log(ros.area))) +
 #the three way interactions are the best! No idea how to graph them. But could graph the precip x trt two way interaction...
 summary(gm19)
 summary(gm31)
-summary(gm27)
+summary(gm27) #this is the not-3 way interation one
 
 # make a graph:
 test2 <- primula %>% filter(!is.na(ros.areaTminus1),
                             !is.na(ros.area),
                             !is.na(summer.tot.precip))
 
-test2<- ggpredict(gm19, terms = c("ros.areaTminus1 [exp]"))
-test2@pred1 <- predict(gm19, re.form = NA)
+test2$pred <- predict(gm27, newdata = test2, re.form=NA)
 
-ggiraphExtra::ggPredict(test2,colorAsFactor = TRUE,interactive=TRUE)
 
-ggplot(test2, aes(x=log(ros.areaTminus1), y=log(ros.area), color=trt))+
-  geom_point()+
+ee <- effect(c("log.ros.areaTminus1", "trt:summer.tot.precip"), gm27)
+ect <- effect(term = c("log.ros.areaTminus1", "trt", "summer.tot.precip"), mod = gm27)
+r <- as.data.frame(ee)
+
+## giving up:
+ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, color=trt))+
+  geom_point(alpha = 0.4) +
   #scale_shape_manual(values=c(1,16,), name='trt', labels=c('control','drought','irrigated'))+
-  geom_line(aes(x = log(ros.areaTminus1), y = as.numeric(pred))) +
-  scale_linetype_discrete(name='trt', labels=c('control','drought','irrigated'))+
-  labs(x = 'Log(Rosette Size T0)', y = 'Log(Rosette Size T1)', color = "Treatment") +
-    facet_wrap(~plot)
+  geom_smooth(method = lm, se = FALSE, fullrange = T)+
+  scale_color_manual(values = c(FF[2], FF[1], FF[3]))+
+  labs(x = 'Log(Rosette Size T0)', y = 'Log(Rosette Size T1)', color = "Treatment")
+  
 
+
+ggplot(test2, aes(x=log.ros.areaTminus1, y=pred, color=trt))+
+  geom_point() +
+  #scale_shape_manual(values=c(1,16,), name='trt', labels=c('control','drought','irrigated'))+
+  geom_point(aes(as.numeric(pred))) +
+   facet_wrap(1~year)
+   scale_linetype_discrete(name='trt', labels=c('control','drought','irrigated'))+
+  labs(x = 'Log(Rosette Size T0)', y = 'Log(Rosette Size T1)', color = "Treatment")+
+   
+### this doesnt work:
+fixed <- data.frame(fixef(gm27)) #adding fixed effects so I can add to regression line
+fixed
+fixed[2,1] * primula$log(ros.areaTminus1) + fixed[5,1]* primula$summer.tot.precip
+
+primula %>% 
+      ggplot(aes(log(ros.areaTminus1), log(ros.area), color = trt))+
+      geom_point()+ 
+      scale_color_manual(values = c(FF[2], FF[1], FF[3]))+ #
+      expand_limits(x = 0, y = 0)+
+      geom_abline(intercept = fixed[1,1], slope =(, color = FF[2])# +#control +
+      geom_abline(intercept = (fixed[1,1] + fixed[3,1]), slope =(fixed[6,1] * + fixed[2,1] + fixed[5,1]),color = FF[3]))  #drought
+        
+plot.m1 <- data.frame(gm27@frame, fitted.re = fitted(gm27))
+fixed.m1 <- data.frame(fixef(gm27))
+
+#there must be a better way, but finding coefficients by hand
+control_int <- fixed.m1[1,1]
+control_slope <- fixed.m1[2,1] + fixed.m1[5,1]
+
+ggplot(plot.m1, aes(x = log.ros.areaTminus1., y = log.ros.area.)) + geom_point()+
+  geom_line(aes(y = fitted.re, color = trt), linetype = 2) + 
+  scale_x_continuous(breaks = 0:3)+ 
+  geom_abline(intercept = fixed.m1[1,1], slope = fixed.m1[2,1]) 
+    + theme_bw()
 
 #########################################################################################
 # Probability of flowering  -------------------------------------------------------------
