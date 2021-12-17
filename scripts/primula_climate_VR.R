@@ -4,7 +4,6 @@
 ## add in vital rate models
 
 library(tidyverse)
-theme_set(theme_classic())
 library(AICcmodavg)
 library(lme4)
 library(lmtest)
@@ -13,9 +12,10 @@ library("ggiraphExtra")
 library(effects)
 library(wesanderson)
 FF <- wes_palettes$FantasticFox1
-
+theme_set(theme_classic())
 # Problem with model fit for binomial models
 # Big problem with N - just filter out all NA's?
+# graphs are hard to make!
 
 # Read in data ------------------------------------------------------------------------
 
@@ -96,6 +96,7 @@ lrtest(gm1, gm2)
 
 ##########################################################################
 # Candidate models
+##
 gm.min <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + (1|plot) + (1|year), data = primula, REML = F)
 gm.min2 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + (1|plot) + (1|year), data = primula, REML = F)
 gm.min3 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + (1|plot) + (1|year), data = primula, REML = F)
@@ -226,15 +227,16 @@ test2 <- primula %>% filter(!is.na(ros.areaTminus1),
                             !is.na(ros.area),
                             !is.na(summer.tot.precip))
 
-test2$pred <- predict(gm27, newdata = test2, re.form=NA)
+test2$pred <- predict(gm27, newdata = test2, re.form=~0)
 
 
 ee <- effect(c("log.ros.areaTminus1", "trt:summer.tot.precip"), gm27)
 ect <- effect(term = c("log.ros.areaTminus1", "trt", "summer.tot.precip"), mod = gm27)
 r <- as.data.frame(ee)
+interact_plot(gm27, pred = log.ros.areaTminus1, modx = trt)
 
 ## giving up:
-ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, color=trt))+
+ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, group = interaction(trt, summer.tot.precip), color = trt))+
   geom_point(alpha = 0.4) +
   #scale_shape_manual(values=c(1,16,), name='trt', labels=c('control','drought','irrigated'))+
   geom_smooth(method = lm, se = FALSE, fullrange = T)+
@@ -243,13 +245,18 @@ ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, color=trt))+
   
 
 
-ggplot(test2, aes(x=log.ros.areaTminus1, y=pred, color=trt))+
+ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area,  group = interaction(trt, summer.tot.precip)))+
   geom_point() +
   #scale_shape_manual(values=c(1,16,), name='trt', labels=c('control','drought','irrigated'))+
-  geom_point(aes(as.numeric(pred))) +
-   facet_wrap(1~year)
+  geom_line(aes(as.numeric(pred)))# +
+   facet_wrap(year~plot)
    scale_linetype_discrete(name='trt', labels=c('control','drought','irrigated'))+
-  labs(x = 'Log(Rosette Size T0)', y = 'Log(Rosette Size T1)', color = "Treatment")+
+  labs(x = 'Log(Rosette Size T0)', y = 'Log(Rosette Size T1)', color = "Treatment")
+   
+ggpredict(gm27)
+
+ggplot(data, aes(x=f2, y=dep, group = interaction(f1, f3))) +
+  geom_smooth(method="lm")
    
 ### this doesnt work:
 fixed <- data.frame(fixef(gm27)) #adding fixed effects so I can add to regression line

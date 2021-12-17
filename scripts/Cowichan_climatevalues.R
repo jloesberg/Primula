@@ -1,6 +1,6 @@
 ## What this script does:
 
-# Reads in cleaned weather station data, makes a single df with mean values and created lagged years
+# Reads in cleaned weather station data, makes a single df with mean values and lagged years
 
 library(tidyverse); theme_set(theme_classic)
 library(lubridate)
