@@ -12,6 +12,8 @@ library("ggiraphExtra")
 library(effects)
 library(wesanderson)
 FF <- wes_palettes$FantasticFox1
+Z <- wes_palettes$Zissou1
+R <- wes_palettes$Royal2
 theme_set(theme_classic())
 # Problem with model fit for binomial models
 # Big problem with N - just filter out all NA's?
@@ -35,7 +37,7 @@ primula$log <- NA
 ### tag 35 in 2019 didnt have an entry for pflower or no.flowers, I'm not certain whether it flowered or not. so, just taking it out
 primula <- primula %>% filter(tag != "35") %>% 
   mutate(plot = as.character(plot),
-         log.ros.areaTminus1 = log(ros.areaTminus1),
+         log.ros.areaT1 = log(ros.areaT1),
          log.ros.area = log(ros.area))
 
 ## Now to build the models. 
@@ -90,153 +92,218 @@ gm2 <- lm(log(ros.area) ~ log(ros.areaTminus1) + pflowerTminus1, data = primula)
 lrtest(gm1, gm2)
 # size and reproducing last year affects size this year) - but this seems backwards - plants that flower are bigger the next year
 
-
-
-
-
 ##########################################################################
 # Candidate models
 ##
-gm.min <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + (1|plot) + (1|year), data = primula, REML = F)
-gm.min2 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + (1|plot) + (1|year), data = primula, REML = F)
-gm.min3 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + (1|plot) + (1|year), data = primula, REML = F)
+gm.min <- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.min2 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.min3 <- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, REML = F)
 ########################################################################################
 ##grow season total precip
-gm1 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm2 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm3 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt+ grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm4 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm5 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm6 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area*trt+ grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm4 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm5 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm6 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 ###last years grow season precip
-gm1lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm2lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm3lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm4lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm5lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm6lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm1lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm2lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm3lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm4lag <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm5lag <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm6lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
 #grow season min temp
-gm7 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm8 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm9 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm10 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm11 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm12 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm7 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm8 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm9 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm10 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm11 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm12 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
 # last years grow season min temp
-gm7lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm8lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm9lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm10lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm11lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm12lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm7lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm8lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm9lag <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm10lag <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm11lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm12lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
 # grow season max temp
-gm13 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm14 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm15 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm16 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm17 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm18 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm13 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm14 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm15 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm16 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm18 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
 # last year grow seasons max temp
-gm13lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm14lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm15lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm16lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm17lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm18lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm13lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm14lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm15lag <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm16lag <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm17lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm18lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
 ## summer max temp
-gm20 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm21 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm22 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm23 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm24 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm19 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm20 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm21 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm22 <- lmer(log.ros.areaT1 ~ log.ros.area + summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm23 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm24 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm19 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
 # last year's summer max temp
-gm19lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm20lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm21lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm22lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm23lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm24lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm19lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm20lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm21lag <- lmer(log.ros.areaT1 ~ log.ros.area + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm22lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm23lag <- lmer(log.ros.areaT1 ~ log.ros.area*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm24lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
 # 2 years ago summer max temp
-gm25lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm26lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.max.temp.2yearlag+ (1|plot) + (1|year), data = primula, REML = F)
-gm27lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm28lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm29lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm30lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm25lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm26lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.max.temp.2yearlag+ (1|plot) + (1|year), data = primula, REML = F)
+gm27lag <- lmer(log.ros.areaT1 ~ log.ros.area + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm28lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm29lag <- lmer(log.ros.areaT1 ~ log.ros.area*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm30lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, REML = F)
 # summer min temp
-gm20 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm21 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm22 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm23 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm24 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
-gm25 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm20 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm21 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm22 <- lmer(log.ros.areaT1 ~ log.ros.area + summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm23 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm24 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm25 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, REML = F)
 # summer min temp lagged
-gm31lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm32lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm33lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm34lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm35lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm36lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm31lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm32lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm33lag <- lmer(log.ros.areaT1 ~ log.ros.area + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm34lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm35lag <- lmer(log.ros.areaT1 ~ log.ros.area*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm36lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
 # summer precip
-gm26 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm27 <- lmer(log.ros.area ~ log.ros.areaTminus1 + trt*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm28 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm29 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm30 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm31 <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm26 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm27 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm28 <- lmer(log.ros.areaT1 ~ log.ros.area + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm29 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm30 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm31 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 #summer precip lag
-gm37lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm38lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm39lag <- lmer(log(ros.area) ~ log(ros.areaTminus1) + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm40lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm41lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
-gm42lag <- lmer(log(ros.area) ~ log(ros.areaTminus1)*trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm37lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm38lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm39lag <- lmer(log.ros.areaT1 ~ log.ros.area + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm40lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm41lag <- lmer(log.ros.areaT1 ~ log.ros.area*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
+gm42lag <- lmer(log.ros.areaT1 ~ log.ros.area*trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
 #
-gm32 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm33 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*winter.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm34 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm32 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm33 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*winter.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm34 <- lmer(log.ros.areaT1 ~ log.ros.area + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, REML = F)
 #
-gm35 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula, REML = F)
-gm36 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula, REML = F)
-gm37 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + winter.tot.precip+ (1|plot) + (1|year), data = primula, REML = F)
+gm35 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula, REML = F)
+gm36 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula, REML = F)
+gm37 <- lmer(log.ros.areaT1 ~ log.ros.area + winter.tot.precip+ (1|plot) + (1|year), data = primula, REML = F)
 #
-gm38 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm39 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
-gm40 <- lmer(log(ros.area) ~ log(ros.areaTminus1) + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm38 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm39 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
+gm40 <- lmer(log.ros.areaT1 ~ log.ros.area + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
 
 ###
 growth <- lst(gm.min, gm.min2, gm.min3, gm1, gm2, gm3, gm4, gm5, gm6, gm7, gm8, gm9, gm10, gm11, gm12, gm13, gm14, gm15, gm16, gm17, gm18, gm19, gm20, gm21, gm22, gm23, gm24, gm25, gm26, gm27, gm28, gm29, gm30, gm31, gm32, gm33, gm34, gm35, gm36, gm37, gm38, gm39, gm40, gm1lag, gm2lag, gm3lag, gm4lag, gm5lag, gm6lag, gm7lag, gm8lag, gm8lag, gm9lag, gm10lag, gm11lag, gm12lag, gm13lag, gm14lag, gm15lag, gm16lag, gm17lag, gm18lag, gm19lag, gm20lag, gm21lag, gm22lag, gm23lag, gm24lag, gm25lag, gm26lag, gm27lag, gm28lag, gm29lag, gm30lag, gm31lag, gm32lag, gm33lag, gm34lag, gm35lag, gm36lag, gm37lag, gm38lag, gm38lag, gm39lag, gm40lag, gm41lag, gm42lag)
 
 growth_AICc<-aictab(cand.set = growth, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
-primula %>% ggplot(aes(log(ros.areaTminus1), log(ros.area))) +
+primula %>% ggplot(aes(log.ros.area, log.ros.areaT1)) +
   geom_jitter(height = .02)+
   theme_classic()+
   geom_smooth(method = lmer, se=FALSE, fullrange = TRUE)+
   expand_limits(x = 0, y = 0)+
   facet_wrap(~year)
 
-#the three way interactions are the best! No idea how to graph them. But could graph the precip x trt two way interaction...
-summary(gm19)
-summary(gm31)
-summary(gm27) #this is the not-3 way interation one
+#gm17 and gm18 are the best and basically the same ( delta AIC is < 2)
+summary(gm17)
+summary(gm18)
+ #since gm18 is a three way interaction, for now I'll go with gm17 because it is the simpler model
 
 # make a graph:
 test2 <- primula %>% filter(!is.na(ros.areaTminus1),
                             !is.na(ros.area),
                             !is.na(summer.tot.precip))
 
-test2$pred <- predict(gm27, newdata = test2, re.form=~0)
+layout(matrix(1:4, ncol = 2))
+plot(gm27)
+layout(1)
+###########################################################################################################################
+# Heres' what works for predicting and graphing
+# control plots
+pred.cont.25.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 16.68, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.cont.25 <- predict(gm17, newdata = pred.cont.25.dat, re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.cont.25 <- as.data.frame(pred.cont.25)
+pred.cont.25 <- cbind(pred.cont.25, pred.cont.25.dat)
+pred.cont.75.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 18.55, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.cont.75 <- predict(gm17, newdata = pred.cont.75.dat, re.form=~0)
+pred.cont.75 <- as.data.frame(pred.cont.75)
+pred.cont.75 <- cbind(pred.cont.75, pred.cont.75.dat)
+pred.cont.av.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 17.47, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.cont.av <- predict(gm17, newdata = pred.cont.av.dat, re.form=~0)
+pred.cont.av <- as.data.frame(pred.cont.av)
+pred.cont.av <- cbind(pred.cont.av, pred.cont.av.dat)
+#irrigated plots
+pred.irr.25.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 16.68, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.irr.25 <- predict(gm17, newdata = pred.irr.25.dat, re.form=~0)
+pred.irr.25 <- as.data.frame(pred.irr.25)
+pred.irr.25 <- cbind(pred.irr.25, pred.irr.25.dat)
+pred.irr.75.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 18.55, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.irr.75 <- predict(gm17, newdata = pred.irr.75.dat, re.form=~0)
+pred.irr.75 <- as.data.frame(pred.irr.75)
+pred.irr.75 <- cbind(pred.irr.75, pred.irr.75.dat)
+pred.irr.av.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 17.47, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.irr.av <- predict(gm17, newdata = pred.irr.av.dat, re.form=~0)
+pred.irr.av <- as.data.frame(pred.irr.av)
+pred.irr.av <- cbind(pred.irr.av, pred.irr.av.dat)
+#drought plots
+pred.drt.25.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 16.68, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.drt.25 <- predict(gm17, newdata = pred.drt.25.dat, re.form=~0)
+pred.drt.25 <- as.data.frame(pred.drt.25)
+pred.drt.25 <- cbind(pred.drt.25, pred.drt.25.dat)
+pred.drt.75.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 18.55, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.drt.75 <- predict(gm17, newdata = pred.drt.75.dat, re.form=~0)
+pred.drt.75 <- as.data.frame(pred.drt.75)
+pred.drt.75 <- cbind(pred.drt.75, pred.drt.75.dat)
+pred.drt.av.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 17.47, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.drt.av <- predict(gm17, newdata = pred.drt.av.dat, re.form=~0)
+pred.drt.av <- as.data.frame(pred.drt.av)
+pred.drt.av <- cbind(pred.drt.av, pred.drt.av.dat)
 
 
-ee <- effect(c("log.ros.areaTminus1", "trt:summer.tot.precip"), gm27)
-ect <- effect(term = c("log.ros.areaTminus1", "trt", "summer.tot.precip"), mod = gm27)
-r <- as.data.frame(ee)
-interact_plot(gm27, pred = log.ros.areaTminus1, modx = trt)
+ggplot(subset(primula, trt == "control"), aes(x=log.ros.area, y=log.ros.areaT1))+
+  geom_point(color = R[5], size = 2) +
+  geom_line(data = pred.cont.25, aes(x = log.ros.area, y = pred.cont.25), color = FF[3], linetype = 2, size = 1) + #25th perc.gs max temp
+  geom_line(data = pred.cont.75, aes(x = log.ros.area, y = pred.cont.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = "black", size = 1.2) + #av  gs max temp
+   labs(title = "Control")+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+   
+primula %>% 
+  filter(trt == "irrigated") %>% 
+  ggplot(aes(x=log.ros.area, y=log.ros.areaT1))+
+     geom_point(color = Z[2], size = 2) +
+     geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25, coluor = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+     geom_line(data = pred.irr.75, aes(x = log.ros.area, y = pred.irr.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+     geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = "black", size = 1.2) + #av gs max temp
+  labs(title = "Irrigated")+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) #make the graph start in the corner
+
+primula %>% 
+  filter(trt == "drought") %>% 
+  ggplot(aes(x=log.ros.area, y=log.ros.areaT1))+
+  geom_point(color = FF[1], size = 2) +
+  geom_line(data = pred.drt.25, aes(x = log.ros.area, y = pred.drt.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.drt.75, aes(x = log.ros.area, y = pred.drt.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = "black", size = 1.2) + #av gs max temp
+  labs(title = "Drought")+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 
 ## giving up:
-ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, group = interaction(trt, summer.tot.precip), color = trt))+
+ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, group = interaction(trt, grow.season.mean.max.temp), color = trt))+
   geom_point(alpha = 0.4) +
   #scale_shape_manual(values=c(1,16,), name='trt', labels=c('control','drought','irrigated'))+
   geom_smooth(method = lm, se = FALSE, fullrange = T)+
@@ -245,44 +312,6 @@ ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, group = interaction(trt
   
 
 
-ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area,  group = interaction(trt, summer.tot.precip)))+
-  geom_point() +
-  #scale_shape_manual(values=c(1,16,), name='trt', labels=c('control','drought','irrigated'))+
-  geom_line(aes(as.numeric(pred)))# +
-   facet_wrap(year~plot)
-   scale_linetype_discrete(name='trt', labels=c('control','drought','irrigated'))+
-  labs(x = 'Log(Rosette Size T0)', y = 'Log(Rosette Size T1)', color = "Treatment")
-   
-ggpredict(gm27)
-
-ggplot(data, aes(x=f2, y=dep, group = interaction(f1, f3))) +
-  geom_smooth(method="lm")
-   
-### this doesnt work:
-fixed <- data.frame(fixef(gm27)) #adding fixed effects so I can add to regression line
-fixed
-fixed[2,1] * primula$log(ros.areaTminus1) + fixed[5,1]* primula$summer.tot.precip
-
-primula %>% 
-      ggplot(aes(log(ros.areaTminus1), log(ros.area), color = trt))+
-      geom_point()+ 
-      scale_color_manual(values = c(FF[2], FF[1], FF[3]))+ #
-      expand_limits(x = 0, y = 0)+
-      geom_abline(intercept = fixed[1,1], slope =(, color = FF[2])# +#control +
-      geom_abline(intercept = (fixed[1,1] + fixed[3,1]), slope =(fixed[6,1] * + fixed[2,1] + fixed[5,1]),color = FF[3]))  #drought
-        
-plot.m1 <- data.frame(gm27@frame, fitted.re = fitted(gm27))
-fixed.m1 <- data.frame(fixef(gm27))
-
-#there must be a better way, but finding coefficients by hand
-control_int <- fixed.m1[1,1]
-control_slope <- fixed.m1[2,1] + fixed.m1[5,1]
-
-ggplot(plot.m1, aes(x = log.ros.areaTminus1., y = log.ros.area.)) + geom_point()+
-  geom_line(aes(y = fitted.re, color = trt), linetype = 2) + 
-  scale_x_continuous(breaks = 0:3)+ 
-  geom_abline(intercept = fixed.m1[1,1], slope = fixed.m1[2,1]) 
-    + theme_bw()
 
 #########################################################################################
 # Probability of flowering  -------------------------------------------------------------
