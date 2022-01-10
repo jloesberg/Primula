@@ -49,7 +49,6 @@ primula %>% ggplot(aes(x = log(ros.areaTminus1), y = log(ros.area), color = trt)
   geom_smooth(method = "lm")
 boxplot(log(ros.area) ~ trt, data = primula)
 
-
 ##########################################################################################################
 ### Do vital rates differ between years?
 gm1 <- lm(log(ros.area) ~ log(ros.areaTminus1), data = primula)
@@ -294,7 +293,7 @@ primula %>%
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 
-## Should these slopes be varying? Need to think about this more - these lines seem too similar!
+## Should these slopes be more different? Need to think about this more - these lines seem too similar! Although coefficients are close to zero
 
 ## giving up version:
 ggplot(test2, aes(x=log.ros.areaTminus1, y=log.ros.area, group = interaction(trt, grow.season.mean.max.temp), color = trt))+
@@ -342,7 +341,6 @@ lrtest(fm1, fm2)
 lrtest(fm1, fm3)
 
 # What does this tell us: yes there is a significant interaction between year and treatment (read: the influence of treatment on pflower varies across years)
-#############################################################################
 # Does flowering in the previous year affect flowering this year?
 
 fm1 <- glm(pflower ~ log(ros.areaTminus1), data = primula, family = "binomial")
@@ -353,7 +351,7 @@ lrtest(fm1, fm2)
 
 
 ##########################################################################
-# Candidate model
+# Candidate models
 fm.min <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min2 <- glmer(pflowerT1 ~ log.ros.area *trt + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min3 <- glmer(pflowerT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -471,7 +469,77 @@ flowering_conv <- lst(fm.min, fm.min2, fm.min3, fm7,fm8,fm7lag, fm9lag, fm10lag,
 flowering<-aictab(cand.set = flowering_conv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
 # lots of similar ones, which one to choose?
+## For now deciding on fm13. Fm14 is the same but has an interaction so is more complicated
 
+# graphing: grow.season.mean.max.temp + log.ros.area + trt
+# Heres' what works for predicting and graphing
+# control plots
+pred.cont.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 16.68, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots! seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.cont.25 <- predict(fm13, newdata = pred.cont.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.cont.25 <- as.data.frame(pred.cont.25)
+pred.cont.25 <- cbind(pred.cont.25, pred.cont.25.dat)
+pred.cont.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 18.55, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.cont.75 <- predict(fm13, newdata = pred.cont.75.dat, type="response", re.form=~0)
+pred.cont.75 <- as.data.frame(pred.cont.75)
+pred.cont.75 <- cbind(pred.cont.75, pred.cont.75.dat)
+pred.cont.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 17.47, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.cont.av <- predict(fm13, newdata = pred.cont.av.dat, type="response", re.form=~0)
+pred.cont.av <- as.data.frame(pred.cont.av)
+pred.cont.av <- cbind(pred.cont.av, pred.cont.av.dat)
+#irrigated plots
+pred.irr.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 16.68, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.irr.25 <- predict(fm13, newdata = pred.irr.25.dat, type="response", re.form=~0)
+pred.irr.25 <- as.data.frame(pred.irr.25)
+pred.irr.25 <- cbind(pred.irr.25, pred.irr.25.dat)
+pred.irr.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 18.55, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.irr.75 <- predict(fm13, newdata = pred.irr.75.dat, type="response", re.form=~0)
+pred.irr.75 <- as.data.frame(pred.irr.75)
+pred.irr.75 <- cbind(pred.irr.75, pred.irr.75.dat)
+pred.irr.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 17.47, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.irr.av <- predict(fm13, newdata = pred.irr.av.dat, type="response", re.form=~0)
+pred.irr.av <- as.data.frame(pred.irr.av)
+pred.irr.av <- cbind(pred.irr.av, pred.irr.av.dat)
+#drought plots
+pred.drt.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 16.68, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.drt.25 <- predict(fm13, newdata = pred.drt.25.dat, type="response", re.form=~0)
+pred.drt.25 <- as.data.frame(pred.drt.25)
+pred.drt.25 <- cbind(pred.drt.25, pred.drt.25.dat)
+pred.drt.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 18.55, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.drt.75 <- predict(fm13, newdata = pred.drt.75.dat, type="response", re.form=~0)
+pred.drt.75 <- as.data.frame(pred.drt.75)
+pred.drt.75 <- cbind(pred.drt.75, pred.drt.75.dat)
+pred.drt.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 17.47, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.drt.av <- predict(fm13, newdata = pred.drt.av.dat, type="response", re.form=~0)
+pred.drt.av <- as.data.frame(pred.drt.av)
+pred.drt.av <- cbind(pred.drt.av, pred.drt.av.dat)
+
+ggplot(subset(primula, trt == "control"), aes(x=log.ros.area, y=pflowerT1))+
+  geom_jitter(color = R[5], height = 0.025, size = 2) +
+  geom_line(data = pred.cont.25, aes(x = log.ros.area, y = pred.cont.25), color = FF[3], linetype = 2, size = 1) + #25th perc.gs max temp
+  geom_line(data = pred.cont.75, aes(x = log.ros.area, y = pred.cont.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = "black", size = 1.2) + #av  gs max temp
+  labs(title = "Control")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+
+primula %>% 
+  filter(trt == "irrigated") %>% 
+  ggplot(aes(x=log.ros.area, y=pflowerT1))+
+  geom_jitter(color = Z[2], height = 0.025, size = 2) +
+  geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25, coluor = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.irr.75, aes(x = log.ros.area, y = pred.irr.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = "black", size = 1.2) + #av gs max temp
+  labs(title = "Irrigated")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) #make the graph start in the corner
+
+primula %>% 
+  filter(trt == "drought") %>% 
+  ggplot(aes(x=log.ros.area, y=pflowerT1))+
+  geom_jitter(color = FF[1], height = 0.025, size = 2) +
+  geom_line(data = pred.drt.25, aes(x = log.ros.area, y = pred.drt.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.drt.75, aes(x = log.ros.area, y = pred.drt.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = "black", size = 1.2) + #av gs max temp
+  labs(title = "Drought")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 #########################################################################################
 # Probability of surviving  -------------------------------------------------------------
 
@@ -518,11 +586,10 @@ lrtest(sm1, sm2)
 
 ##########################################################################
 # Candidate models
-# Candidate model
 sm.min <- glmer(psurvivalT1 ~ ros.areaTminus1 + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 sm.min2 <- glmer(psurvivalT1 ~ log.ros.area*trt + (1|plot) + (1|year), data = primula, family = "binomial")
 sm.min3 <- glmer(psurvivalT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, family = "binomial")
-########################################################################################
+###
 ##grow season total precip
 sm1 <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm2 <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -633,12 +700,34 @@ survival1 <- lst(sm.min, sm.min2, sm.min3, sm1, sm2, sm3, sm4, sm5, sm6, sm7, sm
 #only ones that converged:
 surv.conv <- lst(sm.min, sm.min2, sm.min3, sm1, sm3, sm4, sm1lag, sm3lag, sm4lag,sm7, sm9, sm7lag, sm8lag, sm9lag, sm10lag, sm11lag, sm13, sm14, sm15, sm13lag, sm14lag, sm15lag, sm20, sm22, sm23, sm19lag, sm21lag, sm25lag, sm27lag, sm27,sm31lag,sm32lag, sm33lag, sm31, sm32, sm33, sm34, sm37lag, sm38lag, sm39lag, sm40lag, sm43, sm45)
 
-survival1<-aictab(cand.set = surv.conv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+survival<-aictab(cand.set = surv.conv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
-##
+# best is sm10lag : survivalT1 ~ log.ros.area * grow.season.min.temp.1yearlag
+# Heres' what works for predicting and graphing
+# control plots
+pred.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.49) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.25 <- predict(sm10lag, newdata = pred.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.25 <- as.data.frame(pred.25)
+pred.25 <- cbind(pred.25, pred.25.dat)
+pred.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.84) #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.75 <- predict(sm10lag, newdata = pred.75.dat, type="response", re.form=~0)
+pred.75 <- as.data.frame(pred.75)
+pred.75 <- cbind(pred.75, pred.75.dat)
+pred.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.80) #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.av <- predict(sm10lag, newdata = pred.av.dat, type="response", re.form=~0)
+pred.av <- as.data.frame(pred.av)
+pred.av <- cbind(pred.av, pred.av.dat)
+
+primula %>% 
+  ggplot(aes(x=log.ros.area, y = psurvivalT1))+
+  geom_jitter(height = .025, size = 2) +
+  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25, coluor = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.av, aes(x = log.ros.area, y = pred.av), color = "black", size = 1.2) + #av gs max temp
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) #make the graph start in the corner
 
 
-primula %>% ggplot(aes(log(ros.areaTminus1), psurvival)) +
+primula %>% ggplot(aes(log.ros.area, psurvivalT1)) +
   geom_jitter(height = .02)+
   theme_classic()+
   geom_smooth(method = glm, method.args= list(family="binomial"), se=FALSE, fullrange = TRUE)+
