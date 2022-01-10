@@ -15,7 +15,7 @@ FF <- wes_palettes$FantasticFox1
 Z <- wes_palettes$Zissou1
 R <- wes_palettes$Royal2
 theme_set(theme_classic())
-# Problem with model fit for binomial models
+# Problem with model fit for poisson models
 # make growth graph the other way (lines for trt, graphs as climate)
 # graphs are hard to make!
 
@@ -220,7 +220,7 @@ summary(gm18)
  #since gm18 is a three way interaction, for now I'll go with gm17 because it is the simpler model
 
 ###########################################################################################################################
-# Heres' what works for predicting and graphing
+# Here's what works for predicting and graphing. It's not great (especially where I've put the quartiles in by hand, but don't know a better way!)
 # control plots
 pred.cont.25.dat <-  expand.grid(log.ros.area = 0:6, grow.season.mean.max.temp = 16.68, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
 pred.cont.25 <- predict(gm17, newdata = pred.cont.25.dat, re.form=~0) #re.form = ~0 tells it to not include random effects
@@ -525,7 +525,7 @@ primula %>%
   filter(trt == "irrigated") %>% 
   ggplot(aes(x=log.ros.area, y=pflowerT1))+
   geom_jitter(color = Z[2], height = 0.025, size = 2) +
-  geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25, coluor = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25, color = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
   geom_line(data = pred.irr.75, aes(x = log.ros.area, y = pred.irr.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = "black", size = 1.2) + #av gs max temp
   labs(title = "Irrigated")+
@@ -585,13 +585,14 @@ lrtest(sm1, sm2)
 # there is not a survival cost of reproduction
 
 ##########################################################################
+
 # Candidate models
-sm.min <- glmer(psurvivalT1 ~ ros.areaTminus1 + trt + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.min <- glmer(psurvivalT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 sm.min2 <- glmer(psurvivalT1 ~ log.ros.area*trt + (1|plot) + (1|year), data = primula, family = "binomial")
 sm.min3 <- glmer(psurvivalT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, family = "binomial")
 ###
 ##grow season total precip
-sm1 <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+c1 <- glmer(no.flowers ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm2 <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm3 <- glmer(psurvivalT1 ~ log.ros.area*trt+ grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm4 <- glmer(psurvivalT1 ~ log.ros.area + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -702,8 +703,8 @@ surv.conv <- lst(sm.min, sm.min2, sm.min3, sm1, sm3, sm4, sm1lag, sm3lag, sm4lag
 
 survival<-aictab(cand.set = surv.conv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
-# best is sm10lag : survivalT1 ~ log.ros.area * grow.season.min.temp.1yearlag
-# Heres' what works for predicting and graphing
+# best is sm10lag : survivalT1 ~ log.ros.area * grow.season.min.temp.1yearlag + RE
+# Here's what works for predicting and graphing
 # control plots
 pred.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.49) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.25 <- predict(sm10lag, newdata = pred.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
@@ -721,7 +722,7 @@ pred.av <- cbind(pred.av, pred.av.dat)
 primula %>% 
   ggplot(aes(x=log.ros.area, y = psurvivalT1))+
   geom_jitter(height = .025, size = 2) +
-  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25, coluor = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25, color = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
   geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.av, aes(x = log.ros.area, y = pred.av), color = "black", size = 1.2) + #av gs max temp
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) #make the graph start in the corner
@@ -733,6 +734,198 @@ primula %>% ggplot(aes(log.ros.area, psurvivalT1)) +
   geom_smooth(method = glm, method.args= list(family="binomial"), se=FALSE, fullrange = TRUE)+
   expand_limits(x = 0, y = 0)+
   facet_wrap(~year)
-# what is happening to survival in 2018??
+# what is happening to survival in 2017? Probably something to do with data collection in 2016 and 2017 (not being able to find them?) - not sure how to deal with this - likely a dormanct problem
 
+##################################################################################################################################################################################
+####Number of flowers##############################################################################################################################################################################
+# should be be only for plants that flowered? Yes
+primula_flowering <- primula %>% 
+  filter(pflower =="1")
+c <- glm(no.flowers ~ log.ros.area + trt, data = primula_flowering, family = "poisson")
+summary(c)
+c.min <- glmer(no.flowers ~ log.ros.area + trt + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c.min2 <- glmer(no.flowers ~ log.ros.area*trt + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c.min3 <- glmer(no.flowers ~ log.ros.area + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+###
+##grow season total precip
+c1 <- glmer(no.flowers ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c2 <- glmer(no.flowers ~ log.ros.area + trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c3 <- glmer(no.flowers ~ log.ros.area*trt+ grow.season.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c4 <- glmer(no.flowers ~ log.ros.area + grow.season.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c5 <- glmer(no.flowers ~ log.ros.area*grow.season.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c6 <- glmer(no.flowers ~ log.ros.area*trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+###last years grow season precip
+c1lag <- glmer(no.flowers ~ log.ros.area + trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c2lag <- glmer(no.flowers ~ log.ros.area + trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c3lag <- glmer(no.flowers ~ log.ros.area*trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c4lag <- glmer(no.flowers ~ log.ros.area + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c5lag <- glmer(no.flowers ~ log.ros.area*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c6lag <- glmer(no.flowers ~ log.ros.area*trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+#grow season min temp
+c7 <- glmer(no.flowers ~ log.ros.area + trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c8 <- glmer(no.flowers ~ log.ros.area*trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c9 <- glmer(no.flowers ~ log.ros.area + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c10 <- glmer(no.flowers ~ log.ros.area*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c11 <- glmer(no.flowers ~ log.ros.area + trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c12 <- glmer(no.flowers ~ log.ros.area*trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# last years grow season min temp
+c7lag <- glmer(no.flowers ~ log.ros.area + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c8lag <- glmer(no.flowers ~ log.ros.area*trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c9lag <- glmer(no.flowers ~ log.ros.area + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c10lag <- glmer(no.flowers ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson") ###
+c11lag <- glmer(no.flowers ~ log.ros.area + trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c12lag <- glmer(no.flowers ~ log.ros.area*trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# grow season max temp
+c13 <- glmer(no.flowers ~ log.ros.area + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c14 <- glmer(no.flowers ~ log.ros.area*trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c15 <- glmer(no.flowers ~ log.ros.area + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c16 <- glmer(no.flowers ~ log.ros.area*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c17 <- glmer(no.flowers ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c18 <- glmer(no.flowers ~ log.ros.area*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# last year grow seasons max temp
+c13lag <- glmer(no.flowers ~ log.ros.area + trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c14lag <- glmer(no.flowers ~ log.ros.area*trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c15lag <- glmer(no.flowers ~ log.ros.area + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c16lag <- glmer(no.flowers ~ log.ros.area*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c17lag <- glmer(no.flowers ~ log.ros.area + trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c18lag <- glmer(no.flowers ~ log.ros.area*trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+## summer max temp
+c20 <- glmer(no.flowers ~ log.ros.area + trt + summer.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c21 <- glmer(no.flowers ~ log.ros.area + trt*summer.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c22 <- glmer(no.flowers ~ log.ros.area + summer.mean.max.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c23 <- glmer(no.flowers ~ log.ros.area*trt + summer.mean.max.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c24 <- glmer(no.flowers ~ log.ros.area*summer.mean.max.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c19 <- glmer(no.flowers ~ log.ros.area*trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# last year's summer max temp
+c19lag <- glmer(no.flowers ~ log.ros.area + trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c20lag <- glmer(no.flowers ~ log.ros.area + trt*summer.max.temp.1yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c21lag <- glmer(no.flowers ~ log.ros.area + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c22lag <- glmer(no.flowers ~ log.ros.area*trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c23lag <- glmer(no.flowers ~ log.ros.area*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c24lag <- glmer(no.flowers ~ log.ros.area*trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# 2 years ago summer max temp
+c25lag <- glmer(no.flowers ~ log.ros.area + trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c26lag <- glmer(no.flowers ~ log.ros.area + trt*summer.max.temp.2yearlag+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c27lag <- glmer(no.flowers ~ log.ros.area + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c28lag <- glmer(no.flowers ~ log.ros.area*trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c29lag <- glmer(no.flowers ~ log.ros.area*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c30lag <- glmer(no.flowers ~ log.ros.area*trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# summer min temp
+c25 <- glmer(no.flowers ~ log.ros.area + trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c26 <- glmer(no.flowers ~ log.ros.area + trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c27 <- glmer(no.flowers ~ log.ros.area + summer.mean.min.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c28 <- glmer(no.flowers ~ log.ros.area*trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c29 <- glmer(no.flowers ~ log.ros.area*summer.mean.min.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c30 <- glmer(no.flowers ~ log.ros.area*trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# summer min temp lagged
+c31lag <- glmer(no.flowers ~ log.ros.area + trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c32lag <- glmer(no.flowers ~ log.ros.area + trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c33lag <- glmer(no.flowers ~ log.ros.area + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c34lag <- glmer(no.flowers ~ log.ros.area*trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c35lag <- glmer(no.flowers ~ log.ros.area*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c36lag <- glmer(no.flowers ~ log.ros.area*trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+# summer precip
+c31 <- glmer(no.flowers ~ log.ros.area + trt + summer.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c32 <- glmer(no.flowers ~ log.ros.area + trt*summer.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c33 <- glmer(no.flowers ~ log.ros.area + summer.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c34 <- glmer(no.flowers ~ log.ros.area*trt + summer.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c35 <- glmer(no.flowers ~ log.ros.area*summer.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c36 <- glmer(no.flowers ~ log.ros.area*trt*summer.tot.precip + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+#summer precip lag
+c37lag <- glmer(no.flowers ~ log.ros.area + trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c38lag <- glmer(no.flowers ~ log.ros.area + trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c39lag <- glmer(no.flowers ~ log.ros.area + summer.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c40lag <- glmer(no.flowers ~ log.ros.area*trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c41lag <- glmer(no.flowers ~ log.ros.area*summer.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c42lag <- glmer(no.flowers ~ log.ros.area*trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+#
+c37 <- glmer(no.flowers ~ log.ros.area + trt + winter.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c38 <- glmer(no.flowers ~ log.ros.area + trt*winter.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c39 <- glmer(no.flowers ~ log.ros.area + winter.mean.min.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+#
+c40 <- glmer(no.flowers ~ log.ros.area + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c41 <- glmer(no.flowers ~ log.ros.area + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c42 <- glmer(no.flowers ~ log.ros.area + winter.tot.precip+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+#
+c43 <- glmer(no.flowers ~ log.ros.area + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c44 <- glmer(no.flowers ~ log.ros.area + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+c45 <- glmer(no.flowers ~ log.ros.area + winter.mean.max.temp+ (1|plot) + (1|year), data = primula_flowering, family = "poisson")
+
+###
+###
+#count <- lst(c.min, c.min2, c.min3, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, c14, c15, c16, c17, c18, c19, c20, c21, c22, c23, c24, c25, c26, c27, c28, c29, c30, c31, c32, c33, c34, c35, c36, c37, c38, c39, c40, c1lag, c2lag, c3lag, c4lag, c5lag, c6lag, c7lag, c8lag, c8lag, c9lag, c10lag, c11lag, c12lag, c13lag, c14lag, c15lag, c16lag, c17lag, c18lag, c19lag, c20lag, c21lag, c22lag, c23lag, c24lag, c25lag, c26lag, c27lag, c28lag, c29lag, c30lag, c31lag, c32lag, c33lag, c34lag, c35lag, c36lag, c37lag, c38lag, c38lag, c39lag, c40lag, c41lag, c42lag)
+
+#only ones that converged/no warnings
+count <- lst(c.min, c.min2, c.min3, c9, c7, c7lag, c8lag, c9lag, c10lag, c11lag, c13, c15, c13lag, c14lag, c15lag, c20, c22, c19lag, c20lag, c21lag, c25lag, c27lag, c25, c26, c27, c28, c31lag, c33lag, c34lag, c31, c32, c33, c34, c37lag, c38lag, c39lag, c40lag, c37, c38, c39, c43, c45)
+
+count_AIC<-aictab(cand.set = count, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+#c32 is the best. Is it fishy that it is so much better (delta AIC >48 difference) than the other ones??
+## log.ros.area + trt * summer.tot.precip 
+
+pred.cont.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 46.2, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots! seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.cont.25 <- predict(c32, newdata = pred.cont.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.cont.25 <- as.data.frame(pred.cont.25)
+pred.cont.25 <- cbind(pred.cont.25, pred.cont.25.dat)
+pred.cont.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 67.3, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.cont.75 <- predict(c32, newdata = pred.cont.75.dat, type="response", re.form=~0)
+pred.cont.75 <- as.data.frame(pred.cont.75)
+pred.cont.75 <- cbind(pred.cont.75, pred.cont.75.dat)
+pred.cont.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 60.4, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.cont.av <- predict(c32, newdata = pred.cont.av.dat, type="response", re.form=~0)
+pred.cont.av <- as.data.frame(pred.cont.av)
+pred.cont.av <- cbind(pred.cont.av, pred.cont.av.dat)
+#irrigated plots
+pred.irr.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 46.2, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.irr.25 <- predict(c32, newdata = pred.irr.25.dat, type="response", re.form=~0)
+pred.irr.25 <- as.data.frame(pred.irr.25)
+pred.irr.25 <- cbind(pred.irr.25, pred.irr.25.dat)
+pred.irr.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 67.3, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.irr.75 <- predict(c32, newdata = pred.irr.75.dat, type="response", re.form=~0)
+pred.irr.75 <- as.data.frame(pred.irr.75)
+pred.irr.75 <- cbind(pred.irr.75, pred.irr.75.dat)
+pred.irr.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 60.4, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.irr.av <- predict(c32, newdata = pred.irr.av.dat, type="response", re.form=~0)
+pred.irr.av <- as.data.frame(pred.irr.av)
+pred.irr.av <- cbind(pred.irr.av, pred.irr.av.dat)
+#drought plots
+pred.drt.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 46.2, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.drt.25 <- predict(c32, newdata = pred.drt.25.dat, type="response", re.form=~0)
+pred.drt.25 <- as.data.frame(pred.drt.25)
+pred.drt.25 <- cbind(pred.drt.25, pred.drt.25.dat)
+pred.drt.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 67.3, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.drt.75 <- predict(c32, newdata = pred.drt.75.dat, type="response", re.form=~0)
+pred.drt.75 <- as.data.frame(pred.drt.75)
+pred.drt.75 <- cbind(pred.drt.75, pred.drt.75.dat)
+pred.drt.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), summer.tot.precip = 60.4, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.drt.av <- predict(c32, newdata = pred.drt.av.dat, type="response", re.form=~0)
+pred.drt.av <- as.data.frame(pred.drt.av)
+pred.drt.av <- cbind(pred.drt.av, pred.drt.av.dat)
+
+ggplot(subset(primula_flowering, trt == "control"), aes(x=log.ros.area, y=no.flowers))+
+  geom_point(color = R[5], size = 2) +
+  geom_line(data = pred.cont.25, aes(x = log.ros.area, y = pred.cont.25), color = FF[3], linetype = 2, size = 1) + #25th perc.gs max temp
+  geom_line(data = pred.cont.75, aes(x = log.ros.area, y = pred.cont.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = "black", size = 1.2) + #av  gs max temp
+  labs(title = "Control")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+
+primula_flowering %>% 
+  filter(trt == "irrigated") %>% 
+  ggplot(aes(x=log.ros.area, y=pflowerT1))+
+  geom_jitter(color = Z[2], height = 0.025, size = 2) +
+  geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25, color = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.irr.75, aes(x = log.ros.area, y = pred.irr.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = "black", size = 1.2) + #av gs max temp
+  labs(title = "Irrigated")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) #make the graph start in the corner
+
+primula_flowering %>% 
+  filter(trt == "drought") %>% 
+  ggplot(aes(x=log.ros.area, y=pflowerT1))+
+  geom_jitter(color = FF[1], height = 0.025, size = 2) +
+  geom_line(data = pred.drt.25, aes(x = log.ros.area, y = pred.drt.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.drt.75, aes(x = log.ros.area, y = pred.drt.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = "black", size = 1.2) + #av gs max temp
+  labs(title = "Drought")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 
