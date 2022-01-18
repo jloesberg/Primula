@@ -107,7 +107,7 @@ gm4 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.tot.precip + (1|plot) + 
 gm5 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm6 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm.1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt+ trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-gm.2 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F) #forgot this interction!
+gm.2 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F) #forgot this interaction!
 ###last years grow season precip
 gm1lag <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, REML = F)
 gm1.1lag <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.precip.1yearlag + trt +  + (1|plot) + (1|year), data = primula, REML = F)
@@ -288,7 +288,7 @@ growth_AICc<-aictab(cand.set = growth, modnames = NULL,second.ord=TRUE,nobs=NULL
 
 #gm.9 and gm17 are the best and basically the same ( delta AIC is < 2)
 summary(gm.9)
-summary(gm18)
+summary(gm17)
  #since gm17 has fewer terms, for now I'll go with gm17 because it is the simpler model
 
 ###########################################################################################################################
@@ -336,8 +336,8 @@ pred.drt.av <- cbind(pred.drt.av, pred.drt.av.dat)
 
 ggplot(subset(primula, trt == "control"), aes(x=log.ros.area, y=log.ros.areaT1))+
   geom_point(color = R[5], size = 2) +
-  geom_line(data = pred.cont.25, aes(x = log.ros.area, y = pred.cont.25), color = FF[3], linetype = 2, size = 1.2) + #25th perc.gs max temp
-  geom_line(data = pred.cont.75, aes(x = log.ros.area, y = pred.cont.75), color = FF[5], linetype = 2, size = 1.2) +  #75th perc. gs max temp
+  geom_line(data = pred.cont.25, aes(x = log.ros.area, y = pred.cont.25), color = FF[3], linetype = 2, size = 1) + #25th perc.gs max temp
+  geom_line(data = pred.cont.75, aes(x = log.ros.area, y = pred.cont.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = "black", size = 2) + #av  gs max temp
    labs(title = "Control")+
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
@@ -348,8 +348,8 @@ primula %>%
   filter(trt == "irrigated") %>% 
   ggplot(aes(x=log.ros.area, y=log.ros.areaT1))+
      geom_point(color = Z[2], size = 2) +
-     geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25), color = FF[3], linetype = 2, size = 1.2) + #25th perc. gs max temp
-     geom_line(data = pred.irr.75, aes(x = log.ros.area, y = pred.irr.75), color = FF[5], linetype = 2, size = 1.2) +  #75th perc. gs max temp
+     geom_line(data = pred.irr.25, aes(x = log.ros.area, y = pred.irr.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+     geom_line(data = pred.irr.75, aes(x = log.ros.area, y = pred.irr.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
      geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = "black", size = 2) + #av gs max temp
   labs(title = "Irrigated")+
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
@@ -360,8 +360,8 @@ primula %>%
   filter(trt == "drought") %>% 
   ggplot(aes(x=log.ros.area, y=log.ros.areaT1))+
   geom_point(color = FF[1], size = 2) +
-  geom_line(data = pred.drt.25, aes(x = log.ros.area, y = pred.drt.25), color = FF[3], linetype = 2, size = 1.2) + #25th perc. gs max temp
-  geom_line(data = pred.drt.75, aes(x = log.ros.area, y = pred.drt.75), color = FF[5], linetype = 2, size = 1.2) +  #75th perc. gs max temp
+  geom_line(data = pred.drt.25, aes(x = log.ros.area, y = pred.drt.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.drt.75, aes(x = log.ros.area, y = pred.drt.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = "black", size = 2) + #av gs max temp
   labs(title = "Drought")+
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
@@ -372,15 +372,14 @@ primula %>%
 primula %>% 
   ggplot(aes(x=log.ros.area, y=log.ros.areaT1))+
   geom_point() +
-  geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = FF[3], size = 1.5) + #25th perc. gs max temp
-  geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = R[5], size = 1.5) +  #75th perc. gs max temp
-  geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = FF[4], size = 1.5) + #av gs max temp
+  geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = FF[3], size = 1.5) + #irr
+  geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = R[5], size = 1.5) +  #control
+  geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = FF[4], size = 1.5) + #drt
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1) 
 # not sure how I can get legend without making dummy graph and getting it from there...
 # should these slopes be varying? 
-
 
 #########################################################################################
 # Probability of flowering  -------------------------------------------------------------
@@ -421,8 +420,10 @@ lrtest(fm1, fm3)
 
 fm1 <- glm(pflower ~ log(ros.areaTminus1), data = primula, family = "binomial")
 fm2 <- glm(pflower ~ log(ros.areaTminus1) + pflowerTminus1, data = primula, family = "binomial")
+fm3 <- glm(pflower ~ log(ros.areaTminus1)+ trt, data = primula, family = "binomial")
+fm4 <- glm(pflower ~ log(ros.areaTminus1) +trt + pflowerTminus1, data = primula, family = "binomial")
 
-lrtest(fm1, fm2)
+lrtest(fm1, fm2, fm3, fm4)
 
 
 
@@ -431,6 +432,11 @@ lrtest(fm1, fm2)
 fm.min <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min2 <- glmer(pflowerT1 ~ log.ros.area *trt + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min3 <- glmer(pflowerT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min4 <- glmer(pflowerT1 ~ log.ros.area + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min5 <- glmer(pflowerT1 ~ log.ros.area + pflower + trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min6 <- glmer(pflowerT1 ~ log.ros.area + pflower*trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min5 <- glmer(pflowerT1 ~ log.ros.area*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min5 <- glmer(pflowerT1 ~ log.ros.area*pflower*trt + (1|plot) + (1|year), data = primula, family = "binomial")
 ########################################################################################
 ##grow season total precip
 fm1 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -439,6 +445,8 @@ fm3 <- glmer(pflowerT1 ~ log.ros.area*trt+ grow.season.tot.precip + (1|plot) + (
 fm4 <- glmer(pflowerT1 ~ log.ros.area + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 fm5 <- glmer(pflowerT1 ~ log.ros.area*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 fm6 <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.1 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.2 <- glmer(pflowerT1 ~ log.ros.area*grow.season.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") #forgot this interaction!
 ###last years grow season precip
 fm1lag <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm2lag <- glmer(pflowerT1 ~ log.ros.area + trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -446,6 +454,8 @@ fm3lag <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.precip.1yearlag + (1|
 fm4lag <- glmer(pflowerT1 ~ log.ros.area + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm5lag <- glmer(pflowerT1 ~ log.ros.area*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm6lag <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.3 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.4 <- glmer(pflowerT1 ~ log.ros.area*grow.season.precip.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #grow season min temp
 fm7 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm8 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -453,6 +463,8 @@ fm9 <- glmer(pflowerT1 ~ log.ros.area + grow.season.mean.min.temp+ (1|plot) + (1
 fm10 <- glmer(pflowerT1 ~ log.ros.area*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm11 <- glmer(pflowerT1 ~ log.ros.area + trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm12 <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm.5 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*grow.season.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.6 <- glmer(pflowerT1 ~ log.ros.area*grow.season.mean.min.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # last years grow season min temp
 fm7lag <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm8lag <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -460,6 +472,14 @@ fm9lag <- glmer(pflowerT1 ~ log.ros.area + grow.season.min.temp.1yearlag+ (1|plo
 fm10lag <- glmer(pflowerT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm11lag <- glmer(pflowerT1 ~ log.ros.area + trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm12lag <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm.7 <- glmer(pflowerT1 ~ log.ros.area*trt + trt*grow.season.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")###
+fm.8 <- glmer(pflowerT1 ~ log.ros.area*grow.season.min.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f1 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.mean.max.temp + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f2 <- glmer(pflowerT1 ~ log.ros.area + grow.season.min.temp.1yearlag + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f3 <- glmer(pflowerT1 ~ log.ros.area + grow.season.min.temp.1yearlag + trt*pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f4 <- glmer(pflowerT1 ~ log.ros.area + grow.season.min.temp.1yearlag*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f5 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f6 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
 # grow season max temp
 fm13 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm14 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -467,6 +487,8 @@ fm15 <- glmer(pflowerT1 ~ log.ros.area + grow.season.mean.max.temp+ (1|plot) + (
 fm16 <- glmer(pflowerT1 ~ log.ros.area*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm17 <- glmer(pflowerT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm18 <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm.9 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*grow.season.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.10 <- glmer(pflowerT1 ~ log.ros.area*grow.season.mean.max.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 # last year grow seasons max temp
 fm13lag <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm14lag <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -474,6 +496,8 @@ fm15lag <- glmer(pflowerT1 ~ log.ros.area + grow.season.max.temp.1yearlag+ (1|pl
 fm16lag <- glmer(pflowerT1 ~ log.ros.area*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm17lag <- glmer(pflowerT1 ~ log.ros.area + trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm18lag <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm.11 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*grow.season.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.12 <- glmer(pflowerT1 ~ log.ros.area*grow.season.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 ## summer max temp
 fm20 <- glmer(pflowerT1 ~ log.ros.area + trt + summer.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm21 <- glmer(pflowerT1 ~ log.ros.area + trt*summer.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -481,6 +505,8 @@ fm22 <- glmer(pflowerT1 ~ log.ros.area + summer.mean.max.temp + (1|plot) + (1|ye
 fm23 <- glmer(pflowerT1 ~ log.ros.area*trt + summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 fm24 <- glmer(pflowerT1 ~ log.ros.area*summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 fm19 <- glmer(pflowerT1 ~ log.ros.area*trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.13 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.14 <- glmer(pflowerT1 ~ log.ros.area*summer.mean.max.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # last year's summer max temp
 fm19lag <- glmer(pflowerT1 ~ log.ros.area + trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm20lag <- glmer(pflowerT1 ~ log.ros.area + trt*summer.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -488,6 +514,8 @@ fm21lag <- glmer(pflowerT1 ~ log.ros.area + summer.max.temp.1yearlag + (1|plot) 
 fm22lag <- glmer(pflowerT1 ~ log.ros.area*trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm23lag <- glmer(pflowerT1 ~ log.ros.area*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm24lag <- glmer(pflowerT1 ~ log.ros.area*trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.15 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.16 <- glmer(pflowerT1 ~ log.ros.area*summer.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # 2 years ago summer max temp
 fm25lag <- glmer(pflowerT1 ~ log.ros.area + trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm26lag <- glmer(pflowerT1 ~ log.ros.area + trt*summer.max.temp.2yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -495,6 +523,8 @@ fm27lag <- glmer(pflowerT1 ~ log.ros.area + summer.max.temp.2yearlag + (1|plot) 
 fm28lag <- glmer(pflowerT1 ~ log.ros.area*trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm29lag <- glmer(pflowerT1 ~ log.ros.area*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm30lag <- glmer(pflowerT1 ~ log.ros.area*trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.17 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.18 <- glmer(pflowerT1 ~ log.ros.area*summer.max.temp.2yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # summer min temp
 fm25 <- glmer(pflowerT1 ~ log.ros.area + trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 fm26 <- glmer(pflowerT1 ~ log.ros.area + trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -502,6 +532,8 @@ fm27 <- glmer(pflowerT1 ~ log.ros.area + summer.mean.min.temp + (1|plot) + (1|ye
 fm28 <- glmer(pflowerT1 ~ log.ros.area*trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 fm29 <- glmer(pflowerT1 ~ log.ros.area*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 fm30 <- glmer(pflowerT1 ~ log.ros.area*trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.19 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.20 <- glmer(pflowerT1 ~ log.ros.area*summer.mean.min.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # summer min temp lagged
 fm31lag <- glmer(pflowerT1 ~ log.ros.area + trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm32lag <- glmer(pflowerT1 ~ log.ros.area + trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -509,6 +541,8 @@ fm33lag <- glmer(pflowerT1 ~ log.ros.area + summer.min.temp.1yearlag + (1|plot) 
 fm34lag <- glmer(pflowerT1 ~ log.ros.area*trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm35lag <- glmer(pflowerT1 ~ log.ros.area*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm36lag <- glmer(pflowerT1 ~ log.ros.area*trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.21 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.22 <- glmer(pflowerT1 ~ log.ros.area*summer.min.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # summer precip
 fm31 <- glmer(pflowerT1 ~ log.ros.area + trt + summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 fm32 <- glmer(pflowerT1 ~ log.ros.area + trt*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -516,6 +550,8 @@ fm33 <- glmer(pflowerT1 ~ log.ros.area + summer.tot.precip + (1|plot) + (1|year)
 fm34 <- glmer(pflowerT1 ~ log.ros.area*trt + summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 fm35 <- glmer(pflowerT1 ~ log.ros.area*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 fm36 <- glmer(pflowerT1 ~ log.ros.area*trt*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.23 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.24 <- glmer(pflowerT1 ~ log.ros.area*summer.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #summer precip lag
 fm37lag <- glmer(pflowerT1 ~ log.ros.area + trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm38lag <- glmer(pflowerT1 ~ log.ros.area + trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -523,30 +559,79 @@ fm39lag <- glmer(pflowerT1 ~ log.ros.area + summer.precip.1yearlag + (1|plot) + 
 fm40lag <- glmer(pflowerT1 ~ log.ros.area*trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm41lag <- glmer(pflowerT1 ~ log.ros.area*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 fm42lag <- glmer(pflowerT1 ~ log.ros.area*trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
-#
+fm.25 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.26 <- glmer(pflowerT1 ~ log.ros.area*summer.precip.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+# current year winter:
 fm37 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm38 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm39 <- glmer(pflowerT1 ~ log.ros.area + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm40 <- glmer(pflowerT1 ~ log.ros.area*trt + winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm41 <- glmer(pflowerT1 ~ log.ros.area*winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm42 <- glmer(pflowerT1 ~ log.ros.area*trt*winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm43 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+fm44 <- glmer(pflowerT1 ~ log.ros.area*winter.mean.min.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #
-fm40 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
-fm41 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
-fm42 <- glmer(pflowerT1 ~ log.ros.area + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm45 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm46 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm47 <- glmer(pflowerT1 ~ log.ros.area + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm48 <- glmer(pflowerT1 ~ log.ros.area*trt + winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm49 <- glmer(pflowerT1 ~ log.ros.area*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm50 <- glmer(pflowerT1 ~ log.ros.area*trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm51 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm52 <- glmer(pflowerT1 ~ log.ros.area*winter.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #
-fm43 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-fm44 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-fm45 <- glmer(pflowerT1 ~ log.ros.area + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm53 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm54 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm55 <- glmer(pflowerT1 ~ log.ros.area + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm56 <- glmer(pflowerT1 ~ log.ros.area*trt + winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm57 <- glmer(pflowerT1 ~ log.ros.area*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm58 <- glmer(pflowerT1 ~ log.ros.area*trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm59 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+fm60 <- glmer(pflowerT1 ~ log.ros.area*winter.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+#lagged winter:
+#
+fm61 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm62 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm63 <- glmer(pflowerT1 ~ log.ros.area + winter.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm64 <- glmer(pflowerT1 ~ log.ros.area*trt + winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm65 <- glmer(pflowerT1 ~ log.ros.area*winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm66 <- glmer(pflowerT1 ~ log.ros.area*trt*winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm67 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm68 <- glmer(pflowerT1 ~ log.ros.area*winter.min.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+#
+fm69 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.precip.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm70 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.precip.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm71 <- glmer(pflowerT1 ~ log.ros.area + winter.precip.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm72 <- glmer(pflowerT1 ~ log.ros.area*trt + winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm73 <- glmer(pflowerT1 ~ log.ros.area*winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm74 <- glmer(pflowerT1 ~ log.ros.area*trt*winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm75 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm76 <- glmer(pflowerT1 ~ log.ros.area*winter.precip.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+#
+fm77 <- glmer(pflowerT1 ~ log.ros.area + trt + winter.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm78 <- glmer(pflowerT1 ~ log.ros.area + trt*winter.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm79 <- glmer(pflowerT1 ~ log.ros.area + winter.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm80 <- glmer(pflowerT1 ~ log.ros.area*trt + winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm81 <- glmer(pflowerT1 ~ log.ros.area*winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm82 <- glmer(pflowerT1 ~ log.ros.area*trt*winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm83 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+fm84 <- glmer(pflowerT1 ~ log.ros.area*winter.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+
 
 ###
 flowering1 <- lst(fm.min, fm.min2, fm.min3, fm1, fm2, fm3, fm4, fm5, fm6, fm7, fm8, fm9, fm10, fm11, fm12, fm13, fm14, fm15, fm16, fm17, fm18, fm19, fm20, fm21, fm22, fm23, fm24, fm25, fm26, fm27, fm28, fm29, fm30, fm31, fm32, fm33, fm34, fm35, fm36, fm37, fm38, fm39, fm40, gm41, fm42, fm43, fm44, fm45, fm1lag, fm2lag, fm3lag, fm4lag, fm5lag, fm6lag, fm7lag, fm8lag, fm9lag, fm10lag, fm11lag, fm12lag, fm13lag, fm14lag, fm15lag, fm16lag, fm17lag, fm18lag, fm19lag, fm20lag, fm21lag, fm22lag, fm23lag, fm24lag, fm25lag, fm26lag, fm27lag, fm28lag, fm29lag, fm30lag, fm31lag, fm32lag, fm33lag, fm34lag, fm35lag, fm36lag, fm37lag, fm38lag, fm38lag, fm39lag, fm40lag, fm41lag, fm42lag)
+flowering <- mget(ls(pattern = "^fm")) #make a list of all of those models that start with gm (^ means start with)
 
 #list of just ones that converged
 flowering_conv <- lst(fm.min, fm.min2, fm.min3, fm7,fm8,fm7lag, fm9lag, fm10lag,fm13, fm14, fm15, fm13lag, fm15lag, fm17lag, fm20, fm22, fm21lag, fm25, fm27, fm31lag, fm33lag, fm31, fm32, fm33, fm37, fm38, fm39, fm43, fm45)
+
 #
-flowering<-aictab(cand.set = flowering_conv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+flowering<-aictab(cand.set = flowering, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
-# lots of similar ones, which one to choose?
-## For now deciding on fm13. Fm14 is the same but has an interaction so is more complicated
+# there is a convergence problem here (this table also shows models that didnt converge) ones with delta AIC <2:
+# fm.f6 (delta aic = 0) and fm.7 (1.9). Very tempting to choose the pflower one
 
+# Need to update this with new best fit model:
 # graphing: grow.season.mean.max.temp + log.ros.area + trt
 # Heres' what works for predicting and graphing
 # control plots
