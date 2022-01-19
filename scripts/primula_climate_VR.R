@@ -430,13 +430,23 @@ lrtest(fm1, fm2, fm3, fm4)
 ##########################################################################
 # Candidate models
 fm.min <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, family = "binomial")
-fm.min2 <- glmer(pflowerT1 ~ log.ros.area *trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min2 <- glmer(pflowerT1 ~ log.ros.area*trt + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min3 <- glmer(pflowerT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min4 <- glmer(pflowerT1 ~ log.ros.area + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min5 <- glmer(pflowerT1 ~ log.ros.area + pflower + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.min6 <- glmer(pflowerT1 ~ log.ros.area + pflower*trt + (1|plot) + (1|year), data = primula, family = "binomial")
-fm.min5 <- glmer(pflowerT1 ~ log.ros.area*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
-fm.min5 <- glmer(pflowerT1 ~ log.ros.area*pflower*trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min7 <- glmer(pflowerT1 ~ log.ros.area*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min8 <- glmer(pflowerT1 ~ log.ros.area*pflower*trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min9 <- glmer(pflowerT1 ~ log.ros.area*trt + pflower*trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min10 <- glmer(pflowerT1 ~ log.ros.area*pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.min11 <- glmer(pflowerT1 ~ log.ros.area*pflower + trt + (1|plot) + (1|year), data = primula, family = "binomial")
+
+# if these don't include, climate, which is the best model?
+pflowering <- mget(ls(pattern = "^fm")) #make a list of all of those models that start with gm (^ means start with)
+pflowering<-aictab(cand.set = pflowering, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+#if run without climate: best model is 11: log.ros.area*pflower + trt - this would make sense to me!
+summary(fm.min11)
+
 ########################################################################################
 ##grow season total precip
 fm1 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -480,6 +490,9 @@ fm.f3 <- glmer(pflowerT1 ~ log.ros.area + grow.season.min.temp.1yearlag + trt*pf
 fm.f4 <- glmer(pflowerT1 ~ log.ros.area + grow.season.min.temp.1yearlag*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.f5 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.f6 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f7 <- glmer(pflowerT1 ~ log.ros.area*pflower + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f8 <- glmer(pflowerT1 ~ log.ros.area*pflower+ grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+
 # grow season max temp
 fm13 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm14 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -489,6 +502,14 @@ fm17 <- glmer(pflowerT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot)
 fm18 <- glmer(pflowerT1 ~ log.ros.area*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm.9 <- glmer(pflowerT1 ~ log.ros.area*trt+ trt*grow.season.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.10 <- glmer(pflowerT1 ~ log.ros.area*grow.season.mean.max.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f9 <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.mean.max.temp + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f10 <- glmer(pflowerT1 ~ log.ros.area + grow.season.mean.max.temp + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f11 <- glmer(pflowerT1 ~ log.ros.area + grow.season.mean.max.temp + trt*pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f12 <- glmer(pflowerT1 ~ log.ros.area + grow.season.mean.max.temp*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f13 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.mean.max.temp + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f14 <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.mean.max.temp*trt + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f15 <- glmer(pflowerT1 ~ log.ros.area*pflower + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+fm.f16 <- glmer(pflowerT1 ~ log.ros.area*pflower+ grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 # last year grow seasons max temp
 fm13lag <- glmer(pflowerT1 ~ log.ros.area + trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 fm14lag <- glmer(pflowerT1 ~ log.ros.area*trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -619,58 +640,56 @@ fm84 <- glmer(pflowerT1 ~ log.ros.area*winter.max.temp.1yearlag + trt + (1|plot)
 
 
 ###
-flowering1 <- lst(fm.min, fm.min2, fm.min3, fm1, fm2, fm3, fm4, fm5, fm6, fm7, fm8, fm9, fm10, fm11, fm12, fm13, fm14, fm15, fm16, fm17, fm18, fm19, fm20, fm21, fm22, fm23, fm24, fm25, fm26, fm27, fm28, fm29, fm30, fm31, fm32, fm33, fm34, fm35, fm36, fm37, fm38, fm39, fm40, gm41, fm42, fm43, fm44, fm45, fm1lag, fm2lag, fm3lag, fm4lag, fm5lag, fm6lag, fm7lag, fm8lag, fm9lag, fm10lag, fm11lag, fm12lag, fm13lag, fm14lag, fm15lag, fm16lag, fm17lag, fm18lag, fm19lag, fm20lag, fm21lag, fm22lag, fm23lag, fm24lag, fm25lag, fm26lag, fm27lag, fm28lag, fm29lag, fm30lag, fm31lag, fm32lag, fm33lag, fm34lag, fm35lag, fm36lag, fm37lag, fm38lag, fm38lag, fm39lag, fm40lag, fm41lag, fm42lag)
+#flowering1 <- lst(fm.min, fm.min2, fm.min3, fm1, fm2, fm3, fm4, fm5, fm6, fm7, fm8, fm9, fm10, fm11, fm12, fm13, fm14, fm15, fm16, fm17, fm18, fm19, fm20, fm21, fm22, fm23, fm24, fm25, fm26, fm27, fm28, fm29, fm30, fm31, fm32, fm33, fm34, fm35, fm36, fm37, fm38, fm39, fm40, gm41, fm42, fm43, fm44, fm45, fm1lag, fm2lag, fm3lag, fm4lag, fm5lag, fm6lag, fm7lag, fm8lag, fm9lag, fm10lag, fm11lag, fm12lag, fm13lag, fm14lag, fm15lag, fm16lag, fm17lag, fm18lag, fm19lag, fm20lag, fm21lag, fm22lag, fm23lag, fm24lag, fm25lag, fm26lag, fm27lag, fm28lag, fm29lag, fm30lag, fm31lag, fm32lag, fm33lag, fm34lag, fm35lag, fm36lag, fm37lag, fm38lag, fm38lag, fm39lag, fm40lag, fm41lag, fm42lag)
 flowering <- mget(ls(pattern = "^fm")) #make a list of all of those models that start with gm (^ means start with)
-
-#list of just ones that converged
-flowering_conv <- lst(fm.min, fm.min2, fm.min3, fm7,fm8,fm7lag, fm9lag, fm10lag,fm13, fm14, fm15, fm13lag, fm15lag, fm17lag, fm20, fm22, fm21lag, fm25, fm27, fm31lag, fm33lag, fm31, fm32, fm33, fm37, fm38, fm39, fm43, fm45)
-
-#
+flowering <- flowering %>%  purrr::list_modify("fm.f4" = NULL) %>%  purrr::list_modify("fm11lag" = NULL) %>%  purrr::list_modify("fm.9" = NULL) %>%  
+  purrr::list_modify("fm.f14" = NULL) %>% purrr::list_modify("fm.f12" = NULL) %>% purrr::list_modify("fm.f15" = NULL)  %>% purrr::list_modify("fm17" = NULL) %>% 
+  purrr::list_modify("fm18" = NULL) %>% purrr::list_modify("fm.25" = NULL) %>% purrr::list_modify("fm2" = NULL) %>% purrr::list_modify("fm30" = NULL)# these didnt converge and have low delta AIC's
 flowering<-aictab(cand.set = flowering, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
-# there is a convergence problem here (this table also shows models that didnt converge) ones with delta AIC <2:
+# there is a convergence problem here with a lot of the models (this table also shows models that didnt converge) ones with delta AIC <2:
 # fm.f6 (delta aic = 0) and fm.7 (1.9). Very tempting to choose the pflower one
-
+summary(fm.7)
 # Need to update this with new best fit model:
-# graphing: grow.season.mean.max.temp + log.ros.area + trt
+# graphing: log.ros.area * trt + trt * grow.season.min.temp.1yearlag +      (1 | plot) + (1 | year)
 # Heres' what works for predicting and graphing
 # control plots
-pred.cont.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 16.68, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots! seq(0, 6, by = .1) is the same as 0:6 but smaller increments
-pred.cont.25 <- predict(fm13, newdata = pred.cont.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.cont.25.dat <-  expand.grid(log.ros.area = seq(.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.49, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots! seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.cont.25 <- predict(fm.7, newdata = pred.cont.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.cont.25 <- as.data.frame(pred.cont.25)
 pred.cont.25 <- cbind(pred.cont.25, pred.cont.25.dat)
-pred.cont.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 18.55, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
-pred.cont.75 <- predict(fm13, newdata = pred.cont.75.dat, type="response", re.form=~0)
+pred.cont.75.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.84, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.cont.75 <- predict(fm.7, newdata = pred.cont.75.dat, type="response", re.form=~0)
 pred.cont.75 <- as.data.frame(pred.cont.75)
 pred.cont.75 <- cbind(pred.cont.75, pred.cont.75.dat)
-pred.cont.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 17.47, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
-pred.cont.av <- predict(fm13, newdata = pred.cont.av.dat, type="response", re.form=~0)
+pred.cont.av.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.80, trt = "control") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.cont.av <- predict(fm.7, newdata = pred.cont.av.dat, type="response", re.form=~0)
 pred.cont.av <- as.data.frame(pred.cont.av)
 pred.cont.av <- cbind(pred.cont.av, pred.cont.av.dat)
 #irrigated plots
-pred.irr.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 16.68, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
-pred.irr.25 <- predict(fm13, newdata = pred.irr.25.dat, type="response", re.form=~0)
+pred.irr.25.dat <-  expand.grid(log.ros.area = seq(0.6, 5.6, by = .1), grow.season.min.temp.1yearlag = 5.49, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.irr.25 <- predict(fm.7, newdata = pred.irr.25.dat, type="response", re.form=~0)
 pred.irr.25 <- as.data.frame(pred.irr.25)
 pred.irr.25 <- cbind(pred.irr.25, pred.irr.25.dat)
-pred.irr.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 18.55, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
-pred.irr.75 <- predict(fm13, newdata = pred.irr.75.dat, type="response", re.form=~0)
+pred.irr.75.dat <-  expand.grid(log.ros.area = seq(0.6, 5.6, by = .1), grow.season.min.temp.1yearlag = 5.84, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.irr.75 <- predict(fm.7, newdata = pred.irr.75.dat, type="response", re.form=~0)
 pred.irr.75 <- as.data.frame(pred.irr.75)
 pred.irr.75 <- cbind(pred.irr.75, pred.irr.75.dat)
-pred.irr.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 17.47, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
-pred.irr.av <- predict(fm13, newdata = pred.irr.av.dat, type="response", re.form=~0)
+pred.irr.av.dat <-  expand.grid(log.ros.area = seq(0.6, 5.6, by = .1), grow.season.min.temp.1yearlag = 5.80, trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.irr.av <- predict(fm.7, newdata = pred.irr.av.dat, type="response", re.form=~0)
 pred.irr.av <- as.data.frame(pred.irr.av)
 pred.irr.av <- cbind(pred.irr.av, pred.irr.av.dat)
 #drought plots
-pred.drt.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 16.68, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
-pred.drt.25 <- predict(fm13, newdata = pred.drt.25.dat, type="response", re.form=~0)
+pred.drt.25.dat <-  expand.grid(log.ros.area = seq(0.4, 5.3, by = .1), grow.season.min.temp.1yearlag = 5.49, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+pred.drt.25 <- predict(fm.7, newdata = pred.drt.25.dat, type="response", re.form=~0)
 pred.drt.25 <- as.data.frame(pred.drt.25)
 pred.drt.25 <- cbind(pred.drt.25, pred.drt.25.dat)
-pred.drt.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 18.55, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
-pred.drt.75 <- predict(fm13, newdata = pred.drt.75.dat, type="response", re.form=~0)
+pred.drt.75.dat <-  expand.grid(log.ros.area = seq(0.4, 5.3, by = .1), grow.season.min.temp.1yearlag = 5.84, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.drt.75 <- predict(fm.7, newdata = pred.drt.75.dat, type="response", re.form=~0)
 pred.drt.75 <- as.data.frame(pred.drt.75)
 pred.drt.75 <- cbind(pred.drt.75, pred.drt.75.dat)
-pred.drt.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.mean.max.temp = 17.47, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
-pred.drt.av <- predict(fm13, newdata = pred.drt.av.dat, type="response", re.form=~0)
+pred.drt.av.dat <-  expand.grid(log.ros.area = seq(0.4, 5.3, by = .1), grow.season.min.temp.1yearlag = 5.80, trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.drt.av <- predict(fm.7, newdata = pred.drt.av.dat, type="response", re.form=~0)
 pred.drt.av <- as.data.frame(pred.drt.av)
 pred.drt.av <- cbind(pred.drt.av, pred.drt.av.dat)
 
@@ -701,6 +720,18 @@ primula %>%
   geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = "black", size = 1.2) + #av gs max temp
   labs(title = "Drought")+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+
+# all together using just average temp (no percentiles)
+primula %>% 
+  ggplot(aes(x=log.ros.area, y=pflowerT1))+
+  geom_jitter(height = 0.025, size = 2) +
+  geom_line(data = pred.irr.av, aes(x = log.ros.area, y = pred.irr.av), color = FF[3], size = 1.5) + #25th perc. gs max temp
+  geom_line(data = pred.cont.av, aes(x = log.ros.area, y = pred.cont.av), color = R[5], size = 1.5) +  #75th perc. gs max temp
+  geom_line(data = pred.drt.av, aes(x = log.ros.area, y = pred.drt.av), color = FF[4], size = 1.5) + #av gs max temp
+  labs(title = "Climate Averages")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+# not sure how I can get legend without making dummy graph and getting it from there...
+
 #########################################################################################
 # Probability of surviving  -------------------------------------------------------------
 
@@ -759,6 +790,8 @@ sm3 <- glmer(psurvivalT1 ~ log.ros.area*trt+ grow.season.tot.precip + (1|plot) +
 sm4 <- glmer(psurvivalT1 ~ log.ros.area + grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm5 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm6 <- glmer(psurvivalT1 ~ log.ros.area*trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.1 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*grow.season.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.2 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") #forgot this interaction!
 ###last years grow season precip
 sm1lag <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm2lag <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -766,6 +799,8 @@ sm3lag <- glmer(psurvivalT1 ~ log.ros.area*trt + grow.season.precip.1yearlag + (
 sm4lag <- glmer(psurvivalT1 ~ log.ros.area + grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm5lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm6lag <- glmer(psurvivalT1 ~ log.ros.area*trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.3 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*grow.season.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.4 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.precip.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #grow season min temp
 sm7 <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm8 <- glmer(psurvivalT1 ~ log.ros.area*trt + grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -773,6 +808,8 @@ sm9 <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.min.temp+ (1|plot) + 
 sm10 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm11 <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm12 <- glmer(psurvivalT1 ~ log.ros.area*trt*grow.season.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm.5 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*grow.season.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.6 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.mean.min.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 # last years grow season min temp
 sm7lag <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm8lag <- glmer(psurvivalT1 ~ log.ros.area*trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -780,6 +817,8 @@ sm9lag <- glmer(psurvivalT1 ~ log.ros.area + grow.season.min.temp.1yearlag+ (1|p
 sm10lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial") ###
 sm11lag <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm12lag <- glmer(psurvivalT1 ~ log.ros.area*trt*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm.f7 <- glmer(psurvivalT1 ~ log.ros.area*pflower + trt + grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm.f8 <- glmer(psurvivalT1 ~ log.ros.area*pflower+ grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 # grow season max temp
 sm13 <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm14 <- glmer(psurvivalT1 ~ log.ros.area*trt + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -787,6 +826,8 @@ sm15 <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.max.temp+ (1|plot) +
 sm16 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm17 <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm18 <- glmer(psurvivalT1 ~ log.ros.area*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm.9 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*grow.season.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.10 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.mean.max.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 # last year grow seasons max temp
 sm13lag <- glmer(psurvivalT1 ~ log.ros.area + trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm14lag <- glmer(psurvivalT1 ~ log.ros.area*trt + grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -794,6 +835,8 @@ sm15lag <- glmer(psurvivalT1 ~ log.ros.area + grow.season.max.temp.1yearlag+ (1|
 sm16lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm17lag <- glmer(psurvivalT1 ~ log.ros.area + trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm18lag <- glmer(psurvivalT1 ~ log.ros.area*trt*grow.season.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm.11 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*grow.season.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.12 <- glmer(psurvivalT1 ~ log.ros.area*grow.season.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 ## summer max temp
 sm20 <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm21 <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -801,6 +844,8 @@ sm22 <- glmer(psurvivalT1 ~ log.ros.area + summer.mean.max.temp + (1|plot) + (1|
 sm23 <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 sm24 <- glmer(psurvivalT1 ~ log.ros.area*summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 sm19 <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.13 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.mean.max.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.14 <- glmer(psurvivalT1 ~ log.ros.area*summer.mean.max.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # last year's summer max temp
 sm19lag <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm20lag <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -808,6 +853,8 @@ sm21lag <- glmer(psurvivalT1 ~ log.ros.area + summer.max.temp.1yearlag + (1|plot
 sm22lag <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm23lag <- glmer(psurvivalT1 ~ log.ros.area*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm24lag <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.15 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.16 <- glmer(psurvivalT1 ~ log.ros.area*summer.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # 2 years ago summer max temp
 sm25lag <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm26lag <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.max.temp.2yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
@@ -815,6 +862,8 @@ sm27lag <- glmer(psurvivalT1 ~ log.ros.area + summer.max.temp.2yearlag + (1|plot
 sm28lag <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm29lag <- glmer(psurvivalT1 ~ log.ros.area*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm30lag <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.17 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.max.temp.2yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.18 <- glmer(psurvivalT1 ~ log.ros.area*summer.max.temp.2yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # summer min temp
 sm25 <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 sm26 <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -822,6 +871,8 @@ sm27 <- glmer(psurvivalT1 ~ log.ros.area + summer.mean.min.temp + (1|plot) + (1|
 sm28 <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 sm29 <- glmer(psurvivalT1 ~ log.ros.area*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 sm30 <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.19 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.20 <- glmer(psurvivalT1 ~ log.ros.area*summer.mean.min.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial")
 # summer min temp lagged
 sm31lag <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm32lag <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -829,6 +880,8 @@ sm33lag <- glmer(psurvivalT1 ~ log.ros.area + summer.min.temp.1yearlag + (1|plot
 sm34lag <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm35lag <- glmer(psurvivalT1 ~ log.ros.area*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm36lag <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.21 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.22 <- glmer(psurvivalT1 ~ log.ros.area*summer.min.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 # summer precip
 sm31 <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm32 <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -836,6 +889,8 @@ sm33 <- glmer(psurvivalT1 ~ log.ros.area + summer.tot.precip + (1|plot) + (1|yea
 sm34 <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm35 <- glmer(psurvivalT1 ~ log.ros.area*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
 sm36 <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.23 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.24 <- glmer(psurvivalT1 ~ log.ros.area*summer.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #summer precip lag
 sm37lag <- glmer(psurvivalT1 ~ log.ros.area + trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm38lag <- glmer(psurvivalT1 ~ log.ros.area + trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -843,40 +898,109 @@ sm39lag <- glmer(psurvivalT1 ~ log.ros.area + summer.precip.1yearlag + (1|plot) 
 sm40lag <- glmer(psurvivalT1 ~ log.ros.area*trt + summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm41lag <- glmer(psurvivalT1 ~ log.ros.area*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
 sm42lag <- glmer(psurvivalT1 ~ log.ros.area*trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
-#
+sm.25 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*summer.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.26 <- glmer(psurvivalT1 ~ log.ros.area*summer.precip.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+# current year winter:
 sm37 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm38 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
 sm39 <- glmer(psurvivalT1 ~ log.ros.area + winter.mean.min.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm40 <- glmer(psurvivalT1 ~ log.ros.area*trt + winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm41 <- glmer(psurvivalT1 ~ log.ros.area*winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm42 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm43 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.mean.min.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+sm44 <- glmer(psurvivalT1 ~ log.ros.area*winter.mean.min.temp + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #
-sm40 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
-sm41 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
-sm42 <- glmer(psurvivalT1 ~ log.ros.area + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm45 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm46 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm47 <- glmer(psurvivalT1 ~ log.ros.area + winter.tot.precip+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm48 <- glmer(psurvivalT1 ~ log.ros.area*trt + winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm49 <- glmer(psurvivalT1 ~ log.ros.area*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm50 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm51 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm52 <- glmer(psurvivalT1 ~ log.ros.area*winter.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 #
-sm43 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-sm44 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-sm45 <- glmer(psurvivalT1 ~ log.ros.area + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-
+sm53 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm54 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm55 <- glmer(psurvivalT1 ~ log.ros.area + winter.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm56 <- glmer(psurvivalT1 ~ log.ros.area*trt + winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm57 <- glmer(psurvivalT1 ~ log.ros.area*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm58 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm59 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.tot.precip + (1|plot) + (1|year), data = primula, family = "binomial")
+sm60 <- glmer(psurvivalT1 ~ log.ros.area*winter.tot.precip + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+#lagged winter:
+#
+sm61 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm62 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm63 <- glmer(psurvivalT1 ~ log.ros.area + winter.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm64 <- glmer(psurvivalT1 ~ log.ros.area*trt + winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm65 <- glmer(psurvivalT1 ~ log.ros.area*winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm66 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm67 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.min.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm68 <- glmer(psurvivalT1 ~ log.ros.area*winter.min.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+#
+sm69 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.precip.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm70 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.precip.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm71 <- glmer(psurvivalT1 ~ log.ros.area + winter.precip.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm72 <- glmer(psurvivalT1 ~ log.ros.area*trt + winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm73 <- glmer(psurvivalT1 ~ log.ros.area*winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm74 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm75 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.precip.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm76 <- glmer(psurvivalT1 ~ log.ros.area*winter.precip.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
+#
+sm77 <- glmer(psurvivalT1 ~ log.ros.area + trt + winter.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm78 <- glmer(psurvivalT1 ~ log.ros.area + trt*winter.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm79 <- glmer(psurvivalT1 ~ log.ros.area + winter.max.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm80 <- glmer(psurvivalT1 ~ log.ros.area*trt + winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm81 <- glmer(psurvivalT1 ~ log.ros.area*winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm82 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm83 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.max.temp.1yearlag + (1|plot) + (1|year), data = primula, family = "binomial")
+sm84 <- glmer(psurvivalT1 ~ log.ros.area*winter.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 ###
-survival1 <- lst(sm.min, sm.min2, sm.min3, sm1, sm2, sm3, sm4, sm5, sm6, sm7, sm8, sm9, sm10, sm11, sm12, sm13, sm14, sm15, sm16, sm17, sm18, sm19, sm20, sm21, sm22, sm23, sm24, sm25, sm26, sm27, sm28, sm29, sm30, sm31, sm32, sm33, sm34, sm35, sm36, sm37, sm38, sm39, sm40, sm1lag, sm2lag, sm3lag, sm4lag, sm5lag, sm6lag, sm7lag, sm8lag, sm8lag, sm9lag, sm10lag, sm11lag, sm12lag, sm13lag, sm14lag, sm15lag, sm16lag, sm17lag, sm18lag, sm19lag, sm20lag, sm21lag, sm22lag, sm23lag, sm24lag, sm25lag, sm26lag, sm27lag, sm28lag, sm29lag, sm30lag, sm31lag, sm32lag, sm33lag, sm34lag, sm35lag, sm36lag, sm37lag, sm38lag, sm38lag, sm39lag, sm40lag, sm41lag, sm42lag)
+surv.list <- mget(ls(pattern = "^sm")) #make a list of all of those models that start with gm (^ means start with)
+# surv.list <- surv.list %>%  purrr::list_modify("fm.f4" = NULL) %>%  purrr::list_modify("fm11lag" = NULL) %>%  purrr::list_modify("fm.9" = NULL) %>%  
+#   purrr::list_modify("fm.f14" = NULL) %>% purrr::list_modify("fm.f12" = NULL) %>% purrr::list_modify("fm.f15" = NULL)  %>% purrr::list_modify("fm17" = NULL) %>% 
+#   purrr::list_modify("fm18" = NULL) %>% purrr::list_modify("fm.25" = NULL) %>% purrr::list_modify("fm2" = NULL) %>% purrr::list_modify("fm30" = NULL)# these didnt converge and have low delta AIC's
+surv<-aictab(cand.set = surv.list, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
-#only ones that converged:
-surv.conv <- lst(sm.min, sm.min2, sm.min3, sm1, sm3, sm4, sm1lag, sm3lag, sm4lag,sm7, sm9, sm7lag, sm8lag, sm9lag, sm10lag, sm11lag, sm13, sm14, sm15, sm13lag, sm14lag, sm15lag, sm20, sm22, sm23, sm19lag, sm21lag, sm25lag, sm27lag, sm27,sm31lag,sm32lag, sm33lag, sm31, sm32, sm33, sm34, sm37lag, sm38lag, sm39lag, sm40lag, sm43, sm45)
+# most of these wouldnt converge, etc. but best ones are: sm10lag, sm65, sm38lag...sm10lag and sm65 are same K...how to choose?
+#  sm10lag : survivalT1 ~ log.ros.area * grow.season.min.temp.1yearlag + RE
+# sm65 : log.ros.area * winter.min.temp.1yearlag  +RE
 
-survival<-aictab(cand.set = surv.conv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
-
-# best is sm10lag : survivalT1 ~ log.ros.area * grow.season.min.temp.1yearlag + RE
-# Here's what works for predicting and graphing
-# control plots
-pred.25.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.49) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+# sm10lag
+pred.25.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.49) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.25 <- predict(sm10lag, newdata = pred.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.25 <- as.data.frame(pred.25)
 pred.25 <- cbind(pred.25, pred.25.dat)
-pred.75.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.84) #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.75.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.84) #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
 pred.75 <- predict(sm10lag, newdata = pred.75.dat, type="response", re.form=~0)
 pred.75 <- as.data.frame(pred.75)
 pred.75 <- cbind(pred.75, pred.75.dat)
-pred.av.dat <-  expand.grid(log.ros.area = seq(0, 6, by = .1), grow.season.min.temp.1yearlag = 5.80) #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.av.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.80) #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
 pred.av <- predict(sm10lag, newdata = pred.av.dat, type="response", re.form=~0)
+pred.av <- as.data.frame(pred.av)
+pred.av <- cbind(pred.av, pred.av.dat)
+
+primula %>% 
+  ggplot(aes(x=log.ros.area, y = psurvivalT1))+
+  geom_jitter(height = .025, size = 2) +
+  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_line(data = pred.av, aes(x = log.ros.area, y = pred.av), color = "black", size = 1.2) + #av gs max temp
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) + #make the graph start in the corner
+  labs(title= "sm10lag")
+
+##
+# sm65
+pred.25.dat <-  expand.grid(log.ros.area = seq(0.3, 6, by = .1), winter.min.temp.1yearlag  = 0.143) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.25 <- predict(sm65, newdata = pred.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.25 <- as.data.frame(pred.25)
+pred.25 <- cbind(pred.25, pred.25.dat)
+pred.75.dat <-  expand.grid(log.ros.area = seq(0.3, 6, by = .1), winter.min.temp.1yearlag  = 0.829) #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.75 <- predict(sm65, newdata = pred.75.dat, type="response", re.form=~0)
+pred.75 <- as.data.frame(pred.75)
+pred.75 <- cbind(pred.75, pred.75.dat)
+pred.av.dat <-  expand.grid(log.ros.area = seq(0.3, 6, by = .1), winter.min.temp.1yearlag  = 0.833) #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.av <- predict(sm65, newdata = pred.av.dat, type="response", re.form=~0)
 pred.av <- as.data.frame(pred.av)
 pred.av <- cbind(pred.av, pred.av.dat)
 
@@ -886,8 +1010,12 @@ primula %>%
   geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25, color = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
   geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.av, aes(x = log.ros.area, y = pred.av), color = "black", size = 1.2) + #av gs max temp
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) #make the graph start in the corner
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +#make the graph start in the corner
+  labs(title = "sm65")
 
+# not sure which to go with here
+
+########################################################
 
 primula %>% ggplot(aes(log.ros.area, psurvivalT1)) +
   geom_jitter(height = .02)+
