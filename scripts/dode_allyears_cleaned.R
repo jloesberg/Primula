@@ -98,6 +98,9 @@ dode2019$plot[dode2019$tag == "1728"] <- "5"
 #1645 is in plot 5 not 3
 dode2019$plot[dode2019$tag == "1645"] <- "5"
 
+### tag 35 in 2019 didnt have an entry for pflower or no.flowers, I'm not certain whether it flowered or not. Leave it in?
+#dode2019 <- dode2019 %>% filter(tag != "35") 
+
 dode2019 <- dode2019 %>% 
   mutate(tag = as.character(tag),
          plot = as.factor(plot))
@@ -298,6 +301,10 @@ plots <- plots %>%
 
 Dodecatheon<-left_join(Dodecatheon, plots, by="plot") #join so that every record also belongs to a plot
 
+##################################################################################
+# other problem tags:
+
+
 ################################################################################
 #To check for duplicates:
 which(duplicated(dode2019$tag))
@@ -427,17 +434,19 @@ remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, plots)
 
 # using tidyverse methods to get status next year
 
-Dodecatheon_lag <- Dodecatheon %>% 
+Dodecatheon <- Dodecatheon %>% 
   group_by(tag) %>% 
   mutate(ros.areaT1 = lead(ros.area),
          no.capsulesT1 = lead(no.capsules),
-         no.flowersT1 = lead(no.flowers),
          pflowerT1 = lead(pflower),
          psurvivalT1 = lead(psurvival),
          life_stT1 = lead(life_st),
          ros.areaTminus1 = lag(ros.area),
          pflowerTminus1 = lag(pflower))
-
+Dodecatheon <- Dodecatheon %>% 
+  mutate(plot = as.character(plot),
+         log.ros.areaT1 = log(ros.areaT1),
+         log.ros.area = log(ros.area))
 # 
 # ## Adding fate next year, using mostly jenn's code:
 # #star2 <- star %>% 
@@ -472,9 +481,38 @@ Dodecatheon_lag <- Dodecatheon %>%
 
 #write.csv(star2, "C:/Users/Jenna/Dropbox/Jenna/fall_dode/dode/Dodecatheon_data/AllYears_Dodecatheon_Demography_fates_Oct6.csv",  row.names=F)
 #write.csv(star2, "C:/Users/Jenna/Dropbox/Jenna/fall_dode/dode/Dodecatheon_data/AllYears_Dodecatheon_Demography_fates.csv",  row.names=F)
-#############################################################################
 
-# #determine density for pot experiment:
+
+##########Tiny Plants###################################################################
+#who are the tiny plants?
+
+tiny <- Dodecatheon %>% filter(log.ros.area<2)
+extiny <- Dodecatheon %>% filter(log.ros.area<1)
+#913 in 2018: flowered when tiny - had 2 flowers, no notes
+#extiny plants - what to do here - they are probably clones or new things popping up. But they can definitely get smaller from being big after being underground!
+
+##########Making repro structures metric###################################################################################
+Dodecatheon <- Dodecatheon %>% 
+  mutate(no.flowers = as.numeric(no.flowers),
+         no.capsules = as.numeric(no.capsules),
+         no.aborted = as.numeric(no.aborted),
+         no.eaten = as.numeric(no.eaten)) %>% 
+  replace_na(list(no.flowers = 0, no.capsules = 0, no.aborted = 0, no.eaten = 0)) %>% 
+  dplyr::mutate(flow.sum = no.capsules+ no.flowers,
+                flow.sum = flow.sum+no.aborted,
+                 flow.sum = flow.sum+no.eaten)
+                
+#here, Sum = total number of reproductive parts the plant made, regardless of if those made seeds
+# Next step: add total number of flowers that made seeds
+   # tot.flowers = no.aborted + no.capsules, .na.rm = T)
+
+       #  tot.flowers2 = sum(tot.flowers, no.flowers, na.rm = T))
+# some thign weird is going on with no flowers...not sure what
+
+
+
+##########determine density for pot experiment:###############################################################
+# #
 # 
 # test <- Dodecatheon %>% 
 #   filter(year == "2020") %>% 
@@ -492,4 +530,5 @@ Dodecatheon_lag <- Dodecatheon %>%
 # 
 # #ggsave("density in plots.png")
 
-remove(Dodecatheon)
+remove(tiny, extiny)
+
