@@ -210,7 +210,7 @@ dode2021$YrTag[dode2021$tag == "1579"] <- "2019"
 #change 1579 to tagged in 2019
 #dode2021$YrTag[dode2021$tag == "1076"] <- "2019"
 
-# there's a problem with 955 and 995, and its not clear in the data sheets which goes where. We definitly found 995 in plot 5 though, not plot 3 in 2021. NPNT for 955 in 2021. In 2019 something happened (one "was wrong last year") but there was demography for both tags. Will have to deal with it in 2022 in the field!
+# there's a problem with 955 and 995, and its not clear in the data sheets which goes where. We definitely found 995 in plot 5 though, not plot 3 in 2021. NPNT for 955 in 2021. In 2019 something happened (one "was wrong last year") but there was demography for both tags. Will have to deal with it in 2022 in the field!
 dode2021 <- subset(dode2021, plot != "3" | tag != "995") #taking out the plot 3 995 for 2021
 
 #1498 replaced by 1452
@@ -282,15 +282,6 @@ Dodecatheon$tag[Dodecatheon$tag == "1498"] <- "1452"
 
 #adding ros.area...radius*radius*pi
 Dodecatheon$ros.area<-Dodecatheon$rosetteL/2*Dodecatheon$rosetteW/2*(pi)
-
-################################################################################
-#adding life stages
-#V = vegetative, F = flowering, U = Underground/Dormant, D = dead..but for now leaving it as NA. Havent decided when a plant is dead vs when its still dormant AND what to do with unsurveyed plants. Hmm...
-Dodecatheon <- Dodecatheon %>% 
-  mutate(life_st = if_else(pflower == "1", "F", 
-                           if_else(psurvival == "1" & pflower == "0", "V",
-                                   if_else(psurvival == "0" & pflower == "0", "U", "D"))))
-
 ################################################################################
 #adding treatment
 #read in data that assign treatment to plot
@@ -342,49 +333,55 @@ remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, plots)
 ###############################################################################
 
 # ## need to redo what I did in 2020 to make 2021 plants dormant. This will be a chore with the NS plants in 2020. I  dont want to use the excel method...let's do it in this script so it's reproducible moving forward:
-# 
-# dormant <- Dodecatheon %>% 
-#   mutate(tag = as.character(tag),
-#          year = as.factor(year),
-#          YrTag = as.character(YrTag)) %>% 
-#   select(tag, year, psurvival, YrTag) %>% 
-#   dplyr::group_by(tag) %>% 
-#  pivot_wider(names_from = "year", values_from = "psurvival")
-# 
-# dormant <- dormant %>% 
-#   mutate(years.above = rowSums(across(where(is.numeric)), na.rm = T)) %>% 
-#   filter(YrTag != "2021",
-#          YrTag != "2020",
-#          YrTag != "2019")
-# dormant$years.since.tag[dormant$YrTag == "2016"] <- "6"
-# dormant$years.since.tag[dormant$YrTag == "2017"] <- "5"
-# dormant$years.since.tag[dormant$YrTag == "2018"] <- "4"
-# dormant <- dormant %>% 
-#   mutate(years.underground = (as.numeric(years.since.tag)-years.above)) %>% 
-#   filter(years.underground != "0",
-#          years.underground != "1")
-# 
-# 
-# #Making dormant plants psurvival = 1, size = 0
-# #6/30: made NP/NT plants as dormant if they came back
-# dtable <- read.csv("C:/Users/Jenna/Dropbox/Jenna/fall_dode/dode/Dodecatheon_data/Dode_dormantvdead_table_June4.csv")
-# dormant <- dtable %>% 
-#   filter(state == "dor") %>% 
-#   select(-X)
-# 
-# 
-# dor_fates <- semi_join(Dodecatheon, dormant, by = "tag")
-# dor_fates$life_st[dor_fates$life_st == "U"] <- "Dor"
-# dor_fates$life_st[dor_fates$year=="2018" & is.na(dor_fates$life_st)] <- "Dor"
-# dor_fates$life_st[dor_fates$year=="2019" & is.na(dor_fates$life_st)] <- "Dor"
-# dor_fates$psurvival[dor_fates$life_st == "Dor"] <- "1"
-# dor_fates$ros.area[dor_fates$life_st == "Dor"] <- "0"
-# dor_fates$pflower[dor_fates$life_st == "Dor"] <- "0"
-# 
-# 
+# this makes a wide table like the one I made in excel before
+dormant <- Dodecatheon %>%
+  mutate(tag = as.character(tag),
+         year = as.factor(year),
+         YrTag = as.character(YrTag)) %>%
+  select(tag, year, psurvival, YrTag) %>%
+  dplyr::group_by(tag) %>%
+ pivot_wider(names_from = "year", values_from = "psurvival") %>% 
+  mutate(years.above = rowSums(across(where(is.numeric)), na.rm = T))
+
+# this is pretty atrocious, but can't think of another way!
+# First, open that csv in excel. Then, go through by hand and assign plants stages in each year - future Jenna will have
+# to do it over again in next years
+## there is a problem with this though - can really only tell survival for plants up to 2019 - can only assign plants as dead
+## when they have been underground for two consecutive years. With 2020's plants mostly as NA's this is quite hard
+
+#write.csv(dormant, "./data/dormant.table.csv")
+
+dtable <- read.csv("./data/dormant.table.as.stages.csv")
+dtable <- dtable %>% select(c(tag, X2016, X2017, X2018, X2019, X2020, X2021)) %>% # now pivot longer:
+  pivot_longer(!tag, names_to = "year", values_to = "state", names_prefix = "X")
+
+
+#adding life stages
+#V = vegetative, F = flowering, U = Underground/Dormant, D = dead..but for now leaving it as NA. Havent decided when a plant is dead vs when its still dormant AND what to do with unsurveyed plants. Hmm...
+Dodecatheon <- Dodecatheon %>% 
+  mutate(life_st = if_else(pflower == "1", "F", #if it flowered, its flowering
+                           if_else(psurvival == "1" & pflower == "0", "V", #if its above ground but not flowering = vegetative
+                                   if_else(psurvival == "0" & pflower == "0", "U", "D"))),
+         year = as.character(year)) 
+  
+dor_fates <- left_join(Dodecatheon, dtable, by = c("tag", "year"))
+dor_fates$life_st[dor_fates$state == "dormant"] <- "dormant"
+dor_fates$life_st[dor_fates$state == "underground"] <- "underground"
+dor_fates$life_st[dor_fates$state == "dead"] <- "dead"
+
+#855 is having a problem!
+
+dor_fates$psurvival[dor_fates$life_st == "dormant"] <- "1"
+dor_fates$psurvival[dor_fates$life_st == "dead"] <- "0"
+dor_fates$ros.area[dor_fates$life_st == "dormant"] <- NA
+dor_fates$pflower[dor_fates$life_st == "dormant"] <- "0"
+# can change more things for the dead ones (pflower, etc), but models should be ok for now
+
 # #Putting these onto the main data file:
-# Docecatheon_wdor <- anti_join(Docecatheon,dor_fates, by = "tag") #taking out old dormant rows
-# Docecatheon_wdor <- rbind(Docecatheon_wdor,dor_fates) #putting new dormant (different psurvivals) rows back in
+Dodecatheon <- dor_fates %>% 
+  select(-state)
+
+remove(dormant, dor_fates, dtable)
 # ################################################################################
 # #Adding in eaten data from 2019!
 # eaten_original <- read.csv("/Users/Jenna/Dropbox/Jenna/fall_dode/dode/Dodecatheon_data/2019 Prelim/2019_Dodecatheon_Demography_Data_Resurveys_TS3.csv",  fileEncoding="UTF-8-BOM")
