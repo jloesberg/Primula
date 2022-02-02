@@ -373,13 +373,15 @@ dor_fates$life_st[dor_fates$state == "dead"] <- "dead"
 
 dor_fates$psurvival[dor_fates$life_st == "dormant"] <- "1"
 dor_fates$psurvival[dor_fates$life_st == "dead"] <- "0"
+dor_fates$psurvival[dor_fates$life_st == "underground"] <- "1"
 dor_fates$ros.area[dor_fates$life_st == "dormant"] <- NA
 dor_fates$pflower[dor_fates$life_st == "dormant"] <- "0"
 # can change more things for the dead ones (pflower, etc), but models should be ok for now
 
 # #Putting these onto the main data file:
 Dodecatheon <- dor_fates %>% 
-  select(-state)
+  select(-state) %>% 
+  filter(tag !="855") #fix this at some point!
 
 remove(dormant, dor_fates, dtable)
 # ################################################################################
@@ -437,6 +439,7 @@ Dodecatheon <- Dodecatheon %>%
          no.capsulesT1 = lead(no.capsules),
          pflowerT1 = lead(pflower),
          psurvivalT1 = lead(psurvival),
+         psurvivalT1 = as.numeric(psurvivalT1),
          life_stT1 = lead(life_st),
          ros.areaTminus1 = lag(ros.area),
          pflowerTminus1 = lag(pflower))

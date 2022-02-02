@@ -98,7 +98,8 @@ s_percentile <- summer %>%
 
 ## put these together:
 climate <- left_join(grow_season, winter, by = "year")
-climate <- left_join(climate, summer, by = "year")
+climate <- left_join(climate, summer, by = "year") %>% 
+  mutate(year = as.character(year))
 
 climate_percentiles <- rbind(GS_percentile, s_percentile, w_percentile)
 climate_percentiles$season <- c("growseason", "summer", "winter")

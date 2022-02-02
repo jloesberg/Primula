@@ -11,7 +11,7 @@ library(wesanderson)
 FF <- wes_palettes$FantasticFox1
 Z <- wes_palettes$Zissou1
 R <- wes_palettes$Royal2
-theme_set(theme_classic())
+
 # Problem with model fit for poisson models
 # make growth graph the other way (lines for trt, graphs as climate)
 # graphs are hard to make!
@@ -29,7 +29,7 @@ source("./scripts/dode_allyears_cleaned.R")
 primula <- left_join(Dodecatheon, climate, by = "year")
 
 remove(climate, Dodecatheon)
-
+theme_set(theme_classic()) #for ggplot
 ## Now to build the models. 
 
 # Growth Vital Rates ------------------------------------------------------
@@ -742,19 +742,19 @@ primula %>%
 
 ### Does survival differ between years?
 
-sm1 <- glm(psurvival ~ log(ros.areaTminus1), data = primula, family = "binomial")
-sm2 <- glm(psurvival ~ log(ros.areaTminus1) + year, data = primula, family = "binomial")
-sm3 <- glm(psurvival ~ log(ros.areaTminus1)*year, data = primula, family = "binomial")
+sm1 <- glm(psurvivalT1 ~ log.ros.area, data = primula, family = "binomial")
+sm2 <- glm(psurvivalT1 ~ log.ros.area + year, data = primula, family = "binomial")
+sm3 <- glm(psurvivalT1 ~ log.ros.area*year, data = primula, family = "binomial")
 
 lrtest(sm1, sm2)
 lrtest(sm1, sm3)
-# NO
+# yes
 
 ### Does survival differ between treatments?
 
-sm1 <- glm(psurvival ~ log(ros.areaTminus1), data = primula, family = "binomial")
-sm2 <- glm(psurvival ~ log(ros.areaTminus1) + trt, data = primula, family = "binomial")
-sm3 <- glm(psurvival ~ log(ros.areaTminus1)*trt, data = primula, family = "binomial")
+sm1 <- glm(psurvivalT1 ~ log.ros.area, data = primula, family = "binomial")
+sm2 <- glm(psurvivalT1 ~ log.ros.area + trt, data = primula, family = "binomial")
+sm3 <- glm(psurvivalT1 ~ log.ros.area*trt, data = primula, family = "binomial")
 
 lrtest(sm1, sm2)
 lrtest(sm1, sm3)
@@ -763,9 +763,9 @@ lrtest(sm1, sm3)
 
 # What does this tell us? The probability of flowering does not change across years, but it does change across treatment. However, treatment likely depends on year (some years are drier/wetter, so this will affect strength of treatments/how different they are?). How to test this: Make a model with both and test for a significant interaction? What does the extra water in 2021 mean for this (independent of how much it rained)
 
-sm1 <- glm(psurvival ~ log(ros.areaTminus1) + trt, data = primula, family = "binomial")
-sm2 <- glm(psurvival ~ log(ros.areaTminus1) + trt*year, data = primula, family = "binomial")
-sm3 <- glm(psurvival ~ log(ros.areaTminus1)*trt + year, data = primula, family = "binomial")
+sm1 <- glm(psurvivalT1 ~ log.ros.area + trt, data = primula, family = "binomial")
+sm2 <- glm(psurvivalT1 ~ log.ros.area + trt*year, data = primula, family = "binomial")
+sm3 <- glm(psurvivalT1 ~ log.ros.area*trt + year, data = primula, family = "binomial")
 
 lrtest(sm1, sm2)
 lrtest(sm1, sm3)
@@ -774,8 +774,8 @@ lrtest(sm1, sm3)
 #############################################################################
 # Does flowering in the previous year affect survival this year?
 
-sm1 <- glm(psurvival ~ log(ros.areaTminus1), data = primula, family = "binomial")
-sm2 <- glm(psurvival ~ log.ros.area + pflowerTminus1, data = primula, family = "binomial")
+sm1 <- glm(psurvivalT1 ~ log.ros.area, data = primula, family = "binomial")
+sm2 <- glm(psurvivalT1 ~ log.ros.area + pflower, data = primula, family = "binomial")
 
 lrtest(sm1, sm2)
 # there is not a survival cost of reproduction
@@ -961,14 +961,12 @@ sm83 <- glmer(psurvivalT1 ~ log.ros.area*trt+ trt*winter.max.temp.1yearlag + (1|
 sm84 <- glmer(psurvivalT1 ~ log.ros.area*winter.max.temp.1yearlag + trt + (1|plot) + (1|year), data = primula, family = "binomial") 
 ###
 surv.list <- mget(ls(pattern = "^sm")) #make a list of all of those models that start with gm (^ means start with)
-# surv.list <- surv.list %>%  purrr::list_modify("fm.f4" = NULL) %>%  purrr::list_modify("fm11lag" = NULL) %>%  purrr::list_modify("fm.9" = NULL) %>%  
-#   purrr::list_modify("fm.f14" = NULL) %>% purrr::list_modify("fm.f12" = NULL) %>% purrr::list_modify("fm.f15" = NULL)  %>% purrr::list_modify("fm17" = NULL) %>% 
-#   purrr::list_modify("fm18" = NULL) %>% purrr::list_modify("fm.25" = NULL) %>% purrr::list_modify("fm2" = NULL) %>% purrr::list_modify("fm30" = NULL)# these didnt converge and have low delta AIC's
 surv<-aictab(cand.set = surv.list, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
-
-# most of these wouldnt converge, etc. but best ones are: sm10lag, sm65, sm38lag...sm10lag and sm65 are same K...how to choose?
-#  sm10lag : survivalT1 ~ log.ros.area * grow.season.min.temp.1yearlag + RE
-# sm65 : log.ros.area * winter.min.temp.1yearlag  +RE
+#theres probably a better way, but went through and picked out the ones that converged:
+short.surv <- lst(sm.min3, sm4lag, sm9, sm9lag, sm10lag,sm11lag, sm13, sm.f8, sm15, sm15lag, sm22, sm33lag, sm32, sm33, sm34, sm40lag, sm37, sm39, sm41, sm53, sm55, sm63, sm65, sm78, sm79, sm80, sm81) #ones that converged
+short.surv <- aictab(cand.set = short.surv, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+# best: sm10lag and sm65 - which to choose??
+#next - make graphs for it!
 
 # sm10lag
 pred.25.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), grow.season.min.temp.1yearlag = 5.49) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
@@ -986,38 +984,36 @@ pred.av <- cbind(pred.av, pred.av.dat)
 
 primula %>% 
   ggplot(aes(x=log.ros.area, y = psurvivalT1))+
-  geom_jitter(height = .025, size = 2) +
-  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
-  geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_jitter(height = .025, size = 1) +
+  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25), color = FF[1], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[4], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.av, aes(x = log.ros.area, y = pred.av), color = "black", size = 1.2) + #av gs max temp
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) + #make the graph start in the corner
   labs(title= "sm10lag")
 
-##
-# sm65
-pred.25.dat <-  expand.grid(log.ros.area = seq(0.3, 6, by = .1), winter.min.temp.1yearlag  = 0.143) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+#sm65
+pred.25.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), winter.min.temp.1yearlag = .143) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.25 <- predict(sm65, newdata = pred.25.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.25 <- as.data.frame(pred.25)
 pred.25 <- cbind(pred.25, pred.25.dat)
-pred.75.dat <-  expand.grid(log.ros.area = seq(0.3, 6, by = .1), winter.min.temp.1yearlag  = 0.829) #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
+pred.75.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), winter.min.temp.1yearlag = 0.829) #this is making a set of data that the model will predict points for. size 0:6, 75th quarile of summer precip, and control plots!
 pred.75 <- predict(sm65, newdata = pred.75.dat, type="response", re.form=~0)
 pred.75 <- as.data.frame(pred.75)
 pred.75 <- cbind(pred.75, pred.75.dat)
-pred.av.dat <-  expand.grid(log.ros.area = seq(0.3, 6, by = .1), winter.min.temp.1yearlag  = 0.833) #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
+pred.av.dat <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), winter.min.temp.1yearlag = 0.834) #this is making a set of data that the model will predict points for. size 0:6, av of summer precip, and control plots!
 pred.av <- predict(sm65, newdata = pred.av.dat, type="response", re.form=~0)
 pred.av <- as.data.frame(pred.av)
 pred.av <- cbind(pred.av, pred.av.dat)
 
 primula %>% 
   ggplot(aes(x=log.ros.area, y = psurvivalT1))+
-  geom_jitter(height = .025, size = 2) +
-  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25, color = "25th Percentile"), color = FF[3], linetype = 2, size = 1) + #25th perc. gs max temp
-  geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[5], linetype = 2, size = 1) +  #75th perc. gs max temp
+  geom_jitter(height = .025, size = 1) +
+  geom_line(data = pred.25, aes(x = log.ros.area, y = pred.25), color = FF[1], linetype = 2, size = 1) + #25th perc. gs max temp
+  geom_line(data = pred.75, aes(x = log.ros.area, y = pred.75), color = FF[4], linetype = 2, size = 1) +  #75th perc. gs max temp
   geom_line(data = pred.av, aes(x = log.ros.area, y = pred.av), color = "black", size = 1.2) + #av gs max temp
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +#make the graph start in the corner
-  labs(title = "sm65")
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) + #make the graph start in the corner
+  labs(title= "sm65")
 
-# not sure which to go with here
 
 ########################################################
 
