@@ -11,6 +11,8 @@ weather$Date <- parse_date_time(weather$Date, "Y-m-d")
 
 weather$month_year <- format(as.Date(weather$Date), "%Y-%m")
 
+#because the 2012 data has NA's, only include the December values (no na's)
+weather <- weather %>% filter(Date >= as.Date("2012-12-01"))
 
 # growing season values and lagged 1 year and 2 year values
 ### I'm classifying "growing season" as March - June
@@ -27,7 +29,7 @@ grow_season <- weather %>%
          grow.season.min.temp.1yearlag = lag(grow.season.mean.min.temp),
          grow.season.min.temp.2yearlag = lag(grow.season.min.temp.1yearlag),
          grow.season.max.temp.1yearlag = lag(grow.season.mean.max.temp),
-         grow.season.max.temp.2yearlag = lag(grow.season.max.temp.1yearlag))
+         grow.season.max.temp.2yearlag = lag(grow.season.max.temp.1yearlag)) 
 
 GS_percentile <- grow_season %>% 
   summarize(precip_25th = quantile(grow.season.tot.precip, 0.25),
@@ -42,10 +44,11 @@ GS_percentile <- grow_season %>%
 
 
 #winter values and lagged 1 year and 2 year values
-## winter is January-March
+## winter is January-March # changing this to Dec, Jan, Feb. This is hard bc it spans 2 years
 winter <- weather %>%
   mutate(month = month(Date), year = year(Date)) %>%
-  filter(month < 4) %>% 
+  filter(month < 3 | month == 12) %>% 
+  mutate(year = if_else(month == 12, year+1, year)) %>% # need to make december the same time frame as Jan and Feb
   group_by(year) %>%
   summarise(winter.tot.precip = sum(total_precip_mm),
             winter.mean.min.temp = mean(minTemp_C),
@@ -58,15 +61,15 @@ winter <- weather %>%
          winter.max.temp.2yearlag = lag(winter.max.temp.1yearlag))
 
 w_percentile <- winter %>% 
-  summarize(precip_25th = quantile(winter.tot.precip, 0.25),
-            precip_75th = quantile(winter.tot.precip, 0.75),
-            precip_mean = mean(winter.tot.precip),
-            minT_25th = quantile(winter.mean.min.temp, 0.25),
-            minT_75th = quantile(winter.mean.min.temp, 0.75),
-            minT_mean = mean(winter.mean.min.temp),
-            maxT_25th = quantile(winter.mean.max.temp, 0.25),
-            maxT_75th = quantile(winter.mean.max.temp, 0.75),
-            maxT_mean = mean(winter.mean.max.temp))
+  summarize(precip_25th = quantile(winter.tot.precip, 0.25, na.rm = T),
+            precip_75th = quantile(winter.tot.precip, 0.75, na.rm = T),
+            precip_mean = mean(winter.tot.precip, na.rm = T),
+            minT_25th = quantile(winter.mean.min.temp, 0.25, na.rm = T),
+            minT_75th = quantile(winter.mean.min.temp, 0.75, na.rm = T),
+            minT_mean = mean(winter.mean.min.temp, na.rm = T),
+            maxT_25th = quantile(winter.mean.max.temp, 0.25, na.rm = T),
+            maxT_75th = quantile(winter.mean.max.temp, 0.75, na.rm = T),
+            maxT_mean = mean(winter.mean.max.temp, na.rm = T))
 
 #summer values and lagged 1 year and 2 year values
 ## summer is June-August

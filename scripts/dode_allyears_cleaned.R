@@ -280,6 +280,8 @@ Dodecatheon$tag[Dodecatheon$tag == "1498"] <- "1452"
 # and was incorrectly written down as 955
 #Dodecatheon$tag[Dodecatheon$tag == "955"] <- "995"
 
+ 
+
 #adding ros.area...radius*radius*pi
 Dodecatheon$ros.area<-Dodecatheon$rosetteL/2*Dodecatheon$rosetteW/2*(pi)
 ################################################################################
@@ -334,14 +336,14 @@ remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, plots)
 
 # ## need to redo what I did in 2020 to make 2021 plants dormant. This will be a chore with the NS plants in 2020. I  dont want to use the excel method...let's do it in this script so it's reproducible moving forward:
 # this makes a wide table like the one I made in excel before
+# Yr Tag does ultimately matter for the dormant table - for this can't include it!
 dormant <- Dodecatheon %>%
   mutate(tag = as.character(tag),
-         year = as.factor(year),
-         YrTag = as.character(YrTag)) %>%
-  select(tag, year, psurvival, YrTag) %>%
+         year = as.factor(year)) %>%
+  select(tag, year, psurvival) %>%
   dplyr::group_by(tag) %>%
- pivot_wider(names_from = "year", values_from = "psurvival") %>% 
-  mutate(years.above = rowSums(across(where(is.numeric)), na.rm = T))
+ pivot_wider(names_from = "year", values_from = "psurvival") #%>% 
+  #mutate(years.above = rowSums(across(where(is.numeric)), na.rm = T))
 
 # this is pretty atrocious, but can't think of another way!
 # First, open that csv in excel. Then, go through by hand and assign plants stages in each year - future Jenna will have
@@ -438,6 +440,8 @@ Dodecatheon <- Dodecatheon %>%
   mutate(ros.areaT1 = lead(ros.area),
          no.capsulesT1 = lead(no.capsules),
          pflowerT1 = lead(pflower),
+         pflower = as.numeric(pflower),
+         pflowerT1 = as.numeric(pflowerT1),
          psurvivalT1 = lead(psurvival),
          psurvivalT1 = as.numeric(psurvivalT1),
          life_stT1 = lead(life_st),
