@@ -108,6 +108,9 @@ dode2019 <- dode2019 %>%
 #965 was recorded twice in 2017, but only found in plot 6 in sudsequent years. Taking out the plot 5 tag 965
 dode2019 <- subset(dode2019, plot != "5" | tag != "965")
 
+#tag 35 this year had pflower adn no flowers black - taking it out for now - note that this might mean something for dormancy at some point! it was alive!
+dode2019 <- subset(dode2019, tag != "35")
+
 ################################################################################
 ### #2020:####
 dode2020<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2020_Dodecatheon_Demography_Data.csv", header=T)
