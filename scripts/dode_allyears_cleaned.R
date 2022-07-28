@@ -6,7 +6,7 @@ library(tidyverse)
 ##### - read in files all at once
 ##### - deal with 955 vs 995
 ##### - dormany problem - make reproducible and add 2021 plants
-##### - #1210 replaced by 1076 but they are in different coordinates
+
 
 ################################################################################
 #### 2016: ####
@@ -21,7 +21,8 @@ dode2016$tag[dode2016$tag==542]<-1054 #new tag in 2019
 dode2016 <- dode2016 %>% 
   mutate(tag = as.character(tag),
         plot = as.factor(plot),
-        YrTag = as.numeric(YrTag))
+        YrTag = as.numeric(YrTag),
+        Xcoor = as.character(Xcoor))
 dode2016 <- dode2016 %>% 
   mutate(psurvival = 1,
          pflower = 1)
@@ -44,6 +45,12 @@ dode2017$tag[dode2017$tag==542]<-1054 #new tag in 2019
 dode2017$tag[dode2017$tag==70]<-1734 #new tag in 2019
 #965 was recorded twice in 2017, but only found in plot 6 in sudsequent years. Taking out the plot 5 tag 965, even though it has measurements:
 dode2017 <- subset(dode2017, plot != "5" | tag != "965")
+
+#correct format
+dode2017 <- dode2017 %>% 
+  mutate(plot = as.factor(plot),
+         tag = as.character(tag),
+         Xcoor = as.character(Xcoor))
 
 ################################################################################
 ####2018:####
@@ -68,7 +75,7 @@ dode2018 <- dode2018 %>%
 dode2018$tag[dode2018$tag==202]<-1057 #new tag in 2019
 dode2018$tag[dode2018$tag==542]<-1054 #new tag in 2019
 dode2018$tag[dode2018$tag==70]<-1734 #new tag in 2019
-dode2018$tag[dode2018$tag==1946]<-1270 #new tag in 2019
+
 # 147 was found to be 1477 in 2019:
 dode2018$tag[dode2018$tag=="147"]<-"1477"
 # 1742 in 2018 was found as 1724 in 2019 (but neither found since)
@@ -76,6 +83,12 @@ dode2018$tag[dode2018$tag=="1742"]<-"1724"
 
 #965 was recorded twice in 2017, but only found in plot 6 in sudsequent years. Taking out the plot 5 tag 965
 dode2018 <- subset(dode2018, plot != "5" | tag != "965")
+
+#correct format
+dode2018 <- dode2018 %>% 
+  mutate(plot = as.factor(plot),
+         tag = as.character(tag),
+         Xcoor = as.character(Xcoor))
 
 ################################################################################
 #### 2019:####
@@ -98,6 +111,17 @@ dode2019$plot[dode2019$tag == "1728"] <- "5"
 #1645 is in plot 5 not 3
 dode2019$plot[dode2019$tag == "1645"] <- "5"
 
+
+#1270 and 1946:  1946 tagged in 2018 in plot 11 16J, given a new tag (1270) in 2019. 1946 found in 2020, but entered incorrectly in plot 9 (is in plot 11), but was in 5J. 1270 NS (fixed above)
+#1946 not found in 2021, but 1270 was found, in 16J
+#2022: 1270 found in 16J, 1946 found in 5J
+# seems like these are separate plants and 1270 should have been new in 2019
+dode2019$YrTag[dode2019$tag == "1270"] <- "2019"
+dode2019$notes[dode2019$tag == "1270"] <- "not a replacement for 1946"
+#adding 1946 as a NPNT
+dode2019 <- dode2019 %>% add_row(year = 2019, plot = "11", Xcoor = 5, Ycoor = "J", tag = 1946, notes = "NPNT, different than 1270", YrTag = "2018")
+
+
 ### tag 35 in 2019 didnt have an entry for pflower or no.flowers, I'm not certain whether it flowered or not. Leave it in?
 #dode2019 <- dode2019 %>% filter(tag != "35") 
 
@@ -110,6 +134,9 @@ dode2019 <- subset(dode2019, plot != "5" | tag != "965")
 
 #tag 35 this year had pflower adn no flowers black - taking it out for now - note that this might mean something for dormancy at some point! it was alive!
 dode2019 <- subset(dode2019, tag != "35")
+
+dode2019 <- dode2019 %>% mutate(YrTag = as.numeric(YrTag),
+                                Xcoor = as.character(Xcoor))
 
 ################################################################################
 ### #2020:####
@@ -128,11 +155,17 @@ dode2020$plot[dode2020$tag == "1728"] <- "5"
 #1645 is in plot 5 not 3
 dode2020$plot[dode2020$tag == "1645"] <- "5"
 
+#1946 was written down in plot 9 but it is in plot 11. Was tagged in 2018
+dode2020$plot[dode2020$tag == "1946"] <- "11"
+dode2020$YrTag[dode2020$tag == "1946"] <- "2018"
+
+
 #putting into correct format
 dode2020 <- dode2020 %>% 
   mutate(tag = as.character(tag),
          plot = as.factor(plot),
          YrTag = as.numeric(YrTag),
+         Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
 
@@ -146,19 +179,20 @@ dode2021<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_Dem
 dode2021 <- subset(dode2021, plot != "6" | tag != "1294")
 #965 was recorded twice in 2017, but only found in plot 6 in sudsequent years. Taking out the plot 5 tag 965
 dode2021 <- subset(dode2021, plot != "5" | tag != "965")
-# 995 is in plot 5 not plot 3
-#dode2021 <- subset(dode2021, plot != "3" | tag != "995")
+
 
 ###1283 is in plot 3 not 2
 dode2021 <- subset(dode2021, plot != "2" | tag != "1283")
-
-# 1728 is in plot5 not 3 (just take out NPNT one in plot 3) and change year tg to 2019
+ 
+# 1728 is in plot 5 not 3 (just take out NPNT one in plot 3) and change year to to 2019
 dode2021 <- subset(dode2021, plot != "3" | tag != "1728")
 dode2021$YrTag[dode2021$tag == "1728"] <- "2019"
-# 1645 remove the plot 3 one (NPNT) we took measuremtns for the one in plot 5
-dode2021 <- subset(dode2021, plot != "3" | tag != "1645")
-# 1645 was found in 2019:
-dode2021$YrTag[dode2021$tag == "1645"] <- "2019" #was tagged in 2019
+
+# 852 and 1471: 1471 was a replacement for 852 in 2021, but found both in 2022 and they are separate plants
+# changing notes: 
+dode2021$notes[dode2021$tag == "1471"] <- "NA"
+dode2021$notes[dode2021$tag == "852"] <- "NPNT"
+
 # 1754 was replaced and was recorded under 8307 this year
 dode2021 <- subset(dode2021, tag != "1754")
 #change 8307 to tagged in 2018
@@ -198,38 +232,144 @@ dode2021 <- subset(dode2021, tag != "215")
 #change 8311 to tagged in 2017
 dode2021$YrTag[dode2021$tag == "8311"] <- "2017"
 
-#852 replaced by 1471
-dode2021 <- subset(dode2021, tag != "852")
-#change 1471 to tagged in 2017
-dode2021$YrTag[dode2021$tag == "1471"] <- "2017"
 
-#1645 replaced by 1579
-dode2021 <- subset(dode2021, tag != "1645")
-#change 1579 to tagged in 2019
-dode2021$YrTag[dode2021$tag == "1579"] <- "2019"
+#1645 (incorrectly entered as in plot 3 - it is in plot 5) was "replaced" by 1579 in plot 5
+# 1645 remove the plot 3 one (NPNT)
+dode2021 <- subset(dode2021, plot != "3" | tag != "1645")
+# 1645 was found in 2019 in plot:
+dode2021$YrTag[dode2021$tag == "1645"] <- "2019" #was tagged in 2019
+### 1645 is not in plot 3, so 1579 is just new in 2021
+#change 1579 note bc not new tag for 1645
+dode2021$notes[dode2021$tag == "1579"] <- "NA"
 
-#1210 replaced by 1076 - need to check in 2022
-#dode2021 <- subset(dode2021, tag != "1210")
-#change 1579 to tagged in 2019
-#dode2021$YrTag[dode2021$tag == "1076"] <- "2019"
+#1946 was written down in plot 9 but it is in plot 11 in 2020. Was tagged in 2018
+dode2021$plot[dode2021$tag == "1946"] <- "11"
+dode2021$YrTag[dode2021$tag == "1946"] <- "2018"
 
-# there's a problem with 955 and 995, and its not clear in the data sheets which goes where. We definitely found 995 in plot 5 though, not plot 3 in 2021. NPNT for 955 in 2021. In 2019 something happened (one "was wrong last year") but there was demography for both tags. Will have to deal with it in 2022 in the field!
+# there's a problem with 955 and 995, and its not clear in the data sheets which goes where. We definitely found 995 in plot 5 though, not plot 3 in 2021. NPNT for 955 in 2021. In 2019 something happened (one "was wrong last year") but there was demography for both tags
+# 995 was new in 2019 - it was incorrectly written as plot 3, but it is in plot 5 (found in 2021, also happened for 1728 and 1645)
+# 955 was new in 2017, has always been in plot 5
 dode2021 <- subset(dode2021, plot != "3" | tag != "995") #taking out the plot 3 995 for 2021
+dode2021$notes[dode2021$tag == "995"] <- "tag in plot 5"
 
-#1498 replaced by 1452
+#1498 replaced by 1452 ###
+### 2022: found the original tag 1498, and pulled 1452 - were pointing at same plant
 dode2021 <- subset(dode2021, tag != "1498")
-#change 1579 to tagged in 2019
-dode2021$YrTag[dode2021$tag == "1452"] <- "2019"
+#change 1498 to tagged in 2019
+dode2021$tag[dode2021$tag == "1452"] <- "1498"
+dode2021$notes[dode2021$tag == "1498"] <- "tag found in 2022, not replaced by 1452"
+
+#1076 is definitely seperate from 1210 (2022), and is in 2B not 12B
+dode2021$notes[dode2021$tag == "1076"] <- "in 2B. seperate from 1210"
+dode2021$notes[dode2021$tag == "1210"] <- "NP/NT"
+dode2021$Xcoor[dode2021$tag == "1076"] <- 2
 
 dode2021 <- dode2021 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
          YrTag = as.numeric(YrTag),
+         Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
+
+
+###################################################################################
+#2022 data
+dode2022<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_Demography_Data.csv", header=T)
+
+
+#dealing with problem tags
+
+#	Found original tag (1498), replacement tag (1452) pulled. Changed them in 2021, in 2022 csv: take out
+### 1452
+dode2022 <- subset(dode2022, tag != "1452")
+dode2022$problem.tag[dode2022$tag == "1498"] <- 0
+
+# 1283 is in plot 3 not 2
+dode2022 <- subset(dode2022, plot != "2" | tag != "1283")
+
+# tag 995 and 955 are both in plot 5 (see note above in 2021 section)
+dode2022 <- subset(dode2022, plot != "3" | tag != "995") #taking out the plot 3 995 for 2022
+dode2022$notes[dode2022$tag == "995"] <- "tag in plot 5"
+dode2022$problem.tag[dode2022$tag == "995"] <- 0
+
+# 1728 is in plot 5 not 3 (just take out NPNT one in plot 3) and change year tg to 2019
+dode2022 <- subset(dode2022, plot != "3" | tag != "1728")
+dode2022$YrTag[dode2022$tag == "1728"] <- "2019"
+#1579 was "new" tag for 1728 in plot 3 (but 1728 is not in plot 3, so its just a new tag)
+
+#1645 (incorrectly entered as in plot 3 in 2019 - it is in plot 5) was "replaced" by 1579 in plot 5
+# 1645 remove the plot 3 one (NPNT)
+dode2022 <- subset(dode2022, plot != "3" | tag != "1645")
+# 1645 was found in 2019 in plot:
+dode2022$YrTag[dode2022$tag == "1645"] <- "2019" #was tagged in 2019
+### 1645 is not in plot 3, so 1579 is just new in 2021
+#change 1579 note bc not new tag for 1645
+dode2022$notes[dode2022$tag == "1579"] <- ""
+dode2022$problem.tag[dode2022$tag == "1579"] <- 0
+
+# 716 is in 8G not 9B - changed below
+dode2022$problem.tag[dode2022$tag == "716"] <- 0
+
+#965 was recorded twice in 2017, but only found in plot 6 in subsequent years. Taking out the plot 5 tag 965
+dode2022 <- subset(dode2022, plot != "5" | tag != "965")
+
+# 852 and 1471: 1471 was a replacement for 852 in 2021, but found both in 2022 and they are separate plants
+# changed them in 2019
+dode2022$problem.tag[dode2022$tag == "852"] <- 0
+
+# 1210 and 1076: these are definitely separate plants. But, 1076 is 2B not 12B
+dode2022$Xcoor[dode2022$tag == "1076"] <- 2
+dode2022$problem.tag[dode2022$tag == "1076"] <- 0
+dode2022$notes[dode2022$tag == "1076"] <- "seperate from 1210"
+dode2022$problem.tag[dode2022$tag == "1210"] <- 0
+
+#1937 is actually 1397
+dode2022$tag[dode2022$tag == "1937"] <- "1397"
+dode2022$problem.tag[dode2022$tag == "1397"] <- 0
+
+###1294 is in plot 1, not 6
+dode2022 <- subset(dode2022, plot != "6" | tag != "1294")
+
+#1754 and 8307 - 8307 was new tag for it in 1754
+dode2022 <- subset(dode2022, tag != "1754")
+#change 8307 to tagged in 2018
+dode2022$YrTag[dode2022$tag == "8307"] <- "2018"
+dode2022$notes[dode2022$tag == "8307"] <- "old tag was 1754"
+dode2022$problem.tag[dode2022$tag == "8307"] <- 0
+
+# 864 was replaced and was recorded under 8312 this year
+dode2022 <- subset(dode2022, tag != "864")
+#change 8312 to tagged in 2017
+dode2022$YrTag[dode2022$tag == "8312"] <- "2017"
+dode2022$problem.tag[dode2022$tag == "8312"] <- 0
+
+#552 coordinates are 15D - solved below
+dode2022$problem.tag[dode2022$tag == "552"] <- 0
+
+#1270 and 1946:  1946 tagged in 2018 in plot 11 16J, given a new tag (1270) in 2019. 1946 found in 2020, but entered incorrectly in plot 9 (is in plot 11), but was in 5J. 1270 NS (fixed above)
+#1946 not found in 2021, but 1270 was found, in 16J
+#2022: 1270 found in 16J, 1946 found in 5J
+# seems like these are separate plants and 1270 should have been new in 2019  (done above)
+# 1946 remove the plot 9 one (NPNT)
+dode2022 <- subset(dode2022, plot != "9" | tag != "1946")
+dode2022$notes[dode2022$tag == "1946"] <- ""
+dode2022$problem.tag[dode2022$tag == "1946"] <- 0
+dode2022$problem.tag[dode2022$tag == "1270"] <- 0
+#1946 was tagged in 2018
+dode2022$YrTag[dode2022$tag == "1946"] <- "2018"
+
+
+dode2022 <- dode2022 %>% 
+  mutate(plot = as.factor(plot),
+         tag = as.character(tag),
+         YrTag = as.numeric(YrTag),
+         Xcoor = as.character(Xcoor),
+         psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
+
 
 ################################################################################
 #Putting it all together:
-Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021) 
+Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022) 
 # it gives warnings, but looks like everything is there!
 
 # in 2021, replaced some tags. Doing this in the big df:
@@ -263,8 +403,8 @@ Dodecatheon$tag[Dodecatheon$tag == "215"] <- "8311"
 #852 replaced by 1471
 Dodecatheon$tag[Dodecatheon$tag == "852"] <- "1471"
 
-#1645 replaced by 1579
-Dodecatheon$tag[Dodecatheon$tag == "1645"] <- "1579"
+#1937 is actually 1397
+Dodecatheon$tag[Dodecatheon$tag == "1937"] <- "1397"
 
 #715 was tagged in 2017 not 2018
 Dodecatheon$YrTag[Dodecatheon$tag == "715"] <- "2017"
@@ -272,17 +412,19 @@ Dodecatheon$YrTag[Dodecatheon$tag == "715"] <- "2017"
 #523 was found in 2016
 Dodecatheon$YrTag[Dodecatheon$tag == "523"] <- "2016"
 
-#1210 replaced by 1076
-#Dodecatheon$tag[Dodecatheon$tag == "1210"] <- "1076" # need to check this - these are in different coords
+#1270 was new in 2019
+Dodecatheon$YrTag[Dodecatheon$tag == "1270"] <- "2019"
+#1946 was tagged in 2018
+Dodecatheon$YrTag[Dodecatheon$tag == "1946"] <- "2018"
 
-#1498 replaced by 1452
-Dodecatheon$tag[Dodecatheon$tag == "1498"] <- "1452"
 
-# 995 is in plot 5 not plot 3
-#Dodecatheon$plot[Dodecatheon$tag == "995"] <- "5"
-# and was incorrectly written down as 955
-#Dodecatheon$tag[Dodecatheon$tag == "955"] <- "995"
+# 716 is in 8G not 9B
+Dodecatheon$Xcoor[Dodecatheon$tag == "716"] <- 8
+Dodecatheon$Ycoor[Dodecatheon$tag == "716"] <- "G"
 
+#coordinates for 552 are 15D (not written when tagged)
+Dodecatheon$Xcoor[Dodecatheon$tag == "552"] <- 15
+Dodecatheon$Ycoor[Dodecatheon$tag == "552"] <- "D"
  
 
 #adding ros.area...radius*radius*pi
@@ -317,7 +459,7 @@ remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, plots)
 # 2020 problems:
 #146 = solved
 #715 = solved
-#1294 = duplicate maybe - check in 2021
+
 #1283 = duplicate maybe - check in 2021
 #1271 = solved
 #1800 = solved
