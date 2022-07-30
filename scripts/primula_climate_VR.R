@@ -85,12 +85,22 @@ lrtest(gm2, gm3)
 #############################################################################
 # Does flowering in the previous year affect size this year?
 
-gm1 <- lm(log(ros.area) ~ log(ros.areaTminus1), data = primula)
-gm2 <- lm(log(ros.area) ~ log(ros.areaTminus1) + pflowerTminus1, data = primula)
+gm1 <- lm(log.ros.areaT1 ~ log.ros.area, data = primula)
+gm2 <- lm(log.ros.areaT1 ~ log.ros.area*pflower, data = primula)
+gm3 <- lm(log.ros.areaT1 ~ log.ros.area+pflower, data = primula)
+noflow <-  expand.grid(log.ros.area = seq(0.6,5.6, by = .1), pflower = 0) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+noflow.pred <- predict(gm3, newdata = noflow)
+noflow.pred <- as.data.frame(noflow.pred)
+noflow.pred <- cbind(noflow, noflow.pred)
 
-lrtest(gm1, gm2)
+flow <-  expand.grid(log.ros.area = seq(0.6,5.6, by = .1), pflower =1) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
+flow.pred <- predict(gm3, newdata = flow)
+flow.pred <- as.data.frame(flow.pred)
+noflow.pred <- cbind(flow.pred, noflow.pred)
+
+AIC(gm2, gm3)
 # size and reproducing last year affects size this year) - but this seems backwards - plants that flower are bigger the next year
-
+# not sure what to do here
 ##########################################################################
 # Candidate models
 ##
@@ -384,9 +394,6 @@ dummy.df %>% ggplot(aes(x = var, y = var2, color = treatment))+
   scale_color_manual(values=c(Z[1], Z[3],Z[5], "grey"))+
   scale_linetype_manual(values=c("dotted", "solid", "solid", "solid"))
 #ggsave("./Figures/dummy.legend.png", width = 4, height = 4)
-  
-
-
 
 
 #########################################################################################
@@ -705,8 +712,8 @@ pred.75.noflow <- as.data.frame(pred.75.noflow)
 pred.75.noflow <- cbind(pred.75.noflow, pred.75.noflow.dat)
 
 
-ggplot(subset(primula), aes(x=log.ros.area, y=pflowerT1))+
-  geom_jitter(height = 0.025, size = 2) +
+ggplot(subset(primula), aes(x=log.ros.area, y=pflowerT1, color = as.factor(pflower)))+
+  geom_jitter(height = 0.025, size = 1, alpha= 0.5) +
   geom_line(data = pred.av.flow, aes(x = log.ros.area, y = pred.av.flow), color = "grey", size = 1) +
   geom_line(data = pred.av.noflow, aes(x = log.ros.area, y = pred.av.noflow), color = "grey", linetype = "dashed", size = 1) + 
   geom_line(data = pred.25.flow, aes(x = log.ros.area, y = pred.25.flow), color = FF[3], size = 1) + #25th perc. gs max temp
@@ -714,8 +721,10 @@ ggplot(subset(primula), aes(x=log.ros.area, y=pflowerT1))+
   geom_line(data = pred.75.flow, aes(x = log.ros.area, y = pred.75.flow), color = Z[5], size = 1) + #25th perc. gs max temp
   geom_line(data = pred.75.noflow, aes(x = log.ros.area, y = pred.75.noflow), color = Z[5], linetype = "dashed", size = 1) +
   labs(x = expression(paste("log(Rosette Area) in time", italic(" t"))), y = expression(paste("Probability of Flowering in time ", italic("  t + 1")))) +
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
-#ggsave("./Figures/pflower_climate.png", width = 4, height = 4)
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_color_manual(values = c("lightsteelblue3", "grey0"))+
+  theme(legend.position="none")
+#ggsave("./Figures/pflower_climate2.png", width = 4, height = 4)
 
 # not sure how I can get legend without making dummy graph and getting it from there...
 
