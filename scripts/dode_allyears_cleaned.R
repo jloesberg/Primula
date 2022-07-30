@@ -3,9 +3,8 @@
 library(tidyverse)
 ################################################################################
 #Eventually to do
-##### - read in files all at once
-##### - deal with 955 vs 995
-##### - dormany problem - make reproducible and add 2021 plants
+
+##### - dormany problem - make reproducible and add 2022 plants
 
 
 ################################################################################
@@ -358,6 +357,13 @@ dode2022$problem.tag[dode2022$tag == "1270"] <- 0
 #1946 was tagged in 2018
 dode2022$YrTag[dode2022$tag == "1946"] <- "2018"
 
+#making a clean df for next year's datasheet
+### taking out pulled tags
+dode2022clean <- dode2022 %>% filter(tag.pulled != "1") %>% 
+  select(-c(tag.pulled, problem.tag, toothpick))
+#write.csv(dode2022clean, "/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Cleaned (use for future datasheets)/2022_Dodecatheon_Demography_Data_CLEANED.csv",row.names = F)
+remove(dode2022clean)
+
 
 dode2022 <- dode2022 %>% 
   mutate(plot = as.factor(plot),
@@ -450,6 +456,7 @@ which(duplicated(dode2018$tag))
 which(duplicated(dode2020$tag))
 which(duplicated(dode2017$tag))
 which(duplicated(dode2021$tag))
+which(duplicated(dode2022$tag))
 
 ################################################################################
 ################################################################################
