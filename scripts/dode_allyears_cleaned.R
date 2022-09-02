@@ -372,6 +372,11 @@ dode2022 <- dode2022 %>%
          Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
+################################################################################
+### getting a df for clipping experiment tags: 
+
+#clip.tags <- dode2021 %>% filter(clipping_exp =="1") %>% select(tag)
+#(clip.tags, "./data/clipping_experiment_tags.csv",row.names = F)
 
 ################################################################################
 #Putting it all together:
@@ -446,7 +451,7 @@ plots <- plots %>%
 Dodecatheon<-left_join(Dodecatheon, plots, by="plot") #join so that every record also belongs to a plot
 
 ##################################################################################
-# other problem tags:
+
 
 
 ################################################################################
@@ -461,7 +466,7 @@ which(duplicated(dode2022$tag))
 ################################################################################
 ################################################################################
 #dont need these anymore:
-remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, plots)
+remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots)
 
 # 2020 problems:
 #146 = solved
