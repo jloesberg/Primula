@@ -221,10 +221,10 @@ dode2021 <- subset(dode2021, tag != "214")
 #change 8317 to tagged in 2017 (tag found from last year in 2018)
 dode2021$YrTag[dode2021$tag == "8317"] <- "2017"
 
-#49 repleaced by 8319
-dode2021 <- subset(dode2021, tag != "49")
+#49 replaced by 8319 - 2023/1/19 - actually tag 49 died a while ago!  8319 is new in 2021
+#dode2021 <- subset(dode2021, tag != "49")
 #change 8319 to tagged in 2017
-dode2021$YrTag[dode2021$tag == "8319"] <- "2017"
+#dode2021$YrTag[dode2021$tag == "8319"] <- "2017"
 
 #215 replaced by 8311
 dode2021 <- subset(dode2021, tag != "215")
@@ -406,7 +406,7 @@ Dodecatheon$tag[Dodecatheon$tag == "562"] <- "1183"
 Dodecatheon$tag[Dodecatheon$tag == "214"] <- "8317"
 
 #49 repleaced by 8319
-Dodecatheon$tag[Dodecatheon$tag == "49"] <- "8319"
+#Dodecatheon$tag[Dodecatheon$tag == "49"] <- "8319"
 
 #215 replaced by 8311
 Dodecatheon$tag[Dodecatheon$tag == "215"] <- "8311"
@@ -450,7 +450,6 @@ plots <- plots %>%
 
 Dodecatheon<-left_join(Dodecatheon, plots, by="plot") #join so that every record also belongs to a plot
 
-##################################################################################
 
 
 
@@ -463,7 +462,6 @@ which(duplicated(dode2017$tag))
 which(duplicated(dode2021$tag))
 which(duplicated(dode2022$tag))
 
-################################################################################
 ################################################################################
 #dont need these anymore:
 remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots)
@@ -496,24 +494,29 @@ remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plo
 # Yr Tag does ultimately matter for the dormant table - for this can't include it!
 dormant <- Dodecatheon %>%
   mutate(tag = as.character(tag),
-         year = as.factor(year)) %>%
+         year = as.factor(year),
+         psurvival = as.character(psurvival)) %>%
   select(tag, year, psurvival) %>%
   dplyr::group_by(tag) %>%
- pivot_wider(names_from = "year", values_from = "psurvival") #%>% 
+ pivot_wider(names_from = "year", values_from = "psurvival") %>% 
+  unnest(cols = c(`2016`, `2017`, `2018`, `2019`, `2020`, `2021`, `2022`))
+
   #mutate(years.above = rowSums(across(where(is.numeric)), na.rm = T))
 
 # this is pretty atrocious, but can't think of another way!
 # First, open that csv in excel. Then, go through by hand and assign plants stages in each year - future Jenna will have
 # to do it over again in next years
-## there is a problem with this though - can really only tell survival for plants up to 2019 - can only assign plants as dead
-## when they have been underground for two consecutive years. With 2020's plants mostly as NA's this is quite hard
+## Now that we have 2022 data, I can go back and tell which plants are actually dead and when.
+#write.csv(dormant, "./data/dormant.table2022.csv")
+Dodecatheon <- Dodecatheon %>% 
+  mutate(year = as.character(year))
 
-#write.csv(dormant, "./data/dormant.table.csv")
-
-dtable <- read.csv("./data/dormant.table.as.stages.csv")
-dtable <- dtable %>% select(c(tag, X2016, X2017, X2018, X2019, X2020, X2021)) %>% # now pivot longer:
+dtable <- read.csv("../data/dormant.table.as.stages2022.csv")
+dtable <- dtable %>% select(c(tag, X2016, X2017, X2018, X2019, X2020, X2021, X2022)) %>% # now pivot longer:
   pivot_longer(!tag, names_to = "year", values_to = "state", names_prefix = "X")
+#here we have fates for each tag for each year - now to put it into the Dodecatheon df
 
+#test <- left_join(Dodecatheon, dtable)
 
 #adding life stages
 #V = vegetative, F = flowering, U = Underground/Dormant, D = dead..but for now leaving it as NA. Havent decided when a plant is dead vs when its still dormant AND what to do with unsurveyed plants. Hmm...
@@ -521,7 +524,7 @@ Dodecatheon <- Dodecatheon %>%
   mutate(life_st = if_else(pflower == "1", "F", #if it flowered, its flowering
                            if_else(psurvival == "1" & pflower == "0", "V", #if its above ground but not flowering = vegetative
                                    if_else(psurvival == "0" & pflower == "0", "U", "D"))),
-         year = as.character(year)) 
+        ) 
   
 dor_fates <- left_join(Dodecatheon, dtable, by = c("tag", "year"))
 dor_fates$life_st[dor_fates$state == "dormant"] <- "dormant"
@@ -603,7 +606,8 @@ Dodecatheon <- Dodecatheon %>%
          psurvivalT1 = as.numeric(psurvivalT1),
          life_stT1 = lead(life_st),
          ros.areaTminus1 = lag(ros.area),
-         pflowerTminus1 = lag(pflower))
+         pflowerTminus1 = lag(pflower),
+         no.flowersT1 = lead(no.flowers))
 Dodecatheon <- Dodecatheon %>% 
   mutate(plot = as.character(plot),
          log.ros.areaT1 = log(ros.areaT1),

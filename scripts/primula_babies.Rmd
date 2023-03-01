@@ -1,0 +1,93 @@
+---
+title: "Primula babies data cleaning"
+output: html_notebook
+---
+Right now, this is code from 2020's ipm that I built in JEnn's course...
+
+1. Making size distribution of seedlings: Need to find the mean+SD of area of 2 leaf plants:
+
+```{r seedling mean size approx.}
+twoleaf <- star %>%
+  filter(leaves == "2")
+mean(twoleaf$logros.area)
+sdlg_sd <- sd(twoleaf$logros.area)
+# mean of log(ros.area is 4.228311), SD = 0.661898
+sdlg_mean <- 4.228311/2
+# So size for seedlings will be 2.1142, SD = 0.6619
+```
+So size distrubution for seedlings will be _2.1142, SD = 0.6619_
+
+2. Need the probability of flowering at size t0: 
+3. Need the establishment prob proxy: how many seedlings will a flower the previous year produce?
+
+```{r total number of flowers per plot at T0}
+star_flowers <- star 
+star_flowers$no.flowers[is.na(star_flowers$no.flowers)] <- 0
+
+star_flowers <- star_flowers %>% 
+  dplyr::select(year, plot, no.flowers) %>% 
+  dplyr::filter(!year == "2016") %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::group_by(year, plot) %>% 
+  dplyr::summarize(flowers_per_plot = sum(no.flowers)) #how many flowers per plot per year
+```
+
+```{r number of seedlings per plot section at T1}
+sdl <- dodeseedlings
+sdl <- sdl %>% 
+  dplyr::mutate(sub_ws = if_else(Seedling.number >= 0, 1, 0)) #plots with seedlings
+sdl$sub_ws[is.na(sdl$sub_ws)] <- 0
+
+sdl2 <- sdl %>% 
+  dplyr::group_by(Year, Plot) %>% 
+  dplyr::summarize(total = sum(sub_ws)) %>% 
+  dplyr::mutate(plotpro = total/8)
+sdl2 <- dplyr::rename(sdl2, "year" = "Year", "plot" = "Plot")#getting rid of capitals 
+```
+
+Seedlings weren't always counted in entire plot, although flowers were counted in whole plot (except 2016, as far as I know). So I will figure out the percentage of plot that seedlings were counted in and get the number of flowers that would be in that portion of the plot:
+
+```{r number of flowers per section of plot that seedlings were counted in}
+flower_tot <- merge(sdl2, star_flowers, by = c("year", "plot"))
+
+flower_tot <- flower_tot %>% 
+  dplyr::mutate(fec = plotpro*flowers_per_plot) # number of flowers per section of plot that seedlings were counted in!
+```
+
+```{r seedlings per plot }
+sdl_plot <- sdl 
+
+sdl_plot$Seedling.number[is.na(sdl_plot$Seedling.number)] <- 0
+sdl_plot <- sdl_plot %>% 
+  dplyr::group_by(Year, Plot) %>% 
+  dplyr::summarize(sdl_sum = sum(Seedling.number))
+sdl_plot <- dplyr::rename(sdl_plot, year = Year, plot = Plot) #getting rid of capitals 
+
+fecundity <- merge(sdl_plot, flower_tot, by = c("year", "plot"))
+```
+
+My fecundity proxy will be: how many seedlings in t+1 each flower makes in t
+
+```{r}
+T_0<-fecundity
+T_1<-fecundity
+
+names(T_0) <- sub("sdl", "sdlT0", names(T_0))
+names(T_0) <- sub("fec", "fecT0", names(T_0))
+
+
+names(T_1) <- sub("sdl", "sdlT1", names(T_1))
+names(T_1) <- sub("fec", "fecT1", names(T_1))
+
+
+T_1$year <- T_1$year - 1
+fec <- merge(T_0, T_1, by=c("year","plot"), all.x=TRUE)
+fec <- fec %>% 
+  dplyr::select(-c(total.x, plotpro.x, plotpro.y, total.y))
+fec <- fec %>% 
+  dplyr::mutate(sdl_sumT1 = sdlT1_sum, #sdl_sum = sum of counted seedlings in a plot next year
+        adj_flowersT0=fecT0, #fec = adjusted flower number in plot at area that sdls counted in 
+         proxy = sdl_sumT1/adj_flowersT0)
+```
+
+One problem: there are 2 plots that had no flowers in T0, but then seedlings T1, so my proxy solution is definitely not great, but is it good enough for the project? Sure

@@ -2,8 +2,9 @@
 
 # Reads in cleaned weather station data, makes a single df with mean values and lagged years
 
-library(tidyverse); theme_set(theme_classic)
+library(tidyverse)
 library(lubridate)
+theme_set(theme_classic())
 
 ## read in cleaned, extrapolated weather station data from WeatherStnInterp_Cowichan_Aug20...
 weather <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerData/weather station/WS_cleaned/cgop_weather_daily_interp.csv")

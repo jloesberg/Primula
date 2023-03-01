@@ -1,0 +1,255 @@
+---
+title: "Primula Clipping Experiment"
+author: "JL"
+date: "2/13/2023"
+output: html_document
+---
+
+To do:
+- Figure out if flowernt (plants that flowered but were not in the experiment) plants made seeds and add to fruitset
+
+```{r}
+#packages:
+#read
+library(tidyverse)
+library(lubridate)
+library(AICcmodavg)
+library(lme4)
+library(nlme)
+library(car)
+library(wesanderson) # for colors
+
+theme_set(theme_classic()) #for ggplot
+FF <- wes_palettes$FantasticFox1
+Z <- wes_palettes$Zissou1
+R <- wes_palettes$Royal2
+I <- wes_palettes$IsleofDogs1
+```
+
+```{r}
+#read in data, make df's
+# Add in demography data:
+source("../scripts/dode_allyears_cleaned.R")
+
+#add in tags in clipping experiment
+clip <- read.csv("../data/2021_Primula_Clipping.csv")
+clip <- clip %>% 
+  select(1:8, -c(coor, date.of.clipping)) %>% 
+  mutate(tag = as.character(tag),
+         plot = as.character(plot),
+         initial.flower = no.flowers.at.start +no.buds.at.start)
+
+#adding in soil moisture data
+sm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Students/Jenna/loggerdata/cleaned.data/SM_aprjun15avg_allyears.csv")
+sm <- sm %>% mutate(plot = as.character(plot),
+                    year = as.character(year))
+
+#add in number of seeds made
+seeds21 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Seed_Counts.csv")
+
+#In 2021, which flowers made it to being a capsule?
+seeds21 <- subset(seeds21, tag != "1556") # not an experiment plant
+seeds21 <- subset(seeds21, tag != 1998) # not an experiment plant
+seeds21 <- subset(seeds21, tag != 1813)
+seeds21 <- seeds21 %>% 
+  mutate(pseeds = if_else(no.seeds > 0, 1, 0),
+         tag = as.character(tag),
+         plot = as.character(plot))
+seeds21$pseeds[is.na(seeds21$pseeds)] <- 1 #assuming the plants where we couldn't count capsules separately had all their capsules contribute to seed total
+
+
+cap <- seeds21 %>% group_by(tag, plot) %>% 
+  summarize(no.success.cap = sum(pseeds))
+
+remove(seeds21)
+#adding cap to the clip df
+
+clip <- left_join(clip, cap)
+remove(cap)
+clip$no.success.cap[is.na(clip$no.success.cap)] <- 0
+clip$initial.flower[clip$tag == 1490] <- 6
+clip$initial.flower[clip$tag == 5769] <- 5
+clip$initial.flower[clip$tag == 962] <- 6
+clip$initial.flower[clip$tag == 5746] <- 5
+clip$no.success.cap[clip$tag == 540] <- 4
+clip$no.success.cap[clip$tag == 693] <- 2
+
+############################################################################
+#add in clipping experiment treatments
+
+clip <-  left_join(clip, Dodecatheon, by = c("tag", "plot")) %>% 
+  filter(year == 2021) %>% 
+  mutate(fruitset = no.success.cap/initial.flower) %>% 
+  mutate(pflower = as.factor(pflower),
+         rgr = log.ros.areaT1-log.ros.area) #calc relative growth rate
+
+# these are all of the tags in the clipping experiment for 2021 and 2022
+#add soil moisture:
+clip <- left_join(clip, sm)
+
+#subsetting - get rid of 12 and 14 (only 3 observations per plot - maybe this will help?)
+clip.sub <- clip %>% filter(plot != "12") %>% 
+  filter(plot != "14")
+
+###
+# what sizes are plants in 2021 to 2022
+Dodecatheon.21 <- Dodecatheon %>% 
+  filter(year == "2021")
+#of the plants that flowered in 2021, what was their min size? it doesnt look like I need to set a max size
+ggplot(Dodecatheon.21, aes(log.ros.area, log.ros.areaT1, color = pflower)) +
+  geom_jitter()+
+  facet_wrap(~trt)
+ggplot(subset(Dodecatheon.21, !is.na(pflower)), aes(log.ros.area))+
+  geom_histogram()+
+  facet_wrap(pflower~trt)
+min <- Dodecatheon.21 %>% 
+  group_by(pflower, trt) %>% 
+  summarize(min.size = min(log.ros.area, na.rm = TRUE))
+clip2 <- Dodecatheon.21 %>% 
+  filter(log.ros.area > 2) %>% 
+  mutate(pflower = as.factor(pflower))
+join <-  left_join(clip2, clip)
+join <- join %>% 
+  #eft_join(join,sm, by = c("trt", "plot", "year")) %>% 
+  mutate(treatment = if_else(is.na(treatment) & pflower == 0, "veg", if_else(is.na(treatment) & pflower == 1, "flowernt", treatment),  treatment),
+         rgr = log.ros.areaT1-log.ros.area)
+
+remove(sm, clip2, Dodecatheon, min, Dodecatheon.21)
+```
+
+```{r}
+################################################################################
+# Plan B! 
+
+# calculate relative growth rate - did plants that were clipped grow more or less than plants that weren't
+clip %>% ggplot(aes(fruitset, rgr))+
+  geom_boxplot()+
+  facet_wrap(~treatment)
+
+m1 <- lmer(rgr~trt+ (1|plot), data = clip, REML = F)
+anova(m1)
+summary(m1)
+#drought plants grew more than control plants! and irrigated grew less than control plants? hmm that seems weird. But no effect of clipping treatment on growth 
+#
+# to make sure these are the same size: only include plants that were above ground in 2022
+# 
+fnull <- glmer(pflowerT1 ~ 1 + (1|plot), data = subset(clip.sub, !is.na(rgr)), family = "binomial")
+f1 <- glmer(pflowerT1 ~ rgr + (1|plot), data = subset(clip.sub, !is.na(rgr)), family = "binomial")
+anova(fnull, f1, test="Chisq") #LTR test
+#nope!
+
+f2<- glmer(pflowerT1 ~ fruitset + (1|plot), data = subset(clip.sub, !is.na(rgr)), family = "binomial")
+anova(fnull, f2, test="Chisq") #LTR test
+#yep!
+
+f3<- glmer(pflowerT1 ~ fruitset + rgr + (1|plot), data = subset(clip.sub, !is.na(rgr)), family = "binomial")
+anova(f2, f3, test="Chisq") #LTR test
+#nope adding rgr doesnt help
+
+f4<- glmer(pflowerT1 ~ fruitset*rgr + (1|plot), data = subset(clip.sub, !is.na(rgr)), family = "binomial")
+anova(f2, f4, test="Chisq") #LTR test
+#nope
+
+f5<- glmer(pflowerT1 ~ trt + (1|plot), data = subset(clip.sub, !is.na(rgr)), family = "binomial") #singular fit!
+anova(fnull, f5, test="Chisq") #LTR test
+
+
+
+```
+
+```{r}
+#not using size in model - this may be weird..
+#GROWTH
+
+ggplot(clip.sub, aes(x = trt, y = log.ros.areaT1))+
+  geom_boxplot()
+ggplot(clip.sub, aes(x = plot, y = log.ros.areaT1, color = trt))+
+  geom_boxplot()
+ggplot(clip.sub, aes(x = treatment, y = log.ros.areaT1))+
+  geom_boxplot()+
+  facet_wrap(~trt)
+
+#with random effects
+gnull<- lmer(log.ros.areaT1 ~ trt +(1|plot), data = clip.sub, REML = F)
+gnull1<- lmer(log.ros.areaT1 ~ treatment + (1|plot), data = clip.sub, REML= F)
+gnull2<- lmer(log.ros.areaT1 ~ treatment + trt + (1|plot), data = clip.sub, REML= F)
+anova(gnull, gnull2, test="Chisq") #this is LRT?
+summary(gnull2)
+
+```
+
+```{r}
+
+#with random effects
+gnull<- lmer(log.ros.areaT1 ~ trt +(1|plot), data = clip.sub, REML = F)
+gnull1<- lmer(log.ros.areaT1 ~  fruitset*trt + (1|plot), data = clip.sub, REML= F)
+anova(gnull, gnull1, test="Chisq") #this is LRT?
+summary(gnull1)
+
+fnull<- lmer(pflowerT1 ~ (1|plot), data = clip.sub, REML = F)
+fnull1<- lmer(pflowerT1 ~ fruitset + (1|plot), data = clip.sub, REML= F)
+fnull2<- lmer(pflowerT1 ~ treatment + trt + (1|plot), data = clip.sub, REML= F)
+anova(fnull, fnull1, test="Chisq") #this is LRT?
+summary(gnull2)
+```
+
+
+Maybe cost is in whether or not you flower, not how much effort you put into flowering?
+```{r}
+#######################################################################################
+
+
+###
+ggplot(join, aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_jitter()+
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~treatment)
+ggplot(join, aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_jitter()+
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~trt)
+
+gnull<- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot), data = join, REML = F)
+gnull1<- lmer(log.ros.areaT1 ~ log.ros.area + treatment + (1|plot), data = join, REML = F)
+anova(gnull, gnull1, test="Chisq") #this is LRT
+#no cost on growth
+
+gnull2<- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot), data = join, REML = F)
+anova(gnull, gnull2, test="Chisq") #this is LRT
+#nope!
+
+gnull1<- lmer(log.ros.areaT1 ~ log.ros.area+ treatment + (1|plot), data = join, REML= F)
+gnull2<- lmer(log.ros.areaT1 ~ log.ros.area+ treatment + trt + (1|plot), data = join, REML= F)
+anova(gnull, gnull2, test="Chisq") #this is LRT?
+summary(gnull)
+
+#pflower:
+ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
+  geom_jitter()+
+  geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
+  facet_wrap(~treatment)
+ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
+  geom_jitter(height = .01)+
+  geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
+  facet_wrap(~trt)
+ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
+  geom_jitter(height = .01)+
+  geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
+  facet_wrap(treatment~trt)
+
+fnull <- glmer(pflowerT1 ~ log.ros.area + (1|plot), data = join, family = "binomial")
+f1 <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot), data = join, family = "binomial")
+anova(fnull, f1, test="Chisq") #LTR test
+#nope
+
+f2<- glmer(pflowerT1 ~ log.ros.area+treatment + (1|plot), data = join, family = "binomial")
+anova(fnull, f2, test="Chisq") #LTR test
+#yes, significant! But seems like it is mostly for veg vs the rest
+
+f3<- glmer(pflowerT1 ~ log.ros.area + treatment*trt + (1|plot), data = join, family = "binomial")
+anova(f2, f3, test="Chisq") #LTR test
+
+summary(f2)
+
+```
+
