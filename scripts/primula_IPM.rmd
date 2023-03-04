@@ -1,0 +1,295 @@
+---
+title: "primula_IPM"
+author: "JL"
+date: "3/2/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(AICcmodavg)
+library(lme4)
+library(popbio)
+```
+
+```{r}
+### read in all years of Primula data and weather data from the Cowichan
+# Add in climate data:
+source("../scripts/Cowichan_climatevalues.R")
+
+# Add in demography data:
+source("../scripts/dode_allyears_cleaned.R")
+
+## Join climate data to demography data by year
+primula <- left_join(Dodecatheon, climate, by = "year")
+
+#remove(climate, Dodecatheon)
+theme_set(theme_classic()) #for ggplot
+```
+
+##IPM for Primula data
+```{r}
+#load best fit models from primula_climate_VR.r"
+
+gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt * grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula) ###
+  growth_var <- as.data.frame(VarCorr(gm17)) #assumes same variance across all, not sure if thats ok
+fm.f16 <- glmer(pflowerT1 ~ log.ros.area * as.factor(pflower) + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+sm10lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial") ###
+noflow9 <- glm(flow.sum ~ log.ros.area + grow.season.mean.min.temp, data = subset(primula, flow.sum > 0), family = "poisson")
+```
+
+
+###
+
+
+
+
+Then the other miscellany we'll need (size independent parameters):
+NOTE - these aren't right!!! just throwing things in for now
+```{r}
+#I'm just throwing these in from the hookeri model - these arent right!!!
+seedlings_per_head <- 0.047 #average recruitment if we ignore year/site combos with zero recruitment
+
+#this is from 507 - it's also not right!!! but making a model with it anyway
+twoleaf <- primula %>%
+  filter(leaves == "2",
+         !is.na(log.ros.area))
+sdlg_sd <- sd(twoleaf$log.ros.area)
+# mean of log(ros.area is 4.228311), SD = 0.661898
+sdlg_mean <- mean(twoleaf$log.ros.area)/2
+
+```
+
+Define the min and max size, which are the integration bounds of the IPM.
+```{r size bounds, echo=T}
+minRealsize <- min(primula$log.ros.area, na.rm=T) #why is min_size for seedlings?!
+    #this is 0.0314 (seems VERY tiny. I thought smallest was 0.5 x 0.5? 0.25 x 0.25?)
+    #in 2013, some were measured as 0.2 x 0.2 - and we calculated rosette area
+maxRealsize <- 1.1* max(primula$log.ros.area,na.rm=T)
+ #allow the mesh to be slightly larger than the largest plants we observed
+ #I kept the minimum the same because they are already basically invisible!
+
+#now add a new min & max size to keep the plants in for eviction
+min.size <-minRealsize-1 #lower
+max.size <-maxRealsize+1.5 #upper
+```
+## Collect model parameters into a vector
+
+This is a little tricky! There are a lot of variables in the models, so be careful here with the equations for the mixed models
+Also ~ how do deal with temperature in these?? Just add the variable in to get the slope??
+I've just added in the mean temp, so these are specific to one specific temeperature (in the future, I think I can write a loop to get a range of temperatures?)
+
+
+```{r parameter vector, echo=FALSE}
+#whats the average growing season max temp? Eventually, will need to do a loop here for different climate variables...
+av.grow.max.temp <- climate_percentiles$maxT_mean[1]
+av.grow.min.temp <- climate_percentiles$minT_mean[1]
+
+
+params=data.frame(
+	growth.int.control = NA,
+	growth.int.irr = NA,
+	growth.int.drought = NA,
+	growth.slope  = NA,
+	#growth.slope.irr = NA,
+	#growth.slope.drought = NA,
+	growth.sd=NA,
+	
+	surv.int=NA,
+	surv.slope=NA,
+
+	pflow.int.flowered=NA,
+	pflow.int.veg=NA,
+	pflow.slope.flowered=NA,
+	pflow.slope.veg=NA,
+	
+	no.flow.int=NA,
+	no.flow.slope=NA,
+	
+	recruit.size.mean=NA,
+	recruit.size.sd=NA,
+	establishment.prob=NA
+	#pdorm.int=NA
+)
+#things get messy here, check that these all make sense...[can add written out equations here...]
+params$growth.int.control <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp # growth intercept for control
+params$growth.int.drought <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp # growth intercept for drought
+params$growth.int.irr <- fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[7]*av.grow.max.temp# growth intercept for irr
+
+#because temp is constant here, no need for varying slopes! they are all the same (for now...)
+params$growth.slope <- fixef(gm17)[2] # growth slope size t for control
+#params$growth.slope.irr <- fixef(growth_model)[2] # growth slope size t for irrigation
+#params$growth.slope.drought <- fixef(growth_model)[2] # growth slope size for drought
+params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
+
+params$surv.int <- fixef(sm10lag)[1] + fixef(sm10lag)[3]*av.grow.min.temp # survival intercept
+params$surv.slope <- fixef(sm10lag)[2] + fixef(sm10lag)[4]*av.grow.min.temp # survival size t
+
+params$pflow.int.veg <- fixef(fm.f16)[1] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept for pflower == 0
+params$pflow.int.flowered <- fixef(fm.f16)[1] + fixef(fm.f16)[3] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept
+params$pflow.slope.veg <- fixef(fm.f16)[2] # probability of flowering slope for veg plants
+params$pflow.slope.flowered <- fixef(fm.f16)[2] + fixef(fm.f16)[5] # probability of flowering slope for flowered plants
+
+params$no.flow.int <- coef(noflow9)[1] + coef(noflow9)[3]*av.grow.min.temp # flower number production intercept at certain temp
+params$no.flow.slope <- coef(noflow9)[2] # flower number production size t
+
+#params$pdorm.int <-fixef(dorm_model)[1] #intercept of dormancy model to calculate prob of dormancy (not size dependent)
+#note that the IPM doesn't use dormancy parameter or the dormancy model
+
+params$establishment.prob <- seedlings_per_head # seedlings in t+ 1 per head in t
+params$recruit.size.mean <- sdlg_mean # mean seedling size
+params$recruit.size.sd<- sdlg_sd # sd of seedling size
+
+```
+
+# Build the model!
+
+### Step 1. Build vital rate functions (components of the kernel)
+
+```{r}
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+###         Load functions
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#SURVIVAL AT SIZE X
+s.x=function(x,params) {
+	u=exp(params$surv.int+params$surv.slope*x)
+	return(u/(1+u))
+    }
+
+#GROWTH FROM SIZE X TO XP for CONTROL
+#this includes the eviction solution from townsendia, not sure how this will work for primula
+g.yx.control<-function(xp,x,params){
+  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  growth_to_newsize <-params$growth.int.control + params$growth.slope*xb
+  growth_sd <- params$growth.sd
+  return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+}
+
+#GROWTH FROM SIZE X TO Y for DROUGHT
+g.yx.drought<-function(xp,x,params){
+  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  growth_to_newsize <-params$growth.int.drought + params$growth.slope*xb
+  growth_sd <- params$growth.sd
+  return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+}
+#GROWTH FROM SIZE X TO Y for IRRIGATED
+g.yx.irr<-function(xp,x,params){
+  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  growth_to_newsize <-params$growth.int.irr + params$growth.slope*xb
+  growth_sd <- params$growth.sd
+  return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+}
+
+
+#PROBABILITY OF FLOWERING OF SIZE X individuals that flowered:
+pf.x.flowered <-function(x,params){
+	u<-exp(params$pflow.int.flowered+params$pflow.slope.flowered*x)
+	return(u/(1+u));
+	}
+#PROBABILITY OF FLOWERING OF SIZE X individuals that did not flower:
+pf.x.veg <-function(x,params){
+	u<-exp(params$pflow.int.veg+params$pflow.slope.veg*x)
+	return(u/(1+u));
+	}
+
+# #PRODUCTION OF Y-SIZED INDIVIDUALS FROM X-SIZED MOMS that flowered the previous year
+### this needs some work...
+f.yx.flowered=function(xp,x,params) { 		
+	pf.x.flowered(x,params)*
+    exp(params$no.flow.int+params$no.flow.slope*x)*
+    params$establishment.prob*
+	dnorm(xp,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
+}
+f.yx.veg=function(xp,x,params) { 		
+	pf.x.veg(x,params)*
+    exp(params$no.flow.int+params$no.flow.slope*x)*
+    params$establishment.prob*
+	dnorm(xp,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
+}
+
+```
+
+
+Ok, make the kernels!
+```{r}
+#number of cells in the discretized kernel
+n=100
+
+# boundary points (the edges of the cells defining the kernel)
+b=min.size+c(0:n)*(max.size-min.size)/n 
+# mesh points (midpoints of the cells)
+y=0.5*(b[1:n]+b[2:(n+1)])
+# width of the cells
+h=y[2]-y[1]
+```
+
+```{r}
+#growth kernels - separate for each IDE treatment
+G.control=h*outer(y,y,g.yx.control,params=params) 	# growth kernel
+image(y,y,t(G.control),main='growth kernel - control') # plot it
+
+G.drought=h*outer(y,y,g.yx.drought,params=params) 	# growth kernel
+image(y,y,t(G.drought),main='growth kernel - drought') # plot it
+
+G.irr=h*outer(y,y,g.yx.irr,params=params) 	# growth kernel
+image(y,y,t(G.irr),main='growth kernel - irrigated') # plot it
+
+S=s.x(y,params=params) 				# survival 
+plot(y,S,type='l',main='survival')	# plot it
+
+P.control=G.control 									# placeholder;redefine P on the next line
+for(i in 1:n) P.control[,i]=G.control[,i]*S[i]  		# growth/survival kernel
+image(y,y,t(P.control),main='survival/growth kernel - control')	# plot it
+abline(0,1,lwd=3)						# plot 1:1, which represents stasis
+
+P.drought=G.drought									# placeholder;redefine P on the next line
+for(i in 1:n) P.drought[,i]=G.drought[,i]*S[i]  		# growth/survival kernel
+image(y,y,t(P.drought),main='survival/growth kernel - drought')	# plot it
+abline(0,1,lwd=3)						# plot 1:1, which represents stasis
+
+P.irr=G.irr								# placeholder;redefine P on the next line
+for(i in 1:n) P.irr[,i]=G.irr[,i]*S[i]  		# growth/survival kernel
+image(y,y,t(P.irr),main='survival/growth kernel - irrigated')	# plot it
+abline(0,1,lwd=3)						# plot 1:1, which represents stasis
+
+
+
+F.flower=h*outer(y,y,f.yx.flowered,params=params) 	# reproduction kernel
+image(y,y,t(F.flower),main='fecundity kernel for plants that flowered previous year')	# plot it
+
+F.veg=h*outer(y,y,f.yx.veg,params=params) 	# reproduction kernel
+image(y,y,t(F.veg),main='fecundity kernel for plants that did not flower previous year')	# plot it
+####
+
+K.drought.flow=P.drought+F.flower 															# full kernel for 
+image(y,y,t(K.drought.flow),main='full kernel - drought plants that flowered in year-1')			# plot it
+
+K.drought.veg=P.drought+F.veg 															# full kernel for 
+image(y,y,t(K.drought.veg),main='full kernel - drought plants that didnt flower in year-1')			# plot it
+
+K.irr.flow=P.irr+F.flower 															# full kernel for 
+image(y,y,t(K.irr.flow),main='full kernel - irr plants that flowered in year-1')			# plot it
+
+K.irr.veg=P.irr+F.veg 															# full kernel for 
+image(y,y,t(K.irr.veg),main='full kernel - irr plants that didnt flower in year-1')			# plot it
+
+K.control.flow=P.control+F.flower 															# full kernel for 
+image(y,y,t(K.control.flow),main='full kernel - control plants that flowered in year-1')			# plot it
+
+K.control.veg=P.control+F.veg 															# full kernel for 
+image(y,y,t(K.control.veg),main='full kernel - control plants that didnt flower in year-1')			# plot it
+
+lambda(K.drought.flow)
+lambda(K.drought.veg)
+lambda(K.irr.flow)
+lambda(K.irr.veg)
+lambda(K.control.flow)
+lambda(K.control.veg)
+
+
+```
+Ok! These run! Obvioulsy some things are missing and will change in the future, but at least I get some lambdas! 
+
+What does it mean to compare lambda across these? Can we just think about fitness here??
+

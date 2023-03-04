@@ -2,7 +2,53 @@
 title: "Primula babies data cleaning"
 output: html_notebook
 ---
-Right now, this is code from 2020's ipm that I built in JEnn's course...
+```{r read in }
+# Add in demography data:
+source("../scripts/dode_allyears_cleaned.R")
+
+
+```
+
+```{r}
+#read in one leaf plants! And get toothpick data...
+oneleaf<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_seedlings_allyears.csv", header=T)
+onleaf2022<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_OneLeaf.csv", header=T)
+
+oneleaf <- left_join(oneleaf, onleaf2022) %>% 
+  select(-c(no.survivedTP, no.deadTP))
+
+toothpick <- Dodecatheon %>% 
+  filter(!is.na(toothpick)) %>% 
+  select(c(year, plot, tag, Xcoor, Ycoor, toothpick, trt, no.smleaf, no.bigleaf, log.ros.area))
+```
+
+What to do with the 1-leaf data:
+- I determined (thorugh the pot experiment) that plants stay as cotyledons their first year. This means that the 1-leaf plants that we called seedling are NOT seedling - so, we need to figure out a way to (1) add in a lagged year effect of seed production and one leaf plants (PROBLEM - how do we do probability of survival for this transition??). 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+This is code from 2020's ipm that I built in Jenn's course...
 
 1. Making size distribution of seedlings: Need to find the mean+SD of area of 2 leaf plants:
 
