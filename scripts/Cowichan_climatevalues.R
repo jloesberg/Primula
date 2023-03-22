@@ -4,6 +4,8 @@
 
 library(tidyverse)
 library(lubridate)
+library(wesanderson)
+#library(ggpubr)
 theme_set(theme_classic())
 
 ## read in cleaned, extrapolated weather station data from WeatherStnInterp_Cowichan_Aug20...
@@ -108,3 +110,24 @@ climate <- left_join(climate, summer, by = "year") %>%
 climate_percentiles <- rbind(GS_percentile, s_percentile, w_percentile)
 climate_percentiles$season <- c("growseason", "summer", "winter")
 remove(grow_season, summer, winter, weather, GS_percentile, s_percentile, w_percentile) # take away the dfs I dont need
+
+
+### 
+#Let's look at cliamte across the years of the experiment - how variable is precipitation and temperature?
+#what I really want is to make a graphw tih 2 axes, but ggplot is not making that easy! 
+
+precip <- climate %>% ggplot(aes(x = year, y = grow.season.tot.precip))+
+  geom_col(fill = wes_palettes$Darjeeling2[2], color = "black")+
+  labs(y = "Growing season total precipitation (mm)", x = "Year")
+precip
+#ggsave("./Figures/climate/gs.precip.png", width = 4, height = 4)
+
+temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) + 
+  geom_line(aes(group = 1, color = Z[1]), size = 1.25)+
+  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[3]), size = 1.25)+
+  labs(y = "Temperature (celcius)")+
+  scale_color_discrete(labels=c('Max', 'Min'), name = "Growing season\nmean temp.")
+temp
+#ggsave("./Figures/climate/gs.temp.png", width = 6, height = 4)
+##arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
+

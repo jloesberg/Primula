@@ -141,7 +141,8 @@ join <- left_join(join, no.exp)
 join <- join %>% 
   mutate( fruitset = coalesce(fruitset, fruitset1),
           total.seeds = if_else(fruitset == 0, 0, total.seeds),
-          pseeds = if_else(total.seeds > 0, 1, 0)) %>% 
+          pseeds = if_else(total.seeds > 0, 1, 0),
+          log.total.seeds = if_else(total.seeds > 0, log(total.seeds), NA)) %>% 
   select(-fruitset1) %>% 
   #filter out the two plots with very few observations
   filter(plot != "12") %>% 
@@ -417,8 +418,8 @@ seed3 <- glmer(as.factor(pseeds) ~ log.ros.area + trt + (1|plot), data = join, f
 #Seed production ~ treatment*size (data = plants that made seeds, this is Poisson)
 ```{r}
 #of plants that made seeds, did that differ between treatment?
-noseeds<- glmer(total.seeds ~ 1 + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
-noseeds1 <- glmer(total.seeds ~ log.ros.area + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds<- glmer(log.total.seeds ~ 1 + (1|plot), data = subset(join, pseeds ==1), family = "poisson")
+noseeds1 <- glmer(as.numeric(log.total.seeds) ~ log.ros.area + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
 anova(noseeds, noseeds1 ,test="Chisq") #LTR test
 
 noseeds2 <- glmer(total.seeds ~ log.ros.area + trt + (1|plot), data = subset(join, pseeds == 1), family = "poisson")

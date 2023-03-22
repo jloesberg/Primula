@@ -289,7 +289,9 @@ lambda(K.control.veg)
 
 
 ```
-Ok! These run! Obvioulsy some things are missing and will change in the future, but at least I get some lambdas! 
+Ok! These run! Obviously some things are missing and will need to change, but at least I get some lambdas! 
 
 What does it mean to compare lambda across these? Can we just think about fitness here??
-
+Wait, why is lambda for ones that flowered in t-1 HIGHER than ones that didn't flower?????
+That seems really weird...will think about it more
+At least drought lambda is lower, although control and irrigated arent that different

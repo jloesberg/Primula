@@ -21,7 +21,14 @@ source("./scripts/Cowichan_climatevalues.R")
 source("./scripts/dode_allyears_cleaned.R")
 
 ## Join climate data to demography data by year
-primula <- left_join(Dodecatheon, climate, by = "year")
+primula <- left_join(Dodecatheon, climate, by = "year") %>% 
+  filter(tag!= "1881") %>% 
+  filter(tag!= "1471") %>% 
+  filter(tag!= "1183") %>% 
+  filter(tag!= "8317") %>% 
+  filter(tag!= "8311") %>% 
+  filter(tag!= "8315")
+#there's a problem with these tags that I don't want to deal with rn
 
 remove(climate, Dodecatheon)
 theme_set(theme_classic()) #for ggplot
@@ -29,9 +36,12 @@ theme_set(theme_classic()) #for ggplot
 
 # Growth Vital Rates ------------------------------------------------------
 #####################################################################################################
-primula %>% ggplot(aes(x = log(ros.areaTminus1), y = log(ros.area), color = trt)) +
-  geom_point() +
-  geom_smooth(method = "lm")
+primula %>% ggplot(aes(x = log.ros.area, y = log.ros.areaT1)) +
+  geom_abline(intercept = 0, slope = 1, color = "grey")+
+  geom_point() + 
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~year)
+#ggsave("./Figures/vital rate yearly variation/growth.png", width = 5, height = 5)
 boxplot(log(ros.area) ~ trt, data = primula)
 
 ##########################################################################################################
@@ -413,6 +423,11 @@ rm(list = ls()[grepl("pred", ls())])
 # #tag 35 in 2019 did not an entry for pflower/no.flowers - was left blank. Hmm!
 # # what to do here - took it out in the cleaning script for 2019
 
+primula %>% ggplot(aes(x = log.ros.area, y = pflowerT1)) +
+  geom_point() + 
+  geom_smooth(method="glm", method.args=list(family="binomial"), se = F)+
+  facet_wrap(~year)
+#ggsave("./Figures/vital rate yearly variation/pflower.png", width = 5, height = 5)
 
 ### Do vital rates differ between years?
 
@@ -743,6 +758,12 @@ dummy.df %>% ggplot(aes(x = var, y = var2, color = treatment))+
 #########################################################################################
 # Probability of surviving  -------------------------------------------------------------
 # We now have enough data to decide who's dying and when - need ot go through and solve this...
+primula %>% ggplot(aes(x = log.ros.area, y = psurvivalT1)) +
+  geom_jitter() + 
+  geom_smooth(method="glm", method.args=list(family="binomial"), se = F)+
+  facet_wrap(~year)
+#ggsave("./Figures/vital rate yearly variation/survival.png", width = 5, height = 5)
+
 
 ### Does survival differ between years?
 
@@ -1052,9 +1073,15 @@ primula %>% ggplot(aes(log.ros.area, psurvivalT1)) +
 # also need to make some decisions about flowering vs seeding, because theyre not the same. If flowers were eaten, it flowered, but had 0 flowers and no seeds...
 ggplot(subset(primula, flow.sum > 0), aes(log.ros.area, flow.sum))+
   geom_point()+
-  facet_wrap(~year)
+  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
+  facet_wrap(~year)+
+  labs()
+#ggsave("./Figures/vital rate yearly variation/no.flowers.png", width = 5, height = 5)
+
+
 #  theres also just a lot less flowering in 2020 it looks like? does this affect the model?
 
+noflow.min.null <- glm(flow.sum ~ 1, data = subset(primula,flow.sum > 0), family = "poisson")
 
 noflow.min <- glm(flow.sum ~ log.ros.area + trt, data = subset(primula,flow.sum > 0), family = "poisson")
 noflow.min2 <- glm(flow.sum ~ log.ros.area*trt, data = subset(primula, flow.sum > 0), family = "poisson")
