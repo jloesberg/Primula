@@ -7,6 +7,19 @@ library(lubridate)
 library(wesanderson)
 #library(ggpubr)
 theme_set(theme_classic())
+Z <- wes_palettes$Zissou1
+
+# read in data from ClimateNA (long term averages)
+longterm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerData/ClimateNA/ClimateNA_CGOP_ClimateData.csv")
+#the variables I want here are:
+## Tave_sp	spring mean temperature (°C)
+##  	Tmax_sp	spring mean maximum temperature (°C)
+## Tmin_sp	spring mean minimum temperature (°C)
+##  	PPT_sp	spring precipitation (mm)
+## MAP	mean annual precipitation (mm)
+## they define spring as MArch, April, and May
+longterm <- longterm %>% 
+  select(c(period,Tave_sp, Tmax_sp, Tmin_sp, PPT_sp, MAP))
 
 ## read in cleaned, extrapolated weather station data from WeatherStnInterp_Cowichan_Aug20...
 weather <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerData/weather station/WS_cleaned/cgop_weather_daily_interp.csv")
@@ -18,11 +31,11 @@ weather$month_year <- format(as.Date(weather$Date), "%Y-%m")
 weather <- weather %>% filter(Date >= as.Date("2012-12-01"))
 
 # growing season values and lagged 1 year and 2 year values
-### I'm classifying "growing season" as March - June
+### I'm classifying "growing season" as March - May
 grow_season <- weather %>%
   mutate(month = month(Date), year = year(Date)) %>%
   filter(month > 2,
-         month < 7)%>% 
+         month < 6)%>% 
   group_by(year) %>%
   summarise(grow.season.tot.precip = sum(total_precip_mm),
             grow.season.mean.min.temp = mean(minTemp_C),
@@ -115,19 +128,38 @@ remove(grow_season, summer, winter, weather, GS_percentile, s_percentile, w_perc
 ### 
 #Let's look at cliamte across the years of the experiment - how variable is precipitation and temperature?
 #what I really want is to make a graphw tih 2 axes, but ggplot is not making that easy! 
+#deciding to use the4 1961-1990 long term average - it is not that different from more recent time frames (ie 1991-2020 and 1981-2010)
+PPT_sp <- longterm$PPT_sp[[1]]
+
 
 precip <- climate %>% ggplot(aes(x = year, y = grow.season.tot.precip))+
   geom_col(fill = wes_palettes$Darjeeling2[2], color = "black")+
-  labs(y = "Growing season total precipitation (mm)", x = "Year")
+  labs(y = "Spring (March-May) total precipitation (mm)", x = "Year")+
+  geom_hline(yintercept = PPT_sp, linetype='dashed')+
+  annotate("text", x = "2020", y = PPT_sp, label = "1961-1990 Spring Precip", vjust = -0.5)+
+  scale_y_continuous(expand = c(0,0), n.breaks = 15) 
 precip
-#ggsave("./Figures/climate/gs.precip.png", width = 4, height = 4)
+#ggsave("./Figures/climate/gs.precip.withclimateNA.png", width = 8, height = 8)
+TmaxSP<- longterm$Tmax_sp[[1]]
+TminSP<- longterm$Tmin_sp[[1]]
+TaveSP<- longterm$Tave_sp[[1]]
 
 temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) + 
-  geom_line(aes(group = 1, color = Z[1]), size = 1.25)+
-  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[3]), size = 1.25)+
+  geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
+  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[5]), size = 1.25)+
   labs(y = "Temperature (celcius)")+
-  scale_color_discrete(labels=c('Max', 'Min'), name = "Growing season\nmean temp.")
+  scale_color_discrete(labels=c('Max', 'Min'), name = "Spring\nmean temp.")+
+  geom_hline(yintercept = TmaxSP, linetype='dashed', color = Z[5])+
+  geom_hline(yintercept = TminSP, linetype='dashed', color = Z[1])+
+  geom_hline(yintercept = TaveSP, linetype='dashed', color = Z[3])+
+  annotate("text", x = "2021", y = TmaxSP, label = "1961-1990 Spring Max Temp", vjust = -0.5)+
+  annotate("text", x = "2021", y = TminSP, label = "1961-1990 Spring Min Temp", vjust = -0.5)+
+  annotate("text", x = "2021", y = TaveSP, label = "1961-1990 Spring Mean Temp", vjust = -0.5)+
+  scale_y_continuous(n.breaks=15)
+
+  
+  
 temp
-#ggsave("./Figures/climate/gs.temp.png", width = 6, height = 4)
-##arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
+#ggsave("./Figures/climate/gs.temp.climateNA.png", width = 8, height = 8)
+#arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
 
