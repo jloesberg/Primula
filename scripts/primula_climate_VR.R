@@ -3,8 +3,8 @@
 library(tidyverse)
 library(AICcmodavg)
 library(lme4)
-library(lmtest)
-library(effects)
+#library(lmtest)
+#library(effects)
 library(wesanderson) # for colors
 FF <- wes_palettes$FantasticFox1
 Z <- wes_palettes$Zissou1
@@ -27,7 +27,8 @@ primula <- left_join(Dodecatheon, climate, by = "year") %>%
   filter(tag!= "1183") %>% 
   filter(tag!= "8317") %>% 
   filter(tag!= "8311") %>% 
-  filter(tag!= "8315")
+  filter(tag!= "8315") %>% 
+  mutate(pflower = as.factor(pflower))
 #there's a problem with these tags that I don't want to deal with rn
 
 remove(climate, Dodecatheon)
@@ -40,76 +41,54 @@ primula %>% ggplot(aes(x = log.ros.area, y = log.ros.areaT1)) +
   geom_abline(intercept = 0, slope = 1, color = "grey")+
   geom_point() + 
   geom_smooth(method = "lm", se = F)+
-  facet_wrap(~year)
+  facet_wrap(~trt)
+primula %>% ggplot(aes(x = log.ros.area, y = log.ros.areaT1)) +
+  geom_abline(intercept = 0, slope = 1, color = "grey")+
+  geom_point() + 
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~pflower)
 #ggsave("./Figures/vital rate yearly variation/growth.png", width = 5, height = 5)
 boxplot(log(ros.area) ~ trt, data = primula)
 
 ##########################################################################################################
 ### Do vital rates differ between years? 
 # Not sure if these are of any use? skip down to next section for model selection
-gm1 <- lm(log(ros.area) ~ log(ros.areaTminus1), data = primula)
-gm2 <- lm(log(ros.area) ~ log(ros.areaTminus1) + year, data = primula)
-gm3 <- lm(log(ros.area) ~ log(ros.areaTminus1)*year, data = primula)
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area+(1|plot), data = primula)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + year+(1|plot), data = primula)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area*year+(1|plot), data = primula)
 
-lrtest(gm1, gm2)
-lrtest(gm1, gm3)
+anova(gm1, gm2 ,test="Chisq")
+anova(gm2, gm3 ,test="Chisq")
 
-# YES
+# YES, growth does differ across years
 
 ### Do vital rates differ between treatments?
 
-gm1 <- lm(log(ros.area) ~ log(ros.areaTminus1), data = primula)
-gm2 <- lm(log(ros.area) ~ log(ros.areaTminus1) + trt, data = primula)
-gm3 <- lm(log(ros.area) ~ log(ros.areaTminus1)* trt, data = primula)
-gm3 <- aov(log(ros.area) ~ trt, data = primula)
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area +(1|plot) +(1|year), data = primula, REML = F)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot) +(1|year), data = primula, REML = F)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area * trt + (1|plot) +(1|year), data = primula, REML = F)
+
+anova(gm1, gm2 ,test="Chisq")
+anova(gm2, gm3 ,test="Chisq")
 summary(gm3)
-anova(gm3)
-TukeyHSD(gm3)
-plot(TukeyHSD(gm3))
-#yes, size differs between treatments, on average plants are biggest in irrigated, smallest in drought
-# > TukeyHSD(gm3)
-# Tukey multiple comparisons of means
-# 95% family-wise confidence level
-# 
-# Fit: aov(formula = log(ros.area) ~ trt, data = primula)
-# 
-# $trt
-# diff         lwr        upr     p adj
-# drought-control   -0.2449422 -0.34165828 -0.1482260 0.0000000
-# irrigated-control  0.1669537  0.06909098  0.2648165 0.0001917
-# irrigated-drought  0.4118959  0.31133634  0.5124554 0.0000000
 
-# YES 
-
-# What does this tell us? Growth does change across years, and it does change across treatment. However, treatment likely depends on year (some years are drier/wetter, so this will affect strength of treatments/how different they are?). How to test this: Make a model with both and test for a significant interaction? What does the extra water in 2021 mean for this (independent of how much it rained)
-
-gm1 <- lm(log(ros.area) ~ log(ros.areaTminus1) + trt, data = primula)
-gm2 <- lm(log(ros.area) ~ log(ros.areaTminus1) + trt*year, data = primula)
-gm3 <- lm(log(ros.area) ~ log(ros.areaTminus1)*trt + year, data = primula)
-
-lrtest(gm1, gm2)
-lrtest(gm1, gm3)
-lrtest(gm2, gm3)
+#no, plants aren't different sized across treatments
 
 # What does this tell us: yes there is a significant interaction between year and treatment (read: the influence of treatment on growth varies across years)
 #############################################################################
-# Does flowering in the previous year affect size this year?
+# Does flowering in the previous year affect growth?
 
-gm1 <- lm(log.ros.areaT1 ~ log.ros.area, data = primula)
-gm2 <- lm(log.ros.areaT1 ~ log.ros.area*pflower, data = primula)
-gm3 <- lm(log.ros.areaT1 ~ log.ros.area+pflower, data = primula)
-noflow <-  expand.grid(log.ros.area = seq(0.6,5.6, by = .1), pflower = 0) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
-noflow.pred <- predict(gm3, newdata = noflow)
-noflow.pred <- as.data.frame(noflow.pred)
-noflow.pred <- cbind(noflow, noflow.pred)
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot) +(1|year), data = primula, REML = F)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower+ (1|plot) +(1|year), data = primula, REML = F)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower+ (1|plot) +(1|year), data = primula, REML = F)
 
-flow <-  expand.grid(log.ros.area = seq(0.6,5.6, by = .1), pflower =1) #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots!
-flow.pred <- predict(gm3, newdata = flow)
-flow.pred <- as.data.frame(flow.pred)
-noflow.pred <- cbind(flow.pred, noflow.pred)
 
-AIC(gm2, gm3)
-# size and reproducing last year affects size this year) - but this seems backwards - plants that flower are bigger the next year
+anova(gm1, gm2 ,test="Chisq")
+anova(gm2, gm3 ,test="Chisq")
+
+
+summary(gm3)
+#hmm! plants that flower previously are bigger but grow more slowly than vegetative plants. Interesting!
 # not sure what to do here
 ##########################################################################
 ##########################################################################
@@ -119,6 +98,7 @@ AIC(gm2, gm3)
 gm.min <- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, REML = F)
 gm.min2 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + (1|plot) + (1|year), data = primula, REML = F)
 gm.min3 <- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, REML = F)
+ 
 ########################################################################################
 ##grow season total precip
 gm1 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
@@ -163,6 +143,8 @@ gm14 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + grow.season.mean.max.temp+ (1|p
 gm15 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
 gm16 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
 gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F) ###
+gm17.5 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ pflower+ (1|plot) + (1|year), data = primula, REML = F) ###
+
 gm18 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F)
 gm.9 <- lmer(log.ros.areaT1 ~ log.ros.area*trt+ trt*grow.season.mean.max.temp + (1|plot) + (1|year), data = primula, REML = F)
 gm.10 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.max.temp + trt + (1|plot) + (1|year), data = primula, REML = F) 
@@ -426,7 +408,7 @@ rm(list = ls()[grepl("pred", ls())])
 primula %>% ggplot(aes(x = log.ros.area, y = pflowerT1)) +
   geom_point() + 
   geom_smooth(method="glm", method.args=list(family="binomial"), se = F)+
-  facet_wrap(~year)
+  facet_wrap(~trt)
 #ggsave("./Figures/vital rate yearly variation/pflower.png", width = 5, height = 5)
 
 ### Do vital rates differ between years?
@@ -1074,7 +1056,7 @@ primula %>% ggplot(aes(log.ros.area, psurvivalT1)) +
 ggplot(subset(primula, flow.sum > 0), aes(log.ros.area, flow.sum))+
   geom_point()+
   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~year)+
+  facet_wrap(year~plot)+
   labs()
 #ggsave("./Figures/vital rate yearly variation/no.flowers.png", width = 5, height = 5)
 

@@ -1,6 +1,7 @@
 ## What this script does:
 
 # Reads in cleaned weather station data, makes a single df with mean values and lagged years
+#also reads in long term data from climate NA and makes some graphs
 
 library(tidyverse)
 library(lubridate)
@@ -31,7 +32,7 @@ weather$month_year <- format(as.Date(weather$Date), "%Y-%m")
 weather <- weather %>% filter(Date >= as.Date("2012-12-01"))
 
 # growing season values and lagged 1 year and 2 year values
-### I'm classifying "growing season" as March - May
+### I'm classifying "growing season" as March - May, so the same as spring for the climate NA data
 grow_season <- weather %>%
   mutate(month = month(Date), year = year(Date)) %>%
   filter(month > 2,
@@ -39,14 +40,19 @@ grow_season <- weather %>%
   group_by(year) %>%
   summarise(grow.season.tot.precip = sum(total_precip_mm),
             grow.season.mean.min.temp = mean(minTemp_C),
-            grow.season.mean.max.temp = mean(maxTemp_C)) %>% 
+            grow.season.mean.max.temp = mean(maxTemp_C),
+            grow.season.mean.mean.temp = mean(AveTemp_C)) %>% 
   mutate(grow.season.precip.1yearlag = lag(grow.season.tot.precip),
          grow.season.precip.2yearlag = lag(grow.season.precip.1yearlag),
          grow.season.min.temp.1yearlag = lag(grow.season.mean.min.temp),
+         grow.season.ave.temp.1yearlag = lag(grow.season.mean.mean.temp),
          grow.season.min.temp.2yearlag = lag(grow.season.min.temp.1yearlag),
          grow.season.max.temp.1yearlag = lag(grow.season.mean.max.temp),
-         grow.season.max.temp.2yearlag = lag(grow.season.max.temp.1yearlag)) 
+         grow.season.max.temp.2yearlag = lag(grow.season.max.temp.1yearlag),
+         grow.season.ave.temp.2yearlag = lag(grow.season.ave.temp.1yearlag))
+#this gives a df where we have values for each year
 
+#double check that this is what I want here - probably better to not take the mean of a mean? coudl I just use percentiles from daily averges in teh growign season?
 GS_percentile <- grow_season %>% 
   summarize(precip_25th = quantile(grow.season.tot.precip, 0.25),
             precip_75th = quantile(grow.season.tot.precip, 0.75),
@@ -146,9 +152,10 @@ TaveSP<- longterm$Tave_sp[[1]]
 
 temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) + 
   geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
-  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[5]), size = 1.25)+
-  labs(y = "Temperature (celcius)")+
-  scale_color_discrete(labels=c('Max', 'Min'), name = "Spring\nmean temp.")+
+  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[5]), linewidth = 1.25)+  
+  geom_line(aes(y = grow.season.mean.mean.temp, group = 1, color = Z[3]), linewidth = 1.25, color = Z[3])+
+  labs(y = "Temperature (C)", x = "Year")+
+  theme(legend.position="none")+
   geom_hline(yintercept = TmaxSP, linetype='dashed', color = Z[5])+
   geom_hline(yintercept = TminSP, linetype='dashed', color = Z[1])+
   geom_hline(yintercept = TaveSP, linetype='dashed', color = Z[3])+

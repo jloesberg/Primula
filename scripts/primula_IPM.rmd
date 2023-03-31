@@ -11,7 +11,9 @@ library(tidyverse)
 library(AICcmodavg)
 library(lme4)
 library(popbio)
+theme_set(theme_classic()) #for ggplot
 ```
+
 
 ```{r}
 ### read in all years of Primula data and weather data from the Cowichan
@@ -20,13 +22,22 @@ source("../scripts/Cowichan_climatevalues.R")
 
 # Add in demography data:
 source("../scripts/dode_allyears_cleaned.R")
+#if this doesn't run, it's probably something weird with markdown - go into that R script and change the dormancy read.csv to have ".." instead of "." at the beginning
 
 ## Join climate data to demography data by year
 primula <- left_join(Dodecatheon, climate, by = "year")
 
 #remove(climate, Dodecatheon)
-theme_set(theme_classic()) #for ggplot
+#gives a warning but I think it's fine!
 ```
+
+
+
+
+Eventually do to:
+-add in image of life cycle diagram
+- think more about climate variables - what if I switch to average temperature instead of min/max? To reduce number of models. Also, potentially could just look at spring/growing season climate (ie when the plants are out and growing)
+
 
 ##IPM for Primula data
 ```{r}

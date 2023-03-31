@@ -128,7 +128,7 @@ join <- join %>%
 
 remove(sm, clip2, Dodecatheon, min, Dodecatheon.21)
 
-#none experiment plants that flowered:
+#non experiment plants that flowered:
 no.exp <- read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Resurveys.csv", header=T)
 no.exp <- no.exp %>% 
   filter(!is.na(pseeds)) %>% 
@@ -381,6 +381,17 @@ fl2 <- glmer(no.flowersT1 ~ log.ros.area + trt + (1|plot), data = subset(join, p
 
 summary(flnull)
 
+flbase<- glm(no.flowersT1 ~ 1, data = subset(join, pflowerT1 == "1"), family = "poisson")
+flnull <- glm(no.flowersT1 ~ log.ros.area, data = subset(join, pflowerT1 == "1"), family = "poisson")
+anova(flbase, flnull ,test="Chisq") #LTR test
+
+fl1 <- glm(no.flowersT1 ~ log.ros.area + treatment, data = subset(join, pflowerT1 == "1"), family = "poisson")
+anova(flnull, fl1 ,test="Chisq")
+
+fl2 <- glm(no.flowersT1 ~ log.ros.area + trt, data = subset(join, pflowerT1 == "1"), family = "poisson")
+anova(flnull, fl2 ,test="Chisq")
+anova(fl2)
+
 
 ```
 
@@ -409,28 +420,39 @@ ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
 seed <- glmer(as.factor(pseeds) ~ 1 + (1|plot), data = join, family = "binomial")
 seed2 <- glmer(as.factor(pseeds) ~ log.ros.area + (1|plot), data = join, family = "binomial")
 anova(seed, seed2, test="Chisq") #LTR test
+#yes, bigger plants make more seeds
 
 seed3 <- glmer(as.factor(pseeds) ~ log.ros.area + trt + (1|plot), data = join, family = "binomial")
-
+#did not converge
 ```
 
 
 #Seed production ~ treatment*size (data = plants that made seeds, this is Poisson)
 ```{r}
 #of plants that made seeds, did that differ between treatment?
-noseeds<- glmer(log.total.seeds ~ 1 + (1|plot), data = subset(join, pseeds ==1), family = "poisson")
-noseeds1 <- glmer(as.numeric(log.total.seeds) ~ log.ros.area + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds<- glmer(total.seeds ~ 1 + (1|plot), data = subset(join, pseeds ==1), family = "poisson")
+noseeds1 <- glmer(as.numeric(total.seeds) ~ log.ros.area + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
 anova(noseeds, noseeds1 ,test="Chisq") #LTR test
+#yep its better
 
 noseeds2 <- glmer(total.seeds ~ log.ros.area + trt + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
 anova(noseeds1, noseeds2 ,test="Chisq") #LTR test
+#yep
 
 noseeds3 <- glmer(total.seeds ~ log.ros.area*trt + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
 anova(noseeds2, noseeds3 ,test="Chisq") #LTR test
-
+#yep!
 summary(noseeds2)
 
 summary(noseeds3)
+#...it doesnt make sense to add clipping treatment, right? 
+
+noseeds4 <- glmer(total.seeds ~ log.ros.area + treatment + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+anova(noseeds1, noseeds4 ,test="Chisq") #LTR test
+summary(noseeds4)
+
+noseeds5 <- glmer(total.seeds ~ log.ros.area + trt+treatment + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+anova(noseeds2, noseeds5 ,test="Chisq") #LTR test
 
 ```
 Great, it's significant - now make a graph
@@ -439,23 +461,23 @@ Great, it's significant - now make a graph
 ggplot(subset(join, pseeds == 1), aes(log.ros.area, total.seeds))+
   geom_point()+
   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~trt)+
+  facet_wrap(~treatment)+
   labs()
 ```
 
 ```{r}
 #noseeds3
-pred.dat.control <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.dat.control <-  expand.grid(log.ros.area = seq(3.25, 5.25, by = .1), trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.control <- predict(noseeds3, newdata = pred.dat.control, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.control <- as.data.frame(pred.control)
 pred.control <- cbind(pred.dat.control, pred.control)
 
-pred.dat.irrigated <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.dat.irrigated <-  expand.grid(log.ros.area = seq(3.25, 5.25, by = .1), trt = "irrigated") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.irrigated <- predict(noseeds3, newdata = pred.dat.irrigated, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.irrigated <- as.data.frame(pred.irrigated)
 pred.irrigated <- cbind(pred.dat.irrigated, pred.irrigated)
 
-pred.dat.drought <-  expand.grid(log.ros.area = seq(0.4, 6, by = .1), trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
+pred.dat.drought <-  expand.grid(log.ros.area = seq(3.25, 5.25, by = .1), trt = "drought") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.drought <- predict(noseeds3, newdata = pred.dat.drought, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.drought <- as.data.frame(pred.drought)
 pred.drought <- cbind(pred.dat.drought, pred.drought)
@@ -465,8 +487,8 @@ ggplot(subset(join, pseeds == 1), aes(x=log.ros.area, y=total.seeds))+
   geom_line(data = pred.drought, aes(x = log.ros.area, y = pred.drought), color = Z[5], linewidth = 1) +
   geom_line(data = pred.irrigated, aes(x = log.ros.area, y = pred.irrigated), color = Z[1], linewidth = 1) + 
   geom_line(data = pred.control, aes(x = log.ros.area, y = pred.control), color = Z[3], linewidth = 1) + 
-  labs(x = expression(paste("log(Rosette Area) in time", italic(" t"))), y = expression(paste("No. seeds in", italic("  t")))) +
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+  labs(x = expression(paste("log(Rosette Area) in time", italic(" t"))), y = expression(paste("No. seeds in", italic("  t")))) #+
+  #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 ```
 
 
