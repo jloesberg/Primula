@@ -14,6 +14,12 @@ library(popbio)
 theme_set(theme_classic()) #for ggplot
 ```
 
+- what do f.yx functions need to return? Just number of seedlings? so some thing like the pf functions?
+- HOW to get stage matrices in there? No idea - not sure how Tom's code does it
+Where I'm leaving it off: Tom's code has a n+2 type of deal, but I'm not sure how to actually get the components in...
+-For the most part, I've just taken the average/made up the misc compoenents. Which is fine for now but eventually will need to be dealt with!
+
+
 
 ```{r}
 ### read in all years of Primula data and weather data from the Cowichan
@@ -29,6 +35,13 @@ primula <- left_join(Dodecatheon, climate, by = "year")
 
 #remove(climate, Dodecatheon)
 #gives a warning but I think it's fine!
+
+new.plants <- primula %>%   
+  mutate(leaves = if_else(year == 2022, no.smleaf + no.bigleaf, leaves)) %>% 
+  filter(year == YrTag) %>% ##need to filter cases where year tagged == year (so newly tagged that year)
+  filter(pflower == 0) %>% ## actual new plants definitely can't flower in the first year
+  filter(leaves < 3) %>% 
+  filter(!is.na(log.ros.area))
 ```
 
 
@@ -57,31 +70,28 @@ noflow9 <- glm(flow.sum ~ log.ros.area + grow.season.mean.min.temp, data = subse
 
 
 Then the other miscellany we'll need (size independent parameters):
-NOTE - these aren't right!!! just throwing things in for now
+
+GOAL FOR 4/5: just make some these up for now and make a model that runs!
 ```{r}
 #I'm just throwing these in from the hookeri model - these arent right!!!
-seedlings_per_head <- 0.047 #average recruitment if we ignore year/site combos with zero recruitment
+prob.flower.makes.seeds <- 0.73 #this is a made up number
+no.seeds <- 80 #if you make seeds, this is how many seeds you make per capsule (so per capita?? does this need to be multiplied by number of capsules?) this is actually size dependent, I think - will need more work here.
+prob.seed.germ <- .001 #made up, will change later (after seed addition data comes in )
 
-#this is from 507 - it's also not right!!! but making a model with it anyway
-twoleaf <- primula %>%
-  filter(leaves == "2",
-         !is.na(log.ros.area))
-sdlg_sd <- sd(twoleaf$log.ros.area)
-# mean of log(ros.area is 4.228311), SD = 0.661898
-sdlg_mean <- mean(twoleaf$log.ros.area)/2
+#eventually this might change if we want treatment specific size of new recruits - will look into it more
+new_sd <- sd(new.plants$log.ros.area)
+new_mean <- mean(new.plants$log.ros.area)
 
 ```
 
 Define the min and max size, which are the integration bounds of the IPM.
 ```{r size bounds, echo=T}
-minRealsize <- min(primula$log.ros.area, na.rm=T) #why is min_size for seedlings?!
-    #this is 0.0314 (seems VERY tiny. I thought smallest was 0.5 x 0.5? 0.25 x 0.25?)
-    #in 2013, some were measured as 0.2 x 0.2 - and we calculated rosette area
+minRealsize <- min(primula$log.ros.area, na.rm=T) 
+
 maxRealsize <- 1.1* max(primula$log.ros.area,na.rm=T)
- #allow the mesh to be slightly larger than the largest plants we observed
- #I kept the minimum the same because they are already basically invisible!
 
 #now add a new min & max size to keep the plants in for eviction
+#note - this was code from Townsenia code - will need to revisit for Primula!
 min.size <-minRealsize-1 #lower
 max.size <-maxRealsize+1.5 #upper
 ```
@@ -117,10 +127,15 @@ params=data.frame(
 	
 	no.flow.int=NA,
 	no.flow.slope=NA,
+	no.seeds.int=NA,
+	no.seeds.slope=NA,
 	
 	recruit.size.mean=NA,
 	recruit.size.sd=NA,
-	establishment.prob=NA
+	
+	p.flower.makes.seed=NA,
+	no.seeds = NA,
+	prob.seed.germ = NA
 	#pdorm.int=NA
 )
 #things get messy here, check that these all make sense...[can add written out equations here...]
@@ -148,9 +163,11 @@ params$no.flow.slope <- coef(noflow9)[2] # flower number production size t
 #params$pdorm.int <-fixef(dorm_model)[1] #intercept of dormancy model to calculate prob of dormancy (not size dependent)
 #note that the IPM doesn't use dormancy parameter or the dormancy model
 
-params$establishment.prob <- seedlings_per_head # seedlings in t+ 1 per head in t
-params$recruit.size.mean <- sdlg_mean # mean seedling size
-params$recruit.size.sd<- sdlg_sd # sd of seedling size
+params$p.flower.makes.seed <- prob.flower.makes.seeds
+params$no.seeds <- no.seeds
+params$prob.seed.germ <- prob.seed.germ
+params$recruit.size.mean <- new_mean # mean new >1 leaf plant size
+params$recruit.size.sd<- new_sd # sd of new >1 leaf plant size
 
 ```
 
@@ -158,7 +175,7 @@ params$recruit.size.sd<- sdlg_sd # sd of seedling size
 
 ### Step 1. Build vital rate functions (components of the kernel)
 
-```{r}
+```{r VR functions}
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ###         Load functions
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -202,37 +219,96 @@ pf.x.flowered <-function(x,params){
 pf.x.veg <-function(x,params){
 	u<-exp(params$pflow.int.veg+params$pflow.slope.veg*x)
 	return(u/(1+u));
-	}
+}
+
 
 # #PRODUCTION OF Y-SIZED INDIVIDUALS FROM X-SIZED MOMS that flowered the previous year
+###Here i've put in the misc bits, but not sure if this is correct - seems ok for now
 ### this needs some work...
 f.yx.flowered=function(xp,x,params) { 		
 	pf.x.flowered(x,params)*
     exp(params$no.flow.int+params$no.flow.slope*x)*
-    params$establishment.prob*
-	dnorm(xp,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
+    params$p.flower.makes.seed*
+    params$no.seeds* #this will eventually be a function??
+    params$prob.seed.germ
+  return() #
 }
 f.yx.veg=function(xp,x,params) { 		
 	pf.x.veg(x,params)*
     exp(params$no.flow.int+params$no.flow.slope*x)*
-    params$establishment.prob*
-	dnorm(xp,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
+    params$p.flower.makes.seed*params$no.seeds*params$prob.seed.germ
+  return() #not sure what this should be
 }
 
+#SIZE DISTRIBUTION OF RECRUITS - separate function (before was part of f.yx)
+recruit.size<-function(xp,params){
+  dnorm(xp,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
+}
+#these return a size distribution of new recruits - I think this is not what I want because my fecundity kernel is feeding into a stage (what I need is the number of seedlings created by each size bin)
+```
+
+```{r setting up stage matrices}
+#building off of code by Tom Miller:
+# BIGMATRIX ---------------------------------------------------------------
+bigmatrix<-function(params,
+                   # lower.extension = 0, ## I'll need to extend lower and upper beyond true size limits
+                    #upper.extension = 0,
+                    mat.size, ## matrix dimensions
+                    ){
+  
+  n<-mat.size
+  L<-params$min.size + lower.extension
+  U<-params$max.size + upper.extension
+  #these are the upper and lower integration limits
+  h<-(U-L)/n                   #Bin size
+  b<-L+c(0:n)*h;               #Lower boundaries of bins 
+  y<-0.5*(b[1:n]+b[2:(n+1)]);  #Bins' midpoints
+  #these are the boundary points (b) and mesh points (y)
+  #number of cells in the discretized kernel
+  n=100
+
+  # boundary points (the edges of the cells defining the kernel)
+  b=min.size+c(0:n)*(max.size-min.size)/n 
+  # mesh points (midpoints of the cells)
+  y=0.5*(b[1:n]+b[2:(n+1)])
+  # width of the cells
+  h=y[2]-y[1]
+
+
+  }
+
+# Fertility matrix
+Fmat<-matrix(0,(n+2),(n+2))
+  
+  # 1-yo banked seeds go in top row
+mat[1,3:(n+2)]<-fx(y,params,rfx,PC1,PC2,PC3,extrap)
+  
+  # Growth/survival transition matrix
+  Tmat<-matrix(0,(n+2),(n+2))
+  
+  # Graduation to 2-yo seed bank = pr(not germinating as 1-yo)
+  Tmat[2,1]<-(1-params$germ1)
+  
+  # Graduation from 1-yo bank to cts size = germination * size distn * pre-census survival
+  Tmat[3:(n+2),1]<- params$germ1 * params$precenus_surv * recruit.size(y,params) * h   
+  
+  # Graduation from 2-yo bank to cts size = germination * size distn * pre-census survival
+  Tmat[3:(n+2),2]<- params$germ2 * params$precenus_surv * recruit.size(y,params) * h  
+  
+  # Growth/survival transitions among cts sizes
+  Tmat[3:(n+2),3:(n+2)]<-t(outer(y,y,pxy,params=params,rfx=rfx,PC1=PC1,PC2=PC2,PC3=PC3,extrap=extrap)) * h 
+  
+  # Put it all together
+  IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation ot fertility
+  #and transition matrix
+  return(list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y))
+}
 ```
 
 
 Ok, make the kernels!
 ```{r}
-#number of cells in the discretized kernel
-n=100
 
-# boundary points (the edges of the cells defining the kernel)
-b=min.size+c(0:n)*(max.size-min.size)/n 
-# mesh points (midpoints of the cells)
-y=0.5*(b[1:n]+b[2:(n+1)])
-# width of the cells
-h=y[2]-y[1]
 ```
 
 ```{r}

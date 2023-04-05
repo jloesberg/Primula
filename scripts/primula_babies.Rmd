@@ -108,8 +108,34 @@ tot.seeds <- tot.seeds %>%
 tot.seeds$pseeds[tot.seeds$tag == 693 & tot.seeds$year == "2021"] <-"1"
 
 remove(seeds21, seeds22, seed.trt.1, seeds21.model)
+Dodecatheon <- left_join(Dodecatheon, tot.seeds) #add it to main demography file
 #ok, done!
 #tot.seeds is the end df - it has no.seeds made by all flowering plants in 2021 and 2023
+```
+```{r}
+#Now, make a model for number of seeds produced:
+#first some graphs
+ggplot(subset(Dodecatheon, total.seeds >0), aes(x = log.ros.area, y = total.seeds, color = year))+
+  geom_point()+
+  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
+  facet_wrap(~trt)
+
+#is it size dependent?
+
+s <- glmer(total.seeds~1+(1|plot), data = subset(Dodecatheon, total.seeds >0), family = "poisson")
+s1 <- glmer(total.seeds~log.ros.area + (1|plot), data = subset(Dodecatheon, total.seeds >0), family = "poisson")
+anova(s, s1, test="Chisq") #LTR test
+#yes, size dependent
+s2  <- glmer(total.seeds~log.ros.area+trt + (1|plot), data = subset(Dodecatheon, total.seeds >0), family = "poisson")
+anova(s1, s2, test="Chisq") #LTR test
+s3  <- glmer(total.seeds~log.ros.area*trt + (1|plot), data = subset(Dodecatheon, total.seeds >0), family = "poisson")
+anova(s1, s3, test="Chisq") #LTR test
+
+#ok, for now, I just want number of seeds per capsule made on average
+seeds <- mean(tot.seeds$total.seeds, na.rm = T) #80? seems fine for now
+
+
+
 ```
     
 
@@ -153,9 +179,10 @@ tot.seeds <- left_join(tot.seeds, plots)
 
 #average pseeds?
 pseeds.mean <- tot.seeds %>% 
-  group_by(trt, year) %>% 
+  #group_by(trt, year) %>% 
   summarize(mean.pseeds = mean(as.numeric(pseeds), na.rm = F))
 #ok, not sure what to do here - is this the end values that I want?
+#0.73 - probability a plant will make seeds?
 
 ##OH - It's inflated in 2021 because I caged plants. Duh. How to move forward here?
 remove(survey21, survey22)
@@ -212,11 +239,22 @@ size.dist <- Dodecatheon %>%
   filter(pflower == 0) %>% ## actual new plants definitely can't flower in the first year
   filter(leaves < 3)
 
-  
+#should this vary by treatment?? ie are new recruits different sizes across treatments?
+ggplot(size.dist, aes(year, log.ros.area))+
+  geom_boxplot()
+m <- lmer(log.ros.area~1+(1|plot), data = size.dist)
+m1 <- lmer(log.ros.area~trt+(1|plot), data = size.dist)
+#nope, recruit size does not differ across trt
+m <- lmer(log.ros.area~1+(1|plot), data = size.dist)
+m1 <- lmer(log.ros.area~year+(1|plot), data = size.dist)
+#so year does matter, but i wonder if it's because 2020 was a weird year and we didnt measure all the plants. maybe let's ignore this for now
+
+
+anova(m, m1, test="Chisq") #LTR test
+#here, I think let's not have differing values
 size.dist <- size.dist %>% 
-  group_by(year, trt) %>% 
-  summarize(mean.new = mean(log.ros.area, na.rm = T),
-            sd.new = sd(log.ros.area, na.rm = T))
+  dplyr::summarize(mean.new = mean(log.ros.area),
+            sd.new = sd(log.ros.area))
 #hmm this seems big...but maybe fine. I have it filtered out by year and plot so far
 
 ```
