@@ -14,10 +14,9 @@ library(popbio)
 theme_set(theme_classic()) #for ggplot
 ```
 
-- what do f.yx functions need to return? Just number of seedlings? so some thing like the pf functions?
-- HOW to get stage matrices in there? No idea - not sure how Tom's code does it
-Where I'm leaving it off: Tom's code has a n+2 type of deal, but I'm not sure how to actually get the components in...
--For the most part, I've just taken the average/made up the misc compoenents. Which is fine for now but eventually will need to be dealt with!
+- _what do f.yx functions need to return? Just number of seedlings? so some thing like the pf functions?_
+-For the most part, I've just taken the average/made up the misc components. Which is fine for now but eventually will need to be dealt with!
+- I think Tom's code can help me figure out how to not have seperate functions for each treatment (ie use some form of ifelse)
 
 
 
@@ -73,10 +72,13 @@ Then the other miscellany we'll need (size independent parameters):
 
 GOAL FOR 4/5: just make some these up for now and make a model that runs!
 ```{r}
-#I'm just throwing these in from the hookeri model - these arent right!!!
+
 prob.flower.makes.seeds <- 0.73 #this is a made up number
 no.seeds <- 80 #if you make seeds, this is how many seeds you make per capsule (so per capita?? does this need to be multiplied by number of capsules?) this is actually size dependent, I think - will need more work here.
 prob.seed.germ <- .001 #made up, will change later (after seed addition data comes in )
+prob.seedling.to.1leaf <- .1
+prob.1leaf.to.1leaf <- .1
+prob.1leaf.to.2leaf <- .1
 
 #eventually this might change if we want treatment specific size of new recruits - will look into it more
 new_sd <- sd(new.plants$log.ros.area)
@@ -99,7 +101,7 @@ max.size <-maxRealsize+1.5 #upper
 
 This is a little tricky! There are a lot of variables in the models, so be careful here with the equations for the mixed models
 Also ~ how do deal with temperature in these?? Just add the variable in to get the slope??
-I've just added in the mean temp, so these are specific to one specific temeperature (in the future, I think I can write a loop to get a range of temperatures?)
+I've just added in the mean temp, so these are specific to one specific temperature (in the future, I think I can write a loop to get a range of temperatures?)
 
 
 ```{r parameter vector, echo=FALSE}
@@ -185,128 +187,145 @@ s.x=function(x,params) {
 	return(u/(1+u))
     }
 
-#GROWTH FROM SIZE X TO XP for CONTROL
+#GROWTH FROM SIZE X TO XP for CONTROL...xp is y
 #this includes the eviction solution from townsendia, not sure how this will work for primula
-g.yx.control<-function(xp,x,params){
-  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-  growth_to_newsize <-params$growth.int.control + params$growth.slope*xb
-  growth_sd <- params$growth.sd
-  return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+g.yx.control<-function(y,x,params){
+  #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  #growth_to_newsize <-params$growth.int.control + params$growth.slope*xb
+  #growth_sd <- params$growth.sd
+  #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
+  dnorm(y,mean=params$growth.int.control + params$growth.slope*x,sd=params$growth.sd)
+
 }
 
 #GROWTH FROM SIZE X TO Y for DROUGHT
-g.yx.drought<-function(xp,x,params){
-  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-  growth_to_newsize <-params$growth.int.drought + params$growth.slope*xb
-  growth_sd <- params$growth.sd
-  return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+g.yx.drought<-function(y,x,params){
+  #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  #growth_to_newsize <-params$growth.int.drought + params$growth.slope*x
+  #growth_sd <- params$growth.sd
+  #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
+  dnorm(y,mean=params$growth.int.drought + params$growth.slope*x,sd=params$growth.sd)
+
 }
 #GROWTH FROM SIZE X TO Y for IRRIGATED
-g.yx.irr<-function(xp,x,params){
-  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-  growth_to_newsize <-params$growth.int.irr + params$growth.slope*xb
-  growth_sd <- params$growth.sd
-  return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+g.yx.irr<-function(y,x,params){
+  #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  #growth_to_newsize <-params$growth.int.irr + params$growth.slope*xb
+  #growth_sd <- params$growth.sd
+  #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
+  dnorm(y,mean=params$growth.int.irr + params$growth.slope*x,sd=params$growth.sd)
+
+}
+
+g.yx <- function(y,x,params,trt){
+  irrigated=ifelse()
+  
+  p.surv<-params$surv.mu + params$surv.bsize*xb + 
+    unlist(params$surv.bclim[1,1])*pc1 + 
+    unlist(params$surv.bclim[1,2])*pc2 + 
+    unlist(params$surv.bclim[1,3])*pc3
+}
+
+#Tom Miller's combined s and g kernel
+P.control <- function(y, x, params){
+  s.x(x, params)*g.yx.control(y, x, params)
 }
 
 
 #PROBABILITY OF FLOWERING OF SIZE X individuals that flowered:
 pf.x.flowered <-function(x,params){
 	u<-exp(params$pflow.int.flowered+params$pflow.slope.flowered*x)
-	return(u/(1+u));
+	return(u/(1+u))
 	}
 #PROBABILITY OF FLOWERING OF SIZE X individuals that did not flower:
 pf.x.veg <-function(x,params){
 	u<-exp(params$pflow.int.veg+params$pflow.slope.veg*x)
-	return(u/(1+u));
+	return(u/(1+u))
 }
 
 
-# #PRODUCTION OF Y-SIZED INDIVIDUALS FROM X-SIZED MOMS that flowered the previous year
+# #PRODUCTION OF seedlings by X-SIZED MOMS that flowered the previous year
 ###Here i've put in the misc bits, but not sure if this is correct - seems ok for now
-### this needs some work...
-f.yx.flowered=function(xp,x,params) { 		
-	pf.x.flowered(x,params)*
+
+f.yx.flowered=function(x,params) { 		
+	return(pf.x.flowered(x,params)*
     exp(params$no.flow.int+params$no.flow.slope*x)*
     params$p.flower.makes.seed*
     params$no.seeds* #this will eventually be a function??
-    params$prob.seed.germ
-  return() #
+    params$prob.seed.germ)
+ #is this right? I want a number of seedlings that are made.
 }
-f.yx.veg=function(xp,x,params) { 		
-	pf.x.veg(x,params)*
-    exp(params$no.flow.int+params$no.flow.slope*x)*
-    params$p.flower.makes.seed*params$no.seeds*params$prob.seed.germ
-  return() #not sure what this should be
+f.yx.veg=function(x,params) { 		
+	return(pf.x.veg(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)*
+    params$p.flower.makes.seed*params$no.seeds*params$prob.seed.germ) #not sure what this should be
 }
 
-#SIZE DISTRIBUTION OF RECRUITS - separate function (before was part of f.yx)
-recruit.size<-function(xp,params){
-  dnorm(xp,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
+
+
+#SIZE DISTRIBUTION OF RECRUITS - separate function (before was part of f.yx). Now it feeds into a stage so cant be feeding back into the kernel
+recruit.size<-function(y,params){
+  dnorm(y,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
 }
-#these return a size distribution of new recruits - I think this is not what I want because my fecundity kernel is feeding into a stage (what I need is the number of seedlings created by each size bin)
 ```
 
 ```{r setting up stage matrices}
 #building off of code by Tom Miller:
 # BIGMATRIX ---------------------------------------------------------------
-bigmatrix<-function(params,
-                   # lower.extension = 0, ## I'll need to extend lower and upper beyond true size limits
+n<-100
+bigmatrix<-function(params
+                    #lower.extension = 0, ## I'll need to extend lower and upper beyond true size limits
                     #upper.extension = 0,
-                    mat.size, ## matrix dimensions
-                    ){
+                    #mat.size ## matrix dimensions
+                    )
+  {
   
-  n<-mat.size
-  L<-params$min.size + lower.extension
-  U<-params$max.size + upper.extension
+
+  L<-min.size
+  U<-max.size
   #these are the upper and lower integration limits
   h<-(U-L)/n                   #Bin size
   b<-L+c(0:n)*h;               #Lower boundaries of bins 
   y<-0.5*(b[1:n]+b[2:(n+1)]);  #Bins' midpoints
   #these are the boundary points (b) and mesh points (y)
-  #number of cells in the discretized kernel
-  n=100
-
-  # boundary points (the edges of the cells defining the kernel)
-  b=min.size+c(0:n)*(max.size-min.size)/n 
-  # mesh points (midpoints of the cells)
-  y=0.5*(b[1:n]+b[2:(n+1)])
-  # width of the cells
-  h=y[2]-y[1]
 
 
-  }
+  # Fertility matrix
 
-# Fertility matrix
-Fmat<-matrix(0,(n+2),(n+2))
+  Fmat<-matrix(0,(n+2),(n+2))
   
-  # 1-yo banked seeds go in top row
-mat[1,3:(n+2)]<-fx(y,params,rfx,PC1,PC2,PC3,extrap)
+  # top row: # seedlings produced by each size class:
+  Fmat[1,3:(n+2)]<-f.yx.flowered(y,params) #
   
   # Growth/survival transition matrix
   Tmat<-matrix(0,(n+2),(n+2))
   
-  # Graduation to 2-yo seed bank = pr(not germinating as 1-yo)
-  Tmat[2,1]<-(1-params$germ1)
+  # probability seedling becomes a 1 leaf plant
+  Tmat[2,1]<- prob.seedling.to.1leaf
   
-  # Graduation from 1-yo bank to cts size = germination * size distn * pre-census survival
-  Tmat[3:(n+2),1]<- params$germ1 * params$precenus_surv * recruit.size(y,params) * h   
+   # probability 1 leaf plant stays as a 1 leaf plant
+  Tmat[2,2]<- prob.1leaf.to.1leaf
   
-  # Graduation from 2-yo bank to cts size = germination * size distn * pre-census survival
-  Tmat[3:(n+2),2]<- params$germ2 * params$precenus_surv * recruit.size(y,params) * h  
+  # Graduation from 1 leaf to cts size = prob 1 leaf becomes a 2 leaf * size dist of new 2 leafers
+  Tmat[3:(n+2),2]<- prob.1leaf.to.2leaf *recruit.size(y,params) * h
   
   # Growth/survival transitions among cts sizes
-  Tmat[3:(n+2),3:(n+2)]<-t(outer(y,y,pxy,params=params,rfx=rfx,PC1=PC1,PC2=PC2,PC3=PC3,extrap=extrap)) * h 
+  Tmat[3:(n+2),3:(n+2)]<-
+    t(outer(y,y,P.control,params=params)) * h 
   
   # Put it all together
   IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation ot fertility
   #and transition matrix
   return(list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y))
 }
+
+
+
+primula_lambda <- bigmatrix(params = params)
+lambda(primula_lambda$IPMmat)
 ```
 
 
-Ok, make the kernels!
+
 ```{r}
 
 ```
