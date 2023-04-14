@@ -14,6 +14,61 @@ library(popbio)
 theme_set(theme_classic()) #for ggplot
 ```
 
+- To do: use sarah's code with the townsendia solution to having multiple growth functions feed into one IPM big marrix!
+first, just write out the params to have 6 rows (for each combination of reproduction and trt! )
+
+```{r}
+#this is code from Sarah that has one function!! 
+# 
+#  g.yx<-function(lifehist, xp,x,params){
+#    xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+#    if (lifehist=="Apo"){
+#          growth_to_newsize <-params$growth.int.A + params$growth.slope*xb
+#          growth_sd <- params$growth.sd
+#          return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))}
+#    else if(lifehist=="Sex"){
+#          growth_to_newsize <-params$growth.int.S + params$growth.slope*xb
+#          growth_sd <- params$growth.sd
+#          return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))}
+#  }
+# params_list <-  filter(params) %>% split(., seq(nrow(.)))
+# 
+# ### use the map function to change the inputs and so you can just write 1 function 
+# BFM <- function(params_in, y){
+#     if(exists('g.yx.A') == FALSE){
+#         print('missing g.yx.A function?')
+#     }
+#     
+#     repro_type = params_in[,'Reproduction']
+#     if(repro_type == "Sex"){
+#         G.S=h*outer(y,y,g.yx.S,params=params_in) 	# growth kernel
+#     S=s.x(y,params=params_in) 				# survival
+#     P.S=G.S 								# placeholder;redefine P on the next line
+#     for(i in 1:n) P.S[,i]=G.S[,i]*S[i]  	# growth/survival kernel
+#     F=h*outer(y,y,f.yx,params=params_in) 	    # reproduction kernel
+#             K.S=P.S+F 						# full kernel
+# 
+#     lambsite_ <-lambda(K.S) 
+#     }
+#     else if (repro_type == "Apo"){
+#     G.A=h*outer(y,y,g.yx.A,params=params_in) 	# growth kernel
+#     S=s.x(y,params=params_in) 				# survival
+#     P.A=G.A 								# placeholder;redefine P on the next line
+#     for(i in 1:n) P.A[,i]=G.A[,i]*S[i]  	# growth/survival kernel
+#     F=h*outer(y,y,f.yx,params=params_in) 	    # reproduction kernel
+#             K.A=P.A+F 						# full kernel
+# 
+#     lambsite_ <-lambda(K.A)  
+#     }
+#     out_c <- data.frame(site = params_in$Site, lambda= lambsite_)
+# return(out_c)
+# }
+# 
+# model_out <- params_list %>% map(., .f = BFM, y = y) %>% bind_rows()
+
+```
+
+
 - _what do f.yx functions need to return? Just number of seedlings? so some thing like the pf functions?_
 -For the most part, I've just taken the average/made up the misc components. Which is fine for now but eventually will need to be dealt with!
 - I think Tom's code can help me figure out how to not have separate functions for each treatment (ie use some form of ifelse)
@@ -30,9 +85,11 @@ source("../scripts/dode_allyears_cleaned.R")
 #if this doesn't run, it's probably something weird with markdown - go into that R script and change the dormancy read.csv to have ".." instead of "." at the beginning
 
 ## Join climate data to demography data by year
-primula <- left_join(Dodecatheon, climate, by = "year")
+primula <- left_join(Dodecatheon, climate, by = "year") %>% 
+  mutate(psurvivalT1 = as.factor(psurvivalT1))
 
-#remove(climate, Dodecatheon)
+remove(Dodecatheon)
+
 #gives a warning but I think it's fine!
 
 new.plants <- primula %>%   
@@ -111,9 +168,10 @@ av.grow.min.temp <- climate_percentiles$minT_mean[1]
 
 
 params=data.frame(
-	growth.int.control = NA,
-	growth.int.irr = NA,
-	growth.int.drought = NA,
+	growth.int = c(NA,NA, NA, NA, NA, NA),
+	#growth.int.control = c(NA,NA, NA, NA, NA, NA),
+	#growth.int.irr = NA,
+	#growth.int.drought = NA,
 	growth.slope  = NA,
 	#growth.slope.irr = NA,
 	#growth.slope.drought = NA,
@@ -121,11 +179,13 @@ params=data.frame(
 	
 	surv.int=NA,
 	surv.slope=NA,
-
-	pflow.int.flowered=NA,
-	pflow.int.veg=NA,
-	pflow.slope.flowered=NA,
-	pflow.slope.veg=NA,
+	
+	pflow.int = NA,
+	#pflow.int.flowered=NA,
+	#pflow.int.veg=NA,
+	pflow.slope = NA,
+	#pflow.slope.flowered=NA,
+	#pflow.slope.veg=NA,
 	
 	no.flow.int=NA,
 	no.flow.slope=NA,
@@ -140,24 +200,31 @@ params=data.frame(
 	prob.seed.germ = NA
 	#pdorm.int=NA
 )
+
+params$trt <- c("irrigated", "irrigated", "control", "control", "drought", "drought")
+params$reproduction <- c("flowered", "veg", "flowered", "veg", "flowered", "veg")
+
+#growth intercepts - different for each treatment
+params$growth.int[params$trt == "control"] <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp
+params$growth.int[params$trt == "irrigated"] <-fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp +   fixef(gm17)[7]*av.grow.max.temp
+params$growth.int[params$trt == "drought"] <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp
+
 #things get messy here, check that these all make sense...[can add written out equations here...]
-params$growth.int.control <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp # growth intercept for control
-params$growth.int.drought <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp # growth intercept for drought
-params$growth.int.irr <- fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[7]*av.grow.max.temp# growth intercept for irr
+# params$growth.int.control <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp # growth intercept for control
+# params$growth.int.drought <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp # growth intercept for drought
+# params$growth.int.irr <- fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[7]*av.grow.max.temp# growth intercept for irr
 
 #because temp is constant here, no need for varying slopes! they are all the same (for now...)
 params$growth.slope <- fixef(gm17)[2] # growth slope size t for control
-#params$growth.slope.irr <- fixef(growth_model)[2] # growth slope size t for irrigation
-#params$growth.slope.drought <- fixef(growth_model)[2] # growth slope size for drought
 params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
 
 params$surv.int <- fixef(sm10lag)[1] + fixef(sm10lag)[3]*av.grow.min.temp # survival intercept
 params$surv.slope <- fixef(sm10lag)[2] + fixef(sm10lag)[4]*av.grow.min.temp # survival size t
 
-params$pflow.int.veg <- fixef(fm.f16)[1] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept for pflower == 0
-params$pflow.int.flowered <- fixef(fm.f16)[1] + fixef(fm.f16)[3] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept
-params$pflow.slope.veg <- fixef(fm.f16)[2] # probability of flowering slope for veg plants
-params$pflow.slope.flowered <- fixef(fm.f16)[2] + fixef(fm.f16)[5] # probability of flowering slope for flowered plants
+params$pflow.int[params$reproduction == "veg"] <- fixef(fm.f16)[1] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept for pflower == 0
+params$pflow.int[params$reproduction == "flowered"] <- fixef(fm.f16)[1] + fixef(fm.f16)[3] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept
+params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.f16)[2] # probability of flowering slope for veg plants
+params$pflow.slope[params$reproduction == "flowered"] <- fixef(fm.f16)[2] + fixef(fm.f16)[5] # probability of flowering slope for flowered plants
 
 params$no.flow.int <- coef(noflow9)[1] + coef(noflow9)[3]*av.grow.min.temp # flower number production intercept at certain temp
 params$no.flow.slope <- coef(noflow9)[2] # flower number production size t
@@ -187,53 +254,60 @@ s.x=function(x,params) {
 	return(u/(1+u))
     }
 
-#GROWTH FROM SIZE X TO XP for CONTROL...xp is y
+#GROWTH FROM SIZE X TO XP for CONTROL...here ive changed xp to y, as per Tom's code (I think that what makes the big matrix function work in the end...)
+  # Currently, seperate functions for growth for each IDE treatment. 
   ## returns a *probability density distribution* for each x value
-g.yx.control<-function(y,x,params){
-    #ignoring eviction here...
+#g.yx.control<-function(y,x,params){
+    #ignoring eviction here...this code will eventually fix it
   #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
   #growth_to_newsize <-params$growth.int.control + params$growth.slope*xb
   #growth_sd <- params$growth.sd
   #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
-  dnorm(y,mean=params$growth.int.control + params$growth.slope*x,sd=params$growth.sd)
+ # dnorm(y,mean=params$growth.int.control + params$growth.slope*x,sd=params$growth.sd)
 
-}
+#}
 
 #GROWTH FROM SIZE X TO Y for DROUGHT
-g.yx.drought<-function(y,x,params){
+#g.yx.drought<-function(y,x,params){
     #ignoring eviction here...
   #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
   #growth_to_newsize <-params$growth.int.drought + params$growth.slope*x
   #growth_sd <- params$growth.sd
   #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
-  dnorm(y,mean=params$growth.int.drought + params$growth.slope*x,sd=params$growth.sd)
+  #dnorm(y,mean=params$growth.int.drought + params$growth.slope*x,sd=params$growth.sd)
 
-}
+#}
 #GROWTH FROM SIZE X TO Y for IRRIGATED
-g.yx.irr<-function(y,x,params){
+g.yx<-function(y,x,params){
     #ignoring eviction here...
   #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
   #growth_to_newsize <-params$growth.int.irr + params$growth.slope*xb
   #growth_sd <- params$growth.sd
   #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
-  dnorm(y,mean=params$growth.int.irr + params$growth.slope*x,sd=params$growth.sd)
+  dnorm(y,mean=params$growth.int + params$growth.slope*x,sd=params$growth.sd)
 
 }
-#goal: 
 
 #Tom Miller's combined s and g kernel
-P.control <- function(y, x, params){
-  s.x(x, params)*g.yx.control(y, x, params)
+P <- function(y, x, params){
+  s.x(x, params)*g.yx(y, x, params)
 }
+# P.irr <- function(y, x, params){
+#   s.x(x, params)*g.yx.irr(y, x, params)
+# }
+# P.drought <- function(y, x, params){
+#   s.x(x, params)*g.yx.drought(y, x, params)
+# }
+
 
 #PROBABILITY OF FLOWERING OF SIZE X individuals that flowered:
-pf.x.flowered <-function(x,params){
-	u<-exp(params$pflow.int.flowered+params$pflow.slope.flowered*x)
-	return(u/(1+u))
-	}
+# pf.x.flowered <-function(x,params){
+# 	u<-exp(params$pflow.int.flowered+params$pflow.slope.flowered*x)
+# 	return(u/(1+u))
+# 	}
 #PROBABILITY OF FLOWERING OF SIZE X individuals that did not flower:
-pf.x.veg <-function(x,params){
-	u<-exp(params$pflow.int.veg+params$pflow.slope.veg*x)
+pf.x <-function(x,params){
+	u<-exp(params$pflow.int+params$pflow.slope*x)
 	return(u/(1+u))
 }
 
@@ -241,16 +315,16 @@ pf.x.veg <-function(x,params){
 # #PRODUCTION OF seedlings by X-SIZED plants that flowered the previous year
 ###Here i've put in the misc bits, but not sure if this is correct - seems ok for now
 
-f.yx.flowered=function(x,params) { 		
-	return(pf.x.flowered(x,params)*
-    exp(params$no.flow.int+params$no.flow.slope*x)*
-    params$p.flower.makes.seed*
-    params$no.seeds* #this will eventually be a function??
-    params$prob.seed.germ)
- #is this right? I want a number of seedlings that are made.
-}
-f.yx.veg=function(x,params) { 		
-	return(pf.x.veg(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)*
+# f.yx.flowered=function(x,params) { 		
+# 	return(pf.x.flowered(x,params)*
+#     exp(params$no.flow.int+params$no.flow.slope*x)*
+#     params$p.flower.makes.seed*
+#     params$no.seeds* #this will eventually be a function??
+#     params$prob.seed.germ)
+#  #is this right? I want a number of seedlings that are made.
+# }
+f.yx=function(x,params) { 		
+	return(pf.x(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)*
     params$p.flower.makes.seed*params$no.seeds*params$prob.seed.germ)
 }
 
@@ -262,10 +336,12 @@ recruit.size<-function(y,params){
 ```
 
 ```{r setting up stage matrices}
-#building off of code by Tom Miller:
+params_list <-  filter(params) %>% split(., seq(nrow(.))) #this splits up params into 6 rows, which I can feed into the function below
+#params_in <- params_list[[1]] #to test it!
 # BIGMATRIX ---------------------------------------------------------------
+#building off of code from Tom Miller:
 mat.size = 100 #dimensions of continuous matrix
-bigmatrix<-function(params, mat.size)
+bigmatrix<-function(params_list, mat.size)
   {
   n<-mat.size
   L<-min.size
@@ -280,7 +356,7 @@ bigmatrix<-function(params, mat.size)
   Fmat<-matrix(0,(n+2),(n+2))
   
   # top row: # seedlings produced by each size class:
-  Fmat[1,3:(n+2)]<-f.yx.flowered(y,params) #This is a y because it is the fecundity kernel for plants that have already grown/survived, I think? It's what Tom has
+  Fmat[1,3:(n+2)]<-f.yx(y,params_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived, I think? It's what Tom has
   
   # Growth/survival transition matrix
   Tmat<-matrix(0,(n+2),(n+2))
@@ -292,30 +368,53 @@ bigmatrix<-function(params, mat.size)
   Tmat[2,2]<- prob.1leaf.to.1leaf
   
   # Graduation from 1 leaf to cts size = prob 1 leaf becomes a 2 leaf * size dist of new 2 leafers
-  Tmat[3:(n+2),2]<- prob.1leaf.to.2leaf *recruit.size(y,params) * h
+  Tmat[3:(n+2),2]<- prob.1leaf.to.2leaf *recruit.size(y,params_list) * h
   
   # Growth/survival transitions among cts sizes
-  Tmat[3:(n+2),3:(n+2)]<- t(outer(y,y,P.control,params=params)) * h 
+  Tmat[3:(n+2),3:(n+2)]<- t(outer(y,y,P,params=params_list)) * h 
   
   # Put it all together
   IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation of fertility and transition matrix
-  return(list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y))
+  out_matrix <- list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y)
+  
+  out_lamb <- data.frame(lambda = lambda(IPMmat), trt = params_list$trt, reproduction = params_list$reproduction)
+  #return(out_matrix) #can check this to have a list of all of the matrices listed above
+  return(out_lamb) #for now, I just want lambdas
+
 }
 
-primula_lambda <- bigmatrix(params = params,
-                            mat.size = mat.size)
-lambda(primula_lambda$IPMmat)
+#what I want returned is 6x lambdas
+lamb_lists <- lapply(X = params_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
+#great~! now make it a df
+primula_lambda <- do.call(rbind, lamb_lists)
 
 
+#code from meeting with Sarah that worked on the townsenia problem! Above I came up with a better solution for the primula data
+#model_out <- params_list %>% map(., .f = bigmatrix, params = params_list,
+#                            mat.size = mat.size) %>% bind_rows()
+
+
+# primula_lambda <- bigmatrix(params = params_in,
+#                             mat.size = mat.size)
+# lambda(primula_lambda$IPMmat)
+
+image(primula_lambda$IPMmat,main='full kernel - control flowered')	
+image(primula_lambda$Fmat,main='F kernel - control flowered')	
+image(primula_lambda$Tmat,main='S+G kernel - control flowered')	
+abline(0,1,lwd=3)	
+
+
+#definitely individuals are being evicted. who is the dark square on bottom left? Oh right it is the stage transitions
+## And I'm not sure that the F kernel - axis should be flipped, anyway
 ```
 
 
 
-```{r}
 
-```
 
 ```{r}
+#this is the clunky way to do it!!
+
 #growth kernels - separate for each IDE treatment
 G.control=h*outer(y,y,g.yx.control,params=params) 	# growth kernel
 image(y,y,t(G.control),main='growth kernel - control') # plot it
