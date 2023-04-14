@@ -37,8 +37,8 @@ grow_season <- weather %>%
   mutate(month = month(Date), year = year(Date)) %>%
   filter(month > 2,
          month < 6)%>% 
-  group_by(year) %>%
-  summarise(grow.season.tot.precip = sum(total_precip_mm),
+  dplyr::group_by(year) %>%
+  dplyr::summarize(grow.season.tot.precip = sum(total_precip_mm),
             grow.season.mean.min.temp = mean(minTemp_C),
             grow.season.mean.max.temp = mean(maxTemp_C),
             grow.season.mean.mean.temp = mean(AveTemp_C)) %>% 
@@ -72,7 +72,7 @@ winter <- weather %>%
   filter(month < 3 | month == 12) %>% 
   mutate(year = if_else(month == 12, year+1, year)) %>% # need to make december the same time frame as Jan and Feb
   group_by(year) %>%
-  summarise(winter.tot.precip = sum(total_precip_mm),
+  dplyr::summarize(winter.tot.precip = sum(total_precip_mm),
             winter.mean.min.temp = mean(minTemp_C),
             winter.mean.max.temp = mean(maxTemp_C)) %>% 
   mutate(winter.precip.1yearlag = lag(winter.tot.precip),
@@ -100,7 +100,7 @@ summer <- weather %>%
   filter(month > 5,
          month < 9) %>% 
   group_by(year) %>%
-  summarise(summer.tot.precip = sum(total_precip_mm),
+  dplyr::summarize(summer.tot.precip = sum(total_precip_mm),
             summer.mean.min.temp = mean(minTemp_C),
             summer.mean.max.temp = mean(maxTemp_C)) %>% 
   mutate(summer.precip.1yearlag = lag(summer.tot.precip),
@@ -169,4 +169,4 @@ temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) +
 temp
 #ggsave("./Figures/climate/gs.temp.climateNA.png", width = 8, height = 8)
 #arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
-
+remove(precip, temp)
