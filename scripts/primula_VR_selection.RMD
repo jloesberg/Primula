@@ -1,0 +1,276 @@
+---
+title: "primula_VR_model_selection"
+author: "JL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+## Primula vital rates with climate data
+
+library(tidyverse)
+library(AICcmodavg)
+library(lme4)
+#library(lmtest)
+#library(effects)
+library(wesanderson) # for colors
+FF <- wes_palettes$FantasticFox1
+Z <- wes_palettes$Zissou1
+R <- wes_palettes$Royal2
+I <- wes_palettes$IsleofDogs1
+```
+
+```{r sourcing data}
+# Read in data ------------------------------------------------------------------------
+
+### read in all years of Primula data and weather data from the Cowichan
+# Add in climate data:
+source("../scripts/Cowichan_climatevalues.R")
+
+# Add in demography data:
+source("../scripts/dode_allyears_cleaned.R")
+
+## Join climate data to demography data by year
+primula <- left_join(Dodecatheon, climate, by = "year") %>% 
+  filter(tag!= "1881") %>% 
+  filter(tag!= "1471") %>% 
+  filter(tag!= "1183") %>% 
+  filter(tag!= "8317") %>% 
+  filter(tag!= "8311") %>% 
+  filter(tag!= "8315") %>% 
+  mutate(pflower = as.factor(pflower))
+#there's a problem with these tags that I don't want to deal with rn
+## its some thing with the dormancy addition - not sure how to fix it just yet, so leaving it
+
+remove(climate, Dodecatheon)
+theme_set(theme_classic()) #for ggplot
+```
+
+```{r growth prelim figures}
+# Growth Vital Rates ------------------------------------------------------
+#####################################################################################################
+primula %>% ggplot(aes(x = log.ros.area, y = log.ros.areaT1)) +
+  geom_abline(intercept = 0, slope = 1, color = "grey")+
+  geom_point() + 
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~trt)
+primula %>% ggplot(aes(x = log.ros.area, y = log.ros.areaT1)) +
+  geom_abline(intercept = 0, slope = 1, color = "grey")+
+  geom_point() + 
+  geom_smooth(method = "lm", se = F)+
+  facet_wrap(~pflower)
+#ggsave("./Figures/vital rate yearly variation/growth.png", width = 5, height = 5)
+boxplot(log(ros.area) ~ trt, data = primula)
+
+##########################################################################################################
+### Do vital rates differ between years? 
+# Not sure if these are of any use? skip down to next section for model selection
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area+(1|plot), data = primula)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + year+(1|plot), data = primula)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area*year+(1|plot), data = primula)
+
+anova(gm1, gm2 ,test="Chisq")
+anova(gm2, gm3 ,test="Chisq")
+
+# YES, growth does differ across years
+
+### Do vital rates differ between treatments?
+
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area +(1|plot) +(1|year), data = primula, REML = F)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot) +(1|year), data = primula, REML = F)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area * trt + (1|plot) +(1|year), data = primula, REML = F)
+
+anova(gm1, gm2 ,test="Chisq")
+anova(gm2, gm3 ,test="Chisq")
+summary(gm3)
+
+#no, plants aren't different sized across treatments
+
+# What does this tell us: yes there is a significant interaction between year and treatment (read: the influence of treatment on growth varies across years)
+#############################################################################
+# Does flowering in the previous year affect growth?
+
+gm1 <- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot) +(1|year), data = primula, REML = F)
+gm2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower+ (1|plot) +(1|year), data = primula, REML = F)
+gm3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower+ (1|plot) +(1|year), data = primula, REML = F)
+
+
+anova(gm1, gm2 ,test="Chisq")
+anova(gm2, gm3 ,test="Chisq")
+
+
+summary(gm3)
+#hmm! plants that flower previously are bigger but grow more slowly than vegetative plants. Interesting!
+# not sure what to do here
+##########################################################################
+##########################################################################
+##########################################################################
+```
+
+There has to be a way to automate this, but I think there's not because technically this is a bad model selection approach (ie running all possible models and seeing what's best?). But I like this over a PCA, so oh well!
+
+What climate variables to include:
+Let's ditch lagged climate, and max/min temp - they are correlated, so i think better to pick the mean.
+```{r growth candidate models}
+# Candidate models
+## sans climate
+gm.base <- lmer(log.ros.areaT1 ~ 1 + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.size <- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.trt.int <- lmer(log.ros.areaT1 ~ log.ros.area*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.cor.int <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + (1|plot) + (1|year), data = primula, REML = F)
+gm.base.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*trt*pflower + (1|plot) + (1|year), data = primula, REML = F)
+#the rest of the models below are just these + different climate variables + interactions
+########################################################################################
+##grow season total precip
+gm.gs.precip <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.int <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.trt <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.tot.precip*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower* grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int4 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt +  grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int5 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*trt +  grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + trt* grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.precip.cor.trt.int7 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.tot.precip + pflower + trt + (1|plot) + (1|year), data = primula, REML = F)
+#deciding not to have any 3-way interactions here!
+###
+#grow season ave temp
+gm.gs.av.temp <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.int <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.trt <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.mean.mean.temp + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.mean.temp + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + grow.season.mean.mean.temp*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.mean.temp*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower* grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int4 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt +  grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int5 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*trt +  grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + trt* grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.gs.av.temp.cor.trt.int7 <- lmer(log.ros.areaT1 ~ log.ros.area*grow.season.mean.mean.temp + pflower + trt + (1|plot) + (1|year), data = primula, REML = F)
+#deciding not to have any 3-way interactions here!
+
+#########################################################################################
+##summer total precip
+gm.summer.precip <- lmer(log.ros.areaT1 ~ log.ros.area + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.int <- lmer(log.ros.areaT1 ~ log.ros.area*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.trt <- lmer(log.ros.areaT1 ~ log.ros.area + summer.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + summer.tot.precip*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.tot.precip*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower* summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int4 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt +  summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int5 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*trt +  summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + trt* summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.precip.cor.trt.int7 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.tot.precip + pflower + trt + (1|plot) + (1|year), data = primula, REML = F)
+#deciding not to have any 3-way interactions here!
+###
+#summer ave temp
+gm.summer.av.temp <- lmer(log.ros.areaT1 ~ log.ros.area + summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.int <- lmer(log.ros.areaT1 ~ log.ros.area*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.trt <- lmer(log.ros.areaT1 ~ log.ros.area + summer.mean.temp + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.mean.temp + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + summer.mean.temp*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.mean.temp*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower* summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int4 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt +  summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int5 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*trt +  summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + trt* summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.summer.av.temp.cor.trt.int7 <- lmer(log.ros.areaT1 ~ log.ros.area*summer.mean.temp + pflower + trt + (1|plot) + (1|year), data = primula, REML = F)
+#deciding not to have any 3-way interactions here!
+###############################################################################
+##winter total precip
+gm.winter.precip <- lmer(log.ros.areaT1 ~ log.ros.area + winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.int <- lmer(log.ros.areaT1 ~ log.ros.area*winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.trt <- lmer(log.ros.areaT1 ~ log.ros.area + winter.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.tot.precip + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + winter.tot.precip*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.tot.precip*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower* winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int4 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt +  winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int5 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*trt +  winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + trt* winter.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.precip.cor.trt.int7 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.tot.precip + pflower + trt + (1|plot) + (1|year), data = primula, REML = F)
+#deciding not to have any 3-way interactions here!
+###
+#winter ave temp
+gm.winter.av.temp <- lmer(log.ros.areaT1 ~ log.ros.area + winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.int <- lmer(log.ros.areaT1 ~ log.ros.area*winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.trt <- lmer(log.ros.areaT1 ~ log.ros.area + winter.mean.temp + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.mean.temp + trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + winter.mean.temp*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.mean.temp*trt + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower* winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int4 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt +  winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int5 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*trt +  winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + trt* winter.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+gm.winter.av.temp.cor.trt.int7 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.mean.temp + pflower + trt + (1|plot) + (1|year), data = primula, REML = F)
+#deciding not to have any 3-way interactions here!
+################################################################################
+#Ok - here I'm just looking at growing season, summer, and winter climate of the current year
+###
+growth <- mget(ls(pattern = "^gm")) #make a list of all of those models that start with gm (^ means start with)
+growth_AICc<-aictab(cand.set = growth, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+
+#gm.summer.av.temp.cor.trt.int6 is the best fit:
+summary(gm.summer.av.temp.cor.trt.int6
+)
+#log.ros.areaT1 ~ log.ros.area + pflower + trt * summer.mean.temp +  (1 | plot) + (1 | year)
+
+#rm(list = ls()[grepl("gm", ls())])
+#gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, REML = F) ###
+
+```
+#I need to think about this one more - why would summer temp affect growth the most (since plants senesce in June?? Would they really be affected that much underground? I guess maybe.... At least pflower is in there, but I think it's the opposite of a cost of reproduction...). And why is there an interaction with trt if there is no rain - seems like drought plots are less likely to grow, so maybe shelters are heating more during the summer - this seems reasonable since precip = 0 and control and irrigated are more similar - the drought plots really don't do as well!
+
+#what we would expect for a CoR: plants grow slower if they flower, so would need to be an interaction. So maybe this isnt a sign of a cost, rather just that plants that flower are bigger than ones that did not flower, which makes sense because they need to be a certain size to flower.
