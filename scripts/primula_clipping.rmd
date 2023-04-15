@@ -8,7 +8,7 @@ output: html_document
 To do:
 - Figure out if flowernt (plants that flowered but were not in the experiment) plants made seeds and add to fruitset
 anova(gmm,gmmDx1,test="Chisq")
-- Make table of results for each vital rate (with LRT tests)
+- Make table of results for each vital rate (with LRT tests) in a reproducible way (right now, I've just copied over values)
 
 ```{r}
 #packages:
@@ -61,7 +61,7 @@ seeds21$pseeds[is.na(seeds21$pseeds)] <- 1 #assuming the plants where we couldn'
 
 
 cap <- seeds21 %>% group_by(tag, plot) %>% 
-  summarize(no.success.cap = sum(pseeds),
+  dplyr::summarize(no.success.cap = sum(pseeds),
             total.seeds = sum(no.seeds))
 cap$total.seeds[cap$tag == 1556] <- 29
 cap$total.seeds[cap$tag == 1988] <- 58
@@ -132,11 +132,11 @@ remove(sm, clip2, Dodecatheon, min, Dodecatheon.21)
 no.exp <- read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Resurveys.csv", header=T)
 no.exp <- no.exp %>% 
   filter(!is.na(pseeds)) %>% 
-  rename(fruitset1 = pseeds) %>% 
+  dplyr::rename(fruitset1 = pseeds) %>% 
   select(c(plot, tag, fruitset1)) %>% 
   mutate(plot = as.character(plot),
          tag = as.character(tag))
-#making a decision here that I may need to change: setting pseeds = frutiset (ie assuming that for these plants, if you made seeds, all of your flowers made seeds) - I have the data to check this, but will go check this later
+#making a decision here that I may need to change: setting pseeds = fruitset (ie assuming that for these plants, if you made seeds, all of your flowers made seeds) - I have the data to check this, but will go check this later
 join <- left_join(join, no.exp)
 join <- join %>% 
   mutate( fruitset = coalesce(fruitset, fruitset1),
@@ -146,13 +146,28 @@ join <- join %>%
   select(-fruitset1) %>% 
   #filter out the two plots with very few observations
   filter(plot != "12") %>% 
-  filter(plot != "14")
+  filter(plot != "14") %>% 
+  filter(treatment!="flowernt")
 remove(no.exp)
 
 #also add in number of seeds:
 #test <- left_join(join, seeds21)
 
+#clip.sub filtered out the plots with very few observations
+
 ```
+
+```{r}
+#summary table of n, etc
+
+n2021 <- join %>% 
+  group_by(year, plot, trt, treatment) %>% 
+  summarize(n = n())
+#write_csv(n2021, "../tables/clipping.sample.size.csv")
+
+
+```
+
 
 ```{r}
 ################################################################################
@@ -234,7 +249,7 @@ summary(gnull2)
 Maybe cost is in whether or not you flower, not how much effort you put into flowering?
 
 Growth::
-```{r}
+```{r growth}
 #######################################################################################
 
 
@@ -242,47 +257,68 @@ Growth::
 ggplot(join, aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_jitter()+
   geom_smooth(method = "lm", se = F)+
+  geom_abline(slope=1, intercept=0)+
   facet_wrap(~treatment)
 ggplot(join, aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_jitter()+
   geom_smooth(method = "lm", se = F)+
-  facet_wrap(~trt)
+  geom_abline(slope=1, intercept=0)+
+  facet_wrap(trt~treatment)
 
-gnull.base <- lmer(log.ros.areaT1 ~ 1 + (1|plot), data = join, REML = F)
+#gnull.base <- lmer(log.ros.areaT1 ~ 1 + (1|plot), data = join, REML = F)
 gnull<- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot), data = join, REML = F)
-growth <- anova(gnull.base, gnull, test="Chisq") #this is LRT
+#growth <- anova(gnull.base, gnull, test="Chisq") #this is LRT
 
-growth #including size improves the model:
-summary(test)
-
+#including size improves the model:
 
 gnull1<- lmer(log.ros.areaT1 ~ log.ros.area + treatment + (1|plot), data = join, REML = F)
-growth2 <- anova(gnull, gnull1, test="Chisq") #this is LRT
-growth2
-#no cost on growth
+summary(gnull1)
+growth <- anova(gnull, gnull1, test="Chisq") #this is LRT
+growth #no cost on growth with just clipping treatment
+
 
 gnull2<- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot), data = join, REML = F)
 anova(gnull, gnull2, test="Chisq") #this is LRT
 #nope!
-
-gnull1<- lmer(log.ros.areaT1 ~ log.ros.area+ treatment + (1|plot), data = join, REML= F)
-gnull2<- lmer(log.ros.areaT1 ~ log.ros.area+ treatment + trt + (1|plot), data = join, REML= F)
+growth_stat <- rbind(growth,growth1)
+gnull2<- lmer(log.ros.areaT1 ~ log.ros.area+treatment*trt + (1|plot), data = join, REML= F)
 anova(gnull, gnull2, test="Chisq") #this is LRT?
 summary(gnull)
 
+#how to get fruitset in here - cant use the vegetative plants here because they have fruitset  = NA
+#run other models?
+gnull.base <- lmer(log.ros.areaT1 ~ 1 + (1|plot), data = subset(join, !is.na(fruitset)), REML = F)
+gnull<- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot), data = subset(join, !is.na(fruitset)), REML = F)
+anova(gnull.base, gnull, test="Chisq") #this is LRT
+
+
+gnull1<- lmer(log.ros.areaT1 ~ log.ros.area + fruitset + (1|plot), data = subset(join, !is.na(fruitset)), REML = F)
+anova(gnull, gnull1, test="Chisq") #this is LRT
+
+gnull2<- lmer(log.ros.areaT1 ~ log.ros.area*fruitset + (1|plot), data = subset(join, !is.na(fruitset)), REML = F)
+anova(gnull, gnull2, test="Chisq") #this is LRT
+
+
+#no, doing it with fruitset doesnt help
+#no cost on growth
+```
+
+```{r pflower}
+
 #pflower:
 ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
-  geom_jitter()+
+  geom_jitter(height = .05)+
   geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
   facet_wrap(~treatment)
 ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
-  geom_jitter(height = .01)+
+  geom_jitter(height = .05)+
   geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
   facet_wrap(~trt)
 ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
-  geom_jitter(height = .01)+
+  geom_jitter(height = .05)+
   geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
-  facet_wrap(treatment~trt)
+  facet_wrap(treatment~trt,  ncol = 3)+
+  labs(x = "Log(rosette area) in 2021", y = "Probability of flowering in 2022")
 
 fnull <- glmer(pflowerT1 ~ log.ros.area + (1|plot), data = join, family = "binomial")
 f1 <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot), data = join, family = "binomial")
@@ -298,40 +334,77 @@ anova(f2, f3, test="Chisq") #LTR test
 
 summary(f2)
 
+#what about adding fruitset? NOPE!
+fnull <- glmer(pflowerT1 ~ log.ros.area + (1|plot), data = subset(join, !is.na(fruitset)), family = "binomial")
+f1 <- glmer(pflowerT1 ~ log.ros.area + fruitset + (1|plot), data = subset(join, !is.na(fruitset)), family = "binomial")
+anova(fnull, f1, test="Chisq")
+
+
 ```
 
 ```{r}
 #Survival
+#pflower:
+ggplot(subset(join, !is.na(psurvivalT1)), aes(x = log.ros.area, y = as.factor(psurvivalT1)))+
+  geom_jitter(height = .05)+
+  geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
+  facet_wrap(~treatment)
+ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
+  geom_jitter(height = .01)+
+  geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
+  facet_wrap(~trt)
+ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
+  geom_jitter(height = .01)+
+  geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+
+  facet_wrap(treatment~trt,  ncol = 3)+
+  labs(x = "Log(rosette area) in 2021", y = "Probability of flowering in 2022")
+
 s<- glmer(as.factor(psurvivalT1) ~ 1 + (1|plot), data = join, family = "binomial")
 snull <- glmer(as.factor(psurvivalT1) ~ log.ros.area + (1|plot), data = join, family = "binomial")
 anova(s, snull,test="Chisq") #LTR test
 
-snull1 <- glmer(as.factor(psurvivalT1) ~ log.ros.area + treatment + (1|plot), data = join, family = "binomial")
-anova(snull, snull1,test="Chisq") #LTR test
+snull1 <- glmer(as.factor(psurvivalT1) ~  treatment + (1|plot), data = join, family = "binomial")
+anova(s, snull1,test="Chisq") #LTR test
 
-snull2 <- glmer(as.factor(psurvivalT1) ~ log.ros.area + trt + (1|plot), data = join, family = "binomial")
-anova(snull, snull2,test="Chisq") #LTR test
+snull2 <- glmer(as.factor(psurvivalT1) ~  trt + (1|plot), data = join, family = "binomial")
+anova(s, snull2,test="Chisq") #LTR test
+
+snull3 <- glmer(as.factor(psurvivalT1) ~  trt+treatment + (1|plot), data = join, family = "binomial")
+anova(s, snull3,test="Chisq") #LTR test
+
+#doesnt converge
+#snull4 <- glmer(as.factor(psurvivalT1) ~  trt*treatment + (1|plot), data = join, family = "binomial")
+#anova(s, snull4,test="Chisq") #LTR test
 ```
 
 #What to do about differential flowering success → what about 3 models
 
 ```{r}
 #Probability of flowering model…
-fbase <- glmer(pflowerT1 ~ 1 + (1|plot), data = join, family = "binomial")
-fnull <- glmer(pflowerT1 ~ log.ros.area + (1|plot), data = join, family = "binomial")
+fbase <- glmer(as.factor(pflowerT1) ~ 1 + (1|plot), data = join, family = "binomial")
+fnull <- glmer(as.factor(pflowerT1) ~ log.ros.area + (1|plot), data = join, family = "binomial")
 anova(fbase, fnull, test="Chisq") #LTR test
 
-f1 <- glmer(pflowerT1 ~ log.ros.area + treatment + (1|plot), data = join, family = "binomial")
+f1 <- glmer(as.factor(pflowerT1) ~ log.ros.area + treatment + (1|plot), data = join, family = "binomial")
 anova(fnull, f1, test="Chisq") #LTR test
 
-f2 <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot), data = join, family = "binomial")
-anova(fnull, f2, test="Chisq") #LTR test
+f1.1 <- glmer(as.factor(pflowerT1) ~ log.ros.area*treatment + (1|plot), data = join, family = "binomial")
+anova(f1, f1.1, test="Chisq") #LTR test
+
+#singular fit
+#f2 <- glmer(as.factor(pflowerT1) ~ log.ros.area + trt + (1|plot), data = join, family = "binomial")
+#anova(fnull, f2, test="Chisq") #LTR test
 #great, this one is sig
 
-f3 <- glmer(pflowerT1 ~ log.ros.area*trt + (1|plot), data = join, family = "binomial")
-anova(f2, f3, test="Chisq") #LTR test
+f3 <- glmer(as.factor(pflowerT1) ~ log.ros.area*trt + (1|plot), data = join, family = "binomial")
+anova(fnull, f3, test="Chisq") #LTR test
 
-summary(f2)
+f4 <- glmer(as.factor(pflowerT1) ~ log.ros.area+trt+treatment + (1|plot), data = join, family = "binomial")
+anova(f1, f4, test="Chisq") #LTR test
+f5 <- glmer(as.factor(pflowerT1) ~ log.ros.area+trt*treatment + (1|plot), data = join, family = "binomial")
+anova(f1, f5, test="Chisq") #LTR test
+
+summary(f5)
 
 ```
 ```{r}
@@ -357,7 +430,7 @@ ggplot(join, aes(x=log.ros.area, y=pflowerT1))+
   geom_line(data = pred.drought, aes(x = log.ros.area, y = pred.drought2), color = Z[5], linewidth = 1) +
   geom_line(data = pred.irrigated, aes(x = log.ros.area, y = pred.irrigated2), color = Z[1], linewidth = 1) + 
   geom_line(data = pred.control, aes(x = log.ros.area, y = pred.control2), color = Z[3], linewidth = 1) + 
-  labs(x = expression(paste("log(Rosette Area) in time", italic(" t"))), y = expression(paste("Probability of Flowering in time ", italic("  t + 1")))) +
+  labs(x = "log(Rosette Area) in 2021", y ="Probability of Flowering in 2022") +
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 
 summary(f2)
@@ -392,6 +465,13 @@ fl2 <- glm(no.flowersT1 ~ log.ros.area + trt, data = subset(join, pflowerT1 == "
 anova(flnull, fl2 ,test="Chisq")
 anova(fl2)
 
+##fruitset:
+flbase<- glm(no.flowersT1 ~ 1, data = subset(join, !is.na(fruitset)), family = "poisson")
+flnull <- glm(no.flowersT1 ~ log.ros.area, data = subset(join, !is.na(fruitset)), family = "poisson")
+anova(flbase, flnull ,test="Chisq") #LTR test
+
+fl1 <- glm(no.flowersT1 ~ log.ros.area+fruitset, data = subset(join, !is.na(fruitset)), family = "poisson")
+anova(flnull, fl1 ,test="Chisq")
 
 ```
 
