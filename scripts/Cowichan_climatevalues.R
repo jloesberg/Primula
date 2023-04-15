@@ -74,7 +74,8 @@ winter <- weather %>%
   group_by(year) %>%
   dplyr::summarize(winter.tot.precip = sum(total_precip_mm),
             winter.mean.min.temp = mean(minTemp_C),
-            winter.mean.max.temp = mean(maxTemp_C)) %>% 
+            winter.mean.max.temp = mean(maxTemp_C),
+            winter.mean.temp = mean(AveTemp_C)) %>%
   mutate(winter.precip.1yearlag = lag(winter.tot.precip),
          winter.precip.2yearlag = lag(winter.precip.1yearlag),
          winter.min.temp.1yearlag = lag(winter.mean.min.temp),
@@ -102,7 +103,8 @@ summer <- weather %>%
   group_by(year) %>%
   dplyr::summarize(summer.tot.precip = sum(total_precip_mm),
             summer.mean.min.temp = mean(minTemp_C),
-            summer.mean.max.temp = mean(maxTemp_C)) %>% 
+            summer.mean.max.temp = mean(maxTemp_C),
+            summer.mean.temp = mean(AveTemp_C)) %>% 
   mutate(summer.precip.1yearlag = lag(summer.tot.precip),
          summer.precip.2yearlag = lag(summer.precip.1yearlag),
          summer.min.temp.1yearlag = lag(summer.mean.min.temp),
