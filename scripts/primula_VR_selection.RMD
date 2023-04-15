@@ -186,6 +186,7 @@ gm.summer.precip.cor <- lmer(log.ros.areaT1 ~ log.ros.area + pflower + summer.to
 gm.summer.precip.cor.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm.summer.precip.cor.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + pflower*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm.summer.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+
 gm.summer.precip.cor.trt <- lmer(log.ros.areaT1 ~ log.ros.area + trt + pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm.summer.precip.cor.trt.int1 <- lmer(log.ros.areaT1 ~ log.ros.area*trt + pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
 gm.summer.precip.cor.trt.int2 <- lmer(log.ros.areaT1 ~ log.ros.area + trt*pflower + summer.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
@@ -346,6 +347,8 @@ rm(list = ls()[grepl("fm", ls())]) #remove these before the candidate sets
 ```{r pflower candidate models}
 # Candidate models
 ## sans climate
+#write a function, if model throws an error/warning, have it do this
+
 fm.base <- glmer(pflowerT1 ~ 1 + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.base.size <- glmer(pflowerT1 ~ log.ros.area + (1|plot) + (1|year), data = primula, family = "binomial")
 fm.base.trt <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = primula, family = "binomial")
@@ -488,7 +491,17 @@ fm.winter.av.temp.cor.trt.int7 <- glmer(pflowerT1 ~ log.ros.area*winter.mean.tem
 #Ok - here I'm just looking at growing season, summer, and winter climate of the current year
 ###
 
+#to do: 
+#is this has something, don't include it in the list!
+#fm.gs.precip.cor.int3@optinfo$conv$lme4$messages #this is !NULL, which means it did not converge
+#
+#fm.winter.av.temp.cor.trt.int7@optinfo$conv$lme4$messages #if NULL, then it converges! this is a model that converges
+
+
+
 flowering <- mget(ls(pattern = "^fm")) #make a list of all of those models that start with gm (^ means start with)
+#now how to get the thing above to work here (ie if you show NULL, include it!!)
+
 # flowering <- flowering %>%  purrr::list_modify("fm.f4" = NULL) %>%  purrr::list_modify("fm11lag" = NULL) %>%  purrr::list_modify("fm.9" = NULL) %>%  
 #   purrr::list_modify("fm.f14" = NULL) %>% purrr::list_modify("fm.f12" = NULL) %>% purrr::list_modify("fm.f15" = NULL)  %>% purrr::list_modify("fm17" = NULL) %>% 
 #   purrr::list_modify("fm18" = NULL) %>% purrr::list_modify("fm.25" = NULL) %>% purrr::list_modify("fm2" = NULL) %>% purrr::list_modify("fm30" = NULL)# these didnt converge and have low delta AIC's
