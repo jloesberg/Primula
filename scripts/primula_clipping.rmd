@@ -2,7 +2,9 @@
 title: "Primula Clipping Experiment"
 author: "JL"
 date: "2/13/2023"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 To do:
@@ -12,9 +14,11 @@ To do:
   stepwise selection is wrong, theyre not nested models so it wont work
   - change clipping trt to ln(seeds) and log(fruits produced) - a better measure of reproductive effort! 
   We will have to treat clipping and abortion the same way, which is maybe questionable...
-  - ^we can compare which one is better!
+  - ^we can compare which one is better
+  - Throw in soil moisture in case that fits better - daily average soil moisutre
+  April-end of May
 
-```{r}
+```{r, include = FALSE}
 #packages:
 #read
 library(tidyverse)
@@ -46,7 +50,7 @@ clip <- clip %>%
          initial.flower = no.flowers.at.start +no.buds.at.start)
 
 #adding in soil moisture data
-sm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Students/Jenna/loggerdata/cleaned.data/SM_aprjun15avg_allyears.csv")
+sm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Students/Jenna/loggerdata/cleaned.data/SM_AprilMayavg_allyears.csv")
 sm <- sm %>% mutate(plot = as.character(plot),
                     year = as.character(year))
 
@@ -72,8 +76,6 @@ cap$total.seeds[cap$tag == 1988] <- 58
 cap$total.seeds[cap$tag == 1988] <- 58
 cap$total.seeds[cap$tag == 282] <- 50
 cap$total.seeds[cap$tag == 494] <-98
-
-
 
 #adding cap to the clip df
 
@@ -173,41 +175,98 @@ ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
 ```
 
 
-#these are the vital rate models we want to build:
+#These are the vital rate models we want to build:
 
 ```{r growth model selection}
-growth.1 <- lmer(log.ros.areaT1 ~ log.ros.area +(1|plot), data = clip, REML = F)
-growth.2 <- lmer(log.ros.areaT1 ~ log.ros.area*trt +(1|plot), data = clip, REML= F)
-growth.3 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, REML= F)
-growth.4 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, REML= F)
-growth.5 <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, REML= F)
+growth.01 <- lmer(log.ros.areaT1 ~ log.ros.area +(1|plot), data = clip, REML = F)
+growth.02 <- lmer(log.ros.areaT1 ~ log.ros.area*trt +(1|plot), data = clip, REML= F)
+growth.03 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, REML= F)
+growth.04 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, REML= F)
+growth.05 <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, REML= F)
 
-growth.6 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, REML= F)
-growth.7 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, REML= F)
-growth.8 <- lmer(log.ros.areaT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, REML= F)
+growth.06 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, REML= F)
+growth.07 <- lmer(log.ros.areaT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, REML= F)
+growth.08 <- lmer(log.ros.areaT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, REML= F)
 
 #add in SM data for fun
-growth.10 <- lmer(log.ros.areaT1 ~ log.ros.area*sm_avg +(1|plot), data = clip, REML= F)
-growth.11 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, REML= F)
-growth.12 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, REML= F)
-growth.13 <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, REML= F)
+growth.09 <- lmer(log.ros.areaT1 ~ log.ros.area*sm_avg +(1|plot), data = clip, REML= F)
+growth.10 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, REML= F)
+growth.11 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, REML= F)
+growth.12 <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, REML= F)
 
-growth.14 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, REML= F)
-growth.15 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, REML= F)
-growth.16 <- lmer(log.ros.areaT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, REML= F)
+growth.13 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, REML= F)
+growth.14 <- lmer(log.ros.areaT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, REML= F)
+growth.15 <- lmer(log.ros.areaT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, REML= F)
+growth.16 <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, REML= F)
+growth.17 <- lmer(log.ros.areaT1 ~ log.ros.area*log.total.seeds + (1|plot), data = clip, REML= F)
+growth.18 <- lmer(log.ros.areaT1 ~ log.ros.area + log.cap + (1|plot), data = clip, REML= F)
+growth.19 <- lmer(log.ros.areaT1 ~ log.ros.area*log.cap + (1|plot), data = clip, REML= F)
+
+model.names = c("log(size)", 
+                "log(size)*IDE", 
+                "log(size) + IDE + log(total seeds)", 
+                "log(size) + IDE + log(total seeds) + IDE:log(total seeds) + log(size):IDE",
+                "log(size) + log(total seeds) + IDE + log(total seeds):IDE + log(size):log(total seeds) + log(size):IDE + log(size):log(total seeds):IDE",
+                "log(size) + IDE + log(total capsules)",
+                "log(size) + IDE + log(total capsules) + IDE:log(total capsules) + log(size):IDE",
+                "log(size) + log(total capsules) + IDE + log(total capsules):IDE + log(size):log(total capsules) + log(size):IDE + log(size):log(total seeds):IDE",
+                "log(size)*soil moisture",
+                "log(size) + soil moisture + log(total seeds)",
+                "log(size) + soil moisture + log(total seeds) + soil moisture:log(total seeds) + log(size):soil moisture",
+                "log(size) + log(total seeds) + soil moisture + log(total seeds):soil moisture + log(size):log(total seeds) + log(size):soil moisture + log(size):log(total seeds):soil moisture",
+                "log(size) + soil moisture + log(total capsules)",
+                "log(size) + soil moisture + log(total capsules) + soil moisture:log(total capsules) + log(size):soil moisture",
+                "log(size) + log(total capsules) + soil moisture + log(total capsules):soil moisture + log(size):log(total capsules) + log(size):soil moisture + log(size):log(total seeds):soil moisture",
+                "log(size) + log(total seeds)",
+                "log(size)*log(total seeds)",
+                "log(size) + log(total capsules)",
+                "log(size)*log(total capsules)")
 
 gr.mods <- mget(ls(pattern = "growth")) #make a list of all of those models that start with gm (^ means start with)
-gr_AICc<-aictab(cand.set = gr.mods, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+gr_AICc<-aictab(cand.set = gr.mods, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
+#test<-aictab(cand.set = gr.mods, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+gr.AIC <- as.data.frame(gr_AICc)
+write_csv(gr.AIC, "./Figures/clipping experiment/tables/growth AIC table.csv")
 
-summary(growth.11) #hmm SM is a better variable. Seems odd but ok
+
+summary(growth.16)
 #rm(list = ls()[grepl("growth", ls())]) #removes these models
 ```
 
-```{r growth figures - sm no int}
+
+```{r growth best fit model log.ros.area + log.total.seeds}
+#create df with all possible x values
+#this is for model without an interaction
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = seq(0, 5.3, by = .1))
+pred.output <- predict(growth.16, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.output <- as.data.frame(pred.output)
+pred.dat.output <- cbind(pred.dat, pred.output) %>% 
+  rename(log.ros.areaT1 = pred.output)
+
+#graph it
+growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
+  geom_point()+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "violet")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
+growth
+ggsave(growth, "./Figures/clipping experiment/round 2/growth.png", width = 4, height = 4, dpi = 72)
+ggsave("./Figures/clipping experiment/poisson.seedproduction.png", width = 4, height = 4)
+
+```
+
+```{r growth figures - 2nd lowest AIC - log.ros.area + sm_avg + log.total.seeds}
 #create df with all possible x values
 #this is for model without an interaction
 pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), sm_avg = seq(.1, .25, by = .01), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(growth.11, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.output <- predict(growth.10, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
   rename(log.ros.areaT1 = pred.output)
@@ -215,98 +274,117 @@ pred.dat.output <- cbind(pred.dat, pred.output) %>%
 #graph it
 ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_point()+
-  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
+  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[1], size = 1)+
+  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[3], size = 1)+
+  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[5], size = 1)+
+  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = Z[1])+
+  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[3], linetype = "dashed", size = 1)+
+  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[5], linetype = "dashed", size = 1)+
+    geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
+
 #these seem kind of weird - I think the interaction may make more sense
 ```
-```{r growth figures 2 - sm with int}
+
+
+```{r growth figure 3 - log.ros.area + trt + log.total.seeds, include=FALSE}
 #create df with all possible x values
 #this is for model without an interaction
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), sm_avg = seq(.1, .25, by = .01), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(growth.12, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
-
-#graph it
-ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point()+
-  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
-#these seem kind of weird - I think the interaction may make more sense
-```
-```{r growth figures 3 - trt}
-#create df with all possible x values
-#this is for model without an interaction
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), trt = c("irrigated", "control", "drought"), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(growth.3, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
-
-#graph it
-ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point()+
-  geom_line(data = subset(pred.dat.output, trt == "irrigated" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "blue")+
-  geom_line(data = subset(pred.dat.output,  trt == "control" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output,  trt == "irrigated" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, trt == "control" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
-#why would drought grow more? but plants that make seeds are smaller than plants that make seeds! so that's something
+# pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), trt = c("irrigated", "control", "drought"), log.total.seeds = seq(0, 5.3, by = .1))
+# pred.output <- predict(growth.3, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+# pred.output <- as.data.frame(pred.output)
+# pred.dat.output <- cbind(pred.dat, pred.output) %>% 
+#   rename(log.ros.areaT1 = pred.output)
+# 
+# #graph it
+# ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
+#   geom_point()+
+#   geom_line(data = subset(pred.dat.output, trt == "irrigated" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[1])+
+#   geom_line(data = subset(pred.dat.output,  trt == "control" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[3], size = 1)+
+#   geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[5], size = 1)+
+#   geom_line(data = subset(pred.dat.output,  trt == "irrigated" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = Z[1])+
+#   geom_line(data = subset(pred.dat.output, trt == "control" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[3], linetype = "dashed", size = 1)+
+#   geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[5], linetype = "dashed", size = 1)+
+#       geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
+#     scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+#   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+#   labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
+# #why would drought grow more? but plants that make seeds are smaller than plants that make seeds! so that's something
 ```
 ```{r pflower model selection}
-pf.1 <- glmer(pflowerT1 ~ log.ros.area +(1|plot), data = clip, family = "binomial")
-pf.2 <- glmer(pflowerT1 ~ log.ros.area*trt +(1|plot), data = clip, family = "binomial")
-pf.3 <- glmer(pflowerT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, family = "binomial")
-pf.4 <- glmer(pflowerT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
-pf.5 <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
+pf.01 <- glmer(pflowerT1 ~ log.ros.area +(1|plot), data = clip, family = "binomial")
+pf.02 <- glmer(pflowerT1 ~ log.ros.area*trt +(1|plot), data = clip, family = "binomial")
+pf.03 <- glmer(pflowerT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, family = "binomial")
+pf.04 <- glmer(pflowerT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+pf.05 <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
 
-pf.6 <- glmer(pflowerT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, family = "binomial")
-pf.7 <- glmer(pflowerT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
-pf.8 <- glmer(pflowerT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
+pf.06 <- glmer(pflowerT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, family = "binomial")
+pf.07 <- glmer(pflowerT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+pf.08 <- glmer(pflowerT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
 
-pf.10 <- glmer(pflowerT1 ~ log.ros.area*sm_avg +(1|plot), data = clip, family = "binomial")
-pf.11 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, family = "binomial")
-pf.12 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
-pf.13 <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
+pf.09 <- glmer(pflowerT1 ~ log.ros.area*sm_avg +(1|plot), data = clip, family = "binomial")
+pf.10 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, family = "binomial")
+pf.11 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
+pf.12 <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
 
-pf.14 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, family = "binomial")
-pf.15 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
-pf.16 <- glmer(pflowerT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
+pf.13 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, family = "binomial")
+pf.14 <- glmer(pflowerT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
+pf.15 <- glmer(pflowerT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
+
+pf.16 <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds +(1|plot), data = clip, family = "binomial")
+pf.17 <- glmer(pflowerT1 ~ log.ros.area*log.total.seeds +(1|plot), data = clip, family = "binomial")
+pf.18 <- glmer(pflowerT1 ~ log.ros.area + log.cap +(1|plot), data = clip, family = "binomial")
+pf.19 <- glmer(pflowerT1 ~ log.ros.area*log.cap +(1|plot), data = clip, family = "binomial")
 
 pflower <- mget(ls(pattern = "pf")) #make a list of all of those models that start with gm (^ means start with)
-pflower_AICc<-aictab(cand.set = pflower, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+pflower_AICc<-aictab(cand.set = pflower, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
 #rm(list = ls()[grepl("pflower", ls())]) #removes these models
-summary(pf.3)
+summary(pf.16)
 ```
 
-```{r pflower fig 1 - pf.3}
+```{r pflower best fit model}
 #create df with all possible x values
 #this is for model without an interaction
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), trt = c("irrigated", "control", "drought"), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(pf.3, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = seq(0, 5.3, by = .1))
+pred.output <- predict(pf.16, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
   rename(log.ros.areaT1 = pred.output)
 
 ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
   geom_point()+
-  geom_line(data = subset(pred.dat.output, trt == "irrigated" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "blue")+
-  geom_line(data = subset(pred.dat.output,  trt == "control" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output,  trt == "irrigated" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, trt == "control" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "violet")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "Probability of Flowering in 2022")
+
+
+```
+
+```{r pflower fig 1 - pf.3}
+#create df with all possible x values
+#this is for model without an interaction
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), trt = c("irrigated", "control", "drought"), log.total.seeds = seq(0, 5.3, by = .1))
+pred.output <- predict(pf.03, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.output <- as.data.frame(pred.output)
+pred.dat.output <- cbind(pred.dat, pred.output) %>% 
+  rename(log.ros.areaT1 = pred.output)
+
+ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
+  geom_point()+
+  geom_line(data = subset(pred.dat.output, trt == "irrigated" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[1])+
+  geom_line(data = subset(pred.dat.output,  trt == "control" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[3], size = 1)+
+  geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[5], size = 1)+
+  geom_line(data = subset(pred.dat.output,  trt == "irrigated" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = Z[1])+
+  geom_line(data = subset(pred.dat.output, trt == "control" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[3], linetype = "dashed", size = 1)+
+  geom_line(data = subset(pred.dat.output, trt == "drought" & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = Z[5], linetype = "dashed", size = 1)
 
 
 ```
@@ -332,85 +410,97 @@ ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
 ```
 
 ```{r poisson}
-nof.1 <- glmer(no.flowersT1 ~ log.ros.area + (1|plot), data = clip, family = "poisson")
-nof.2 <- glmer(no.flowersT1 ~ log.ros.area*trt + (1|plot), data = clip, family = "poisson")
-nof.3 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, family = "poisson")
-nof.4 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
-nof.5 <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "poisson")
+nof.01 <- glmer(no.flowersT1 ~ log.ros.area + (1|plot), data = clip, family = "poisson")
+nof.02 <- glmer(no.flowersT1 ~ log.ros.area*trt + (1|plot), data = clip, family = "poisson")
+nof.03 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, family = "poisson")
+nof.04 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
+nof.05 <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "poisson")
 
-nof.6 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, family = "poisson")
-nof.7 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
-nof.8 <- glmer(no.flowersT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "poisson")
+nof.06 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, family = "poisson")
+nof.07 <- glmer(no.flowersT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
+nof.08 <- glmer(no.flowersT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "poisson")
 
-nof.10 <- glmer(no.flowersT1 ~ log.ros.area*sm_avg + (1|plot), data = clip, family = "poisson")
-nof.11 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, family = "poisson")
-nof.12 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, family = "poisson")
-nof.13 <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "poisson")
+nof.09 <- glmer(no.flowersT1 ~ log.ros.area*sm_avg + (1|plot), data = clip, family = "poisson")
+nof.10 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, family = "poisson")
+nof.11 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, family = "poisson")
+nof.12 <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "poisson")
 
-nof.14 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, family = "poisson")
-nof.15 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, family = "poisson")
-nof.16 <- glmer(no.flowersT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "poisson")
+nof.13 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, family = "poisson")
+nof.14 <- glmer(no.flowersT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, family = "poisson")
+nof.15 <- glmer(no.flowersT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "poisson")
+nof.16 <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, family = "poisson")
+nof.17 <- glmer(no.flowersT1 ~ log.ros.area*log.total.seeds + (1|plot), data = clip, family = "poisson")
+nof.18 <- glmer(no.flowersT1 ~ log.ros.area + log.cap + (1|plot), data = clip, family = "poisson")
+nof.19 <- glmer(no.flowersT1 ~ log.ros.area*log.cap + (1|plot), data = clip, family = "poisson")
+
 
 flowers <- mget(ls(pattern = "nof.")) #make a list of all of those models that start with gm (^ means start with)
-flowers_AICc<-aictab(cand.set = flowers, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
+flowers_AICc<-aictab(cand.set = flowers, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
 #rm(list = ls()[grepl("flowers", ls())]) #removes these models
-summary(nof.11)
+summary(nof.17)
 ```
 
-```{r poisson fig 1 - }
+```{r poisson fig 1 - best fit, but singular! }
 #create df with all possible x values
 #this is for model without an interaction
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), sm_avg = seq(.1, .25, by = .01), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(nof.11, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = seq(0, 5.3, by = .1))
+pred.output <- predict(nof.16, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
+  rename(no.flowersT1 = pred.output)
 
 ggplot(clip, aes(x = log.ros.area, y = no.flowersT1))+
   geom_point()+
-  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "blue")+
-  geom_line(data = subset(pred.dat.output,  sm_avg == .13 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output,  sm_avg == .25 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid4")+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 4), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid2")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 1), aes(x = log.ros.area, y = no.flowersT1), color = "violet")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = no.flowersT1), color = "grey")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "No. flowers in 2022")
 
 #this seems reasonable...but is a singular fit!
 ```
 
 ```{r survival}
-sur.1 <- glmer(psurvivalT1 ~ log.ros.area +(1|plot), data = clip, family = "binomial")
-sur.2 <- glmer(psurvivalT1 ~ log.ros.area*trt +(1|plot), data = clip, family = "binomial")
-sur.3 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, family = "binomial")
-sur.4 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
-sur.5 <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
+sur.01 <- glmer(psurvivalT1 ~ log.ros.area +(1|plot), data = clip, family = "binomial")
+sur.02 <- glmer(psurvivalT1 ~ log.ros.area*trt +(1|plot), data = clip, family = "binomial")
+sur.03 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.total.seeds + (1|plot), data = clip, family = "binomial")
+sur.04 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.total.seeds + trt:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+sur.05 <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
 
-sur.6 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, family = "binomial")
-s.7 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
-sur.8 <- glmer(psurvivalT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
+sur.06 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.cap + (1|plot), data = clip, family = "binomial")
+sur.07 <- glmer(psurvivalT1 ~ log.ros.area + trt + log.cap + trt:log.cap + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+sur.08 <- glmer(psurvivalT1 ~ log.ros.area + log.cap + trt + log.cap:trt + log.ros.area:log.cap + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
 
-sur.10 <- glmer(psurvivalT1 ~ log.ros.area*sm_avg +(1|plot), data = clip, family = "binomial")
-sur.11 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, family = "binomial")
-sur.12 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
-sur.13 <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
+sur.09 <- glmer(psurvivalT1 ~ log.ros.area*sm_avg +(1|plot), data = clip, family = "binomial")
+sur.10 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.total.seeds + (1|plot), data = clip, family = "binomial")
+sur.11 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.total.seeds + sm_avg:log.total.seeds + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
+sur.12 <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + sm_avg + log.total.seeds:sm_avg + log.ros.area:log.total.seeds + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
 
-sur.14 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, family = "binomial")
-s.15 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
-sur.16 <- glmer(psurvivalT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
+sur.13 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.cap + (1|plot), data = clip, family = "binomial")
+sur.14 <- glmer(psurvivalT1 ~ log.ros.area + sm_avg + log.cap + sm_avg:log.cap + log.ros.area:sm_avg + (1|plot), data = clip, family = "binomial")
+sur.15 <- glmer(psurvivalT1 ~ log.ros.area + log.cap + sm_avg + log.cap:sm_avg + log.ros.area:log.cap + log.ros.area:sm_avg + log.ros.area:log.total.seeds:sm_avg + (1|plot), data = clip, family = "binomial")
+
+sur.16 <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, family = "binomial")
+sur.17 <- glmer(psurvivalT1 ~ log.ros.area*log.total.seeds + (1|plot), data = clip, family = "binomial")
+sur.18 <- glmer(psurvivalT1 ~ log.ros.area + log.cap + (1|plot), data = clip, family = "binomial")
+sur.19 <- glmer(psurvivalT1 ~ log.ros.area*log.cap +(1|plot), data = clip, family = "binomial")
 
 
 survival <- mget(ls(pattern = "sur.")) #make a list of all of those models that start with gm (^ means start with)
 survival_AICc<-aictab(cand.set = survival, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
 #rm(list = ls()[grepl("survival", ls())]) #removes these models
-
+#the "best" 2 models give weird warnigns so going with the null model with just size
 ```
-```{r survival }
+```{r survival best fit }
 #create df with all possible x values
 #this is for model without an interaction
 pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1))
-pred.output <- predict(sur.1, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.output <- predict(sur.01, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
   rename(log.ros.areaT1 = pred.output)
@@ -418,34 +508,10 @@ pred.dat.output <- cbind(pred.dat, pred.output) %>%
 ggplot(clip, aes(x = log.ros.area, y = psurvivalT1))+
   geom_point()+
   geom_line(data = pred.dat.output, aes(x = log.ros.area, y = log.ros.areaT1))
-  geom_line(data = subset(pred.dat.output,  sm_avg == .13 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output,  sm_avg == .25 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
 
 ```
 
-```{r survival 2}
-#create df with all possible x values
-#this is for model without an interaction
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), sm_avg = seq(.1, .25, by = .01), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(sur.11, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
 
-ggplot(clip, aes(x = log.ros.area, y = psurvivalT1))+
-  geom_point()+
-  geom_line(data = subset(pred.dat.output, sm_avg == .25 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "blue")+
-  geom_line(data = subset(pred.dat.output,  sm_avg == .13 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 5.3), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", size = 1)+
-  geom_line(data = subset(pred.dat.output,  sm_avg == .25 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1),  linetype = "dashed", color = "blue")+
-  geom_line(data = subset(pred.dat.output, sm_avg == .13 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", linetype = "dashed", size = 1)+
-  geom_line(data = subset(pred.dat.output, sm_avg == .1 & log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "red", linetype = "dashed", size = 1)
-
-
-```
 
 #############################################################################################
 
@@ -455,19 +521,10 @@ ggplot(clip, aes(x = log.ros.area, y = psurvivalT1))+
 
 
 
-```{r}
-#summary table of n, etc
-
-n2021 <- join %>% 
-  group_by(year, plot, trt, treatment) %>% 
-  summarize(n = n())
-#write_csv(n2021, "../tables/clipping.sample.size.csv")
 
 
-```
 
-
-```{r}
+```{r include = F, eval = FALSE}
 ################################################################################
 # Plan B! 
 
@@ -507,7 +564,7 @@ anova(fnull, f5, test="Chisq") #LTR test
 
 ```
 
-```{r}
+```{r include = F, eval = FALSE}
 #not using size in model - this may be weird..
 #GROWTH
 
@@ -528,7 +585,7 @@ summary(gnull2)
 
 ```
 
-```{r}
+```{r include = F, eval = FALSE}
 
 #with random effects
 gnull<- lmer(log.ros.areaT1 ~ trt +(1|plot), data = clip.sub, REML = F)
@@ -547,7 +604,7 @@ summary(gnull2)
 Maybe cost is in whether or not you flower, not how much effort you put into flowering?
 
 Growth::
-```{r growth}
+```{r growth,  include = F, eval = FALSE}
 #######################################################################################
 
 join <- join %>% 
@@ -618,7 +675,7 @@ final_fm <- get_model(step_fm)
 
 ```
 
-```{r pflower}
+```{r  include = F, eval = FALSE}
 
 #pflower:
 ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
@@ -657,7 +714,7 @@ anova(fnull, f1, test="Chisq")
 
 ```
 
-```{r}
+```{r include = F, eval = FALSE}
 #Survival
 #pflower:
 ggplot(subset(join, !is.na(psurvivalT1)), aes(x = log.ros.area, y = as.factor(psurvivalT1)))+
@@ -694,7 +751,7 @@ anova(s, snull3,test="Chisq") #LTR test
 
 #What to do about differential flowering success → what about 3 models
 
-```{r}
+```{r include = F, eval = FALSE}
 #Probability of flowering model…
 fbase <- glmer(as.factor(pflowerT1) ~ 1 + (1|plot), data = join, family = "binomial")
 fnull <- glmer(as.factor(pflowerT1) ~ log.ros.area + (1|plot), data = join, family = "binomial")
@@ -722,7 +779,7 @@ anova(f1, f5, test="Chisq") #LTR test
 summary(f5)
 
 ```
-```{r}
+```{r  include = F, eval = FALSE}
 ## make graph for that model:
 # pflower av plots
 pred.control<-  expand.grid(log.ros.area = seq(1, 5.25, by = .1), trt = "control")#this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip, and control plots! seq(0, 6, by = .1) is the same as 0:6 but smaller increments
@@ -756,7 +813,7 @@ summary(f2)
 
 # fecundity - 
 
-```{r}
+```{r  include = F, eval = FALSE}
 flbase<- glmer(no.flowersT1 ~ 1 + (1|plot), data = subset(join, pflowerT1 == "1"), family = "poisson")
 flnull <- glmer(no.flowersT1 ~ log.ros.area + (1|plot), data = subset(join, pflowerT1 == "1"), family = "poisson")
 anova(flbase, flnull ,test="Chisq") #LTR test
@@ -791,7 +848,7 @@ anova(flnull, fl1 ,test="Chisq")
 ```
 
 
-```{r}
+```{r include = FALSE, eval = FALSE}
 
 
 #pflower:
@@ -810,7 +867,7 @@ ggplot(join, aes(x = log.ros.area, y = pflowerT1))+
 ```
 
 #Probability of successfully making seeds ~ treatment*size (data = plants that tried to flower)
-```{r}
+```{r  include = F, eval = FALSE}
 #of plants that tried to flower, what was their probability of making seeds:
 seed <- glmer(as.factor(pseeds) ~ 1 + (1|plot), data = join, family = "binomial")
 seed2 <- glmer(as.factor(pseeds) ~ log.ros.area + (1|plot), data = join, family = "binomial")
@@ -823,7 +880,7 @@ seed3 <- glmer(as.factor(pseeds) ~ log.ros.area + trt + (1|plot), data = join, f
 
 
 #Seed production ~ treatment*size (data = plants that made seeds, this is Poisson)
-```{r}
+```{r  include = F, eval = FALSE}
 #of plants that made seeds, did that differ between treatment?
 noseeds<- glmer(total.seeds ~ 1 + (1|plot), data = subset(join, pseeds ==1), family = "poisson")
 noseeds1 <- glmer(as.numeric(total.seeds) ~ log.ros.area + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
@@ -852,7 +909,7 @@ anova(noseeds2, noseeds5 ,test="Chisq") #LTR test
 ```
 Great, it's significant - now make a graph
 
-```{r}
+```{r include = F, eval = FALSE}
 ggplot(subset(join, pseeds == 1), aes(log.ros.area, total.seeds))+
   geom_point()+
   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
@@ -860,7 +917,7 @@ ggplot(subset(join, pseeds == 1), aes(log.ros.area, total.seeds))+
   labs()
 ```
 
-```{r}
+```{r include = F, eval = FALSE}
 #noseeds3
 pred.dat.control <-  expand.grid(log.ros.area = seq(3.25, 5.25, by = .1), trt = "control") #this is making a set of data that the model will predict points for. size 0:6, 25th quarile of summer precip seq(0, 6, by = .1) is the same as 0:6 but smaller increments
 pred.control <- predict(noseeds3, newdata = pred.dat.control, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
