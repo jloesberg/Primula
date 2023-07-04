@@ -175,6 +175,28 @@ ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
 ```
 
 
+#Fig 2:
+Boxplot for number of seeds made across clipping treatment
+
+```{r}
+no.seeds.boxplot.trt <- ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
+  geom_boxplot(aes(color = trt))+
+  facet_wrap(~trt)+
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
+  labs(y = "Log(total seeds)", x = "Number of flowers clipped")+
+  theme(legend.position = "none")
+no.seeds.boxplot.trt
+ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 6, height = 6, dpi = 300)
+
+no.seeds.boxplot <- ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
+  geom_boxplot()+
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
+  labs(y = "Log(total seeds)", x = "Number of flowers clipped")
+no.seeds.boxplot
+ggsave(plot = no.seeds.boxplot, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.png", width = 6, height = 6, dpi = 300)
+```
+
+
 #These are the vital rate models we want to build:
 
 ```{r growth model selection}
@@ -226,7 +248,7 @@ gr.mods <- mget(ls(pattern = "growth")) #make a list of all of those models that
 gr_AICc<-aictab(cand.set = gr.mods, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
 #test<-aictab(cand.set = gr.mods, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 gr.AIC <- as.data.frame(gr_AICc)
-write_csv(gr.AIC, "./Figures/clipping experiment/tables/growth AIC table.csv")
+#write.csv(x = gr.AIC, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/growth AIC table.csv")
 
 
 summary(growth.16)
@@ -257,9 +279,7 @@ growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
 growth
-ggsave(growth, "./Figures/clipping experiment/round 2/growth.png", width = 4, height = 4, dpi = 72)
-ggsave("./Figures/clipping experiment/poisson.seedproduction.png", width = 4, height = 4)
-
+#ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/growth.png", width = 6, height = 6, dpi = 300)
 ```
 
 ```{r growth figures - 2nd lowest AIC - log.ros.area + sm_avg + log.total.seeds}
@@ -340,7 +360,9 @@ pf.19 <- glmer(pflowerT1 ~ log.ros.area*log.cap +(1|plot), data = clip, family =
 
 pflower <- mget(ls(pattern = "pf")) #make a list of all of those models that start with gm (^ means start with)
 pflower_AICc<-aictab(cand.set = pflower, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
+pflower.AIC <- as.data.frame(pflower_AICc)
 
+#write.csv(x = pflower.AIC, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/pflower AIC table.csv")
 #rm(list = ls()[grepl("pflower", ls())]) #removes these models
 summary(pf.16)
 ```
@@ -354,8 +376,8 @@ pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
   rename(log.ros.areaT1 = pred.output)
 
-ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
-  geom_point()+
+pflower.fig <- ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
+  geom_jitter(height = .01)+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4")+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2")+
@@ -364,8 +386,9 @@ ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "Probability of Flowering in 2022")
+pflower.fig
 
-
+#ggsave(plot = pflower.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/pflower.png", width = 6, height = 6, dpi = 300)
 ```
 
 ```{r pflower fig 1 - pf.3}
@@ -436,9 +459,10 @@ nof.19 <- glmer(no.flowersT1 ~ log.ros.area*log.cap + (1|plot), data = clip, fam
 
 flowers <- mget(ls(pattern = "nof.")) #make a list of all of those models that start with gm (^ means start with)
 flowers_AICc<-aictab(cand.set = flowers, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
-
+noflower.AIC <- as.data.frame(flowers_AICc)
+#write.csv(x = noflower.AIC, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/no.flower AIC table.csv")
 #rm(list = ls()[grepl("flowers", ls())]) #removes these models
-summary(nof.17)
+summary(nof.16)
 ```
 
 ```{r poisson fig 1 - best fit, but singular! }
@@ -450,7 +474,7 @@ pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
   rename(no.flowersT1 = pred.output)
 
-ggplot(clip, aes(x = log.ros.area, y = no.flowersT1))+
+no.flowers <- ggplot(clip, aes(x = log.ros.area, y = no.flowersT1))+
   geom_point()+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid4")+
   geom_line(data = subset(pred.dat.output,  log.total.seeds == 4), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid3")+
@@ -460,6 +484,37 @@ ggplot(clip, aes(x = log.ros.area, y = no.flowersT1))+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = no.flowersT1), color = "grey")+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "No. flowers in 2022")
+
+no.flowers
+#ggsave(plot = no.flowers, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.flower.png", width = 6, height = 6, dpi = 300)
+
+
+#this seems reasonable...but is a singular fit!
+```
+
+```{r poisson fig 1 -int}
+#create df with all possible x values
+#this is for model without an interaction
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = seq(0, 5.3, by = .1))
+pred.output <- predict(nof.17, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.output <- as.data.frame(pred.output)
+pred.dat.output <- cbind(pred.dat, pred.output) %>% 
+  rename(no.flowersT1 = pred.output)
+
+no.flowers1 <- ggplot(clip, aes(x = log.ros.area, y = no.flowersT1))+
+  geom_point()+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid4")+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 4), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid2")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = no.flowersT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 1), aes(x = log.ros.area, y = no.flowersT1), color = "violet")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = no.flowersT1), color = "grey")+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "No. flowers in 2022")
+
+no.flowers1
+#ggsave(plot = no.flowers1, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.flower.png", width = 6, height = 6, dpi = 300)
+
 
 #this seems reasonable...but is a singular fit!
 ```
@@ -491,11 +546,13 @@ sur.19 <- glmer(psurvivalT1 ~ log.ros.area*log.cap +(1|plot), data = clip, famil
 
 
 survival <- mget(ls(pattern = "sur.")) #make a list of all of those models that start with gm (^ means start with)
-survival_AICc<-aictab(cand.set = survival, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
-
-#rm(list = ls()[grepl("survival", ls())]) #removes these models
+survival_AICc<-aictab(cand.set = survival, modnames = model.names,second.ord=TRUE,nobs=NULL,sort=TRUE)
+surv.AIC <- as.data.frame(survival_AICc)
+#write.csv(x = surv.AIC, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/survival AIC table.csv")
+#rm(list = ls()[grepl("sur", ls())]) #removes these models
 #the "best" 2 models give weird warnigns so going with the null model with just size
 ```
+
 ```{r survival best fit }
 #create df with all possible x values
 #this is for model without an interaction
@@ -503,11 +560,15 @@ pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1))
 pred.output <- predict(sur.01, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
+  rename(survT1 = pred.output)
 
-ggplot(clip, aes(x = log.ros.area, y = psurvivalT1))+
+survival <- ggplot(clip, aes(x = log.ros.area, y = psurvivalT1))+
   geom_point()+
-  geom_line(data = pred.dat.output, aes(x = log.ros.area, y = log.ros.areaT1))
+  geom_line(data = pred.dat.output, aes(x = log.ros.area, y = survT1))+
+  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "Survival in 2022")
+survival
+#ggsave(plot = survival, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/survival.png", width = 6, height = 6, dpi = 300)
 
 ```
 
@@ -880,18 +941,18 @@ seed3 <- glmer(as.factor(pseeds) ~ log.ros.area + trt + (1|plot), data = join, f
 
 
 #Seed production ~ treatment*size (data = plants that made seeds, this is Poisson)
-```{r  include = F, eval = FALSE}
+```{r seed production}
 #of plants that made seeds, did that differ between treatment?
-noseeds<- glmer(total.seeds ~ 1 + (1|plot), data = subset(join, pseeds ==1), family = "poisson")
-noseeds1 <- glmer(as.numeric(total.seeds) ~ log.ros.area + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds<- glmer(total.seeds ~ 1 + (1|plot), data = subset(clip, pseeds ==1), family = "poisson")
+noseeds1 <- glmer(as.numeric(total.seeds) ~ log.ros.area + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
 anova(noseeds, noseeds1 ,test="Chisq") #LTR test
 #yep its better
 
-noseeds2 <- glmer(total.seeds ~ log.ros.area + trt + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds2 <- glmer(total.seeds ~ log.ros.area + trt + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
 anova(noseeds1, noseeds2 ,test="Chisq") #LTR test
 #yep
 
-noseeds3 <- glmer(total.seeds ~ log.ros.area*trt + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds3 <- glmer(total.seeds ~ log.ros.area*trt + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
 anova(noseeds2, noseeds3 ,test="Chisq") #LTR test
 #yep!
 summary(noseeds2)
@@ -899,21 +960,24 @@ summary(noseeds2)
 summary(noseeds3)
 #...it doesnt make sense to add clipping treatment, right? 
 
-noseeds4 <- glmer(total.seeds ~ log.ros.area + treatment + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds4 <- glmer(total.seeds ~ log.ros.area + treatment + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
 anova(noseeds1, noseeds4 ,test="Chisq") #LTR test
 summary(noseeds4)
 
-noseeds5 <- glmer(total.seeds ~ log.ros.area + trt+treatment + (1|plot), data = subset(join, pseeds == 1), family = "poisson")
+noseeds5 <- glmer(total.seeds ~ log.ros.area + trt+treatment + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
 anova(noseeds2, noseeds5 ,test="Chisq") #LTR test
+
+noseeds6 <- glmer(total.seeds ~ log.ros.area + trt*treatment + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
+anova(noseeds2, noseeds6 ,test="Chisq") #LTR test
 
 ```
 Great, it's significant - now make a graph
 
 ```{r include = F, eval = FALSE}
-ggplot(subset(join, pseeds == 1), aes(log.ros.area, total.seeds))+
+ggplot(subset(clip, pseeds == 1), aes(log.ros.area, log.total.seeds))+
   geom_point()+
   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~treatment)+
+  facet_wrap(trt~treatment)+
   labs()
 ```
 
@@ -934,15 +998,17 @@ pred.drought <- predict(noseeds3, newdata = pred.dat.drought, type="response", r
 pred.drought <- as.data.frame(pred.drought)
 pred.drought <- cbind(pred.dat.drought, pred.drought)
 
-ggplot(subset(join, pseeds == 1), aes(x=log.ros.area, y=total.seeds))+
+no.seeds <- ggplot(subset(clip, pseeds == 1), aes(x=log.ros.area, y=total.seeds))+
   geom_jitter(height = 0.025, size = 2, alpha= 0.5) +
-  geom_line(data = pred.drought, aes(x = log.ros.area, y = pred.drought), color = Z[5], linewidth = 1.5) +
-  geom_line(data = pred.irrigated, aes(x = log.ros.area, y = pred.irrigated), color = Z[1], linewidth = 1.5) + 
-  geom_line(data = pred.control, aes(x = log.ros.area, y = pred.control), color = Z[3], linewidth = 1.5) + 
-  labs(x = expression(paste("log(Rosette Area) in time", italic(" t"))), y = expression(paste("No. seeds in", italic("  t")))) +
-  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 15))
-  #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
-ggsave("./Figures/clipping experiment/poisson.seedproduction.png", width = 4, height = 4)
+  geom_line(data = pred.drought, aes(x = log.ros.area, y = pred.drought), color = Z[5], linewidth = 1) +
+  geom_line(data = pred.irrigated, aes(x = log.ros.area, y = pred.irrigated), color = Z[1], linewidth = 1) + 
+  geom_line(data = pred.control, aes(x = log.ros.area, y = pred.control), color = Z[3], linewidth = 1) + 
+  labs(x = "log(Rosette Area) in 2021", y = "Total seeds in 2021") +
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 15))#+
+    #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
+
+no.seeds
+#ggsave(plot = no.seeds, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/poisson.seedproduction.png", width = 6, height = 6, dpi = 300)
 
 ```
 
