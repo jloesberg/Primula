@@ -17,6 +17,9 @@ To do:
   - ^we can compare which one is better
   - Throw in soil moisture in case that fits better - daily average soil moisutre
   April-end of May
+- 7/6 update:
+  - Jenny Gremer to the rescue:
+  - Go back to LRT but do it in a different way! ( leaving the AIC things, but new stuff is before)
 
 ```{r, include = FALSE}
 #packages:
@@ -152,10 +155,13 @@ clip <- clip %>%
           total.seeds = if_else(fruitset == 0, 0, total.seeds),
           pseeds = if_else(total.seeds > 0, 1, 0),
           log.total.seeds = log(total.seeds + 1), #because there are zeros 
-         psurvivalT1 = if_else(is.na(psurvivalT1), 0, psurvivalT1))
+         psurvivalT1 = if_else(is.na(psurvivalT1), 0, psurvivalT1),
+         trt = as.factor(trt)) %>% 
+  filter(!is.na(log.total.seeds))
 clip <- clip %>%
   select(-c(no.flowers.at.start, no.buds.at.start, tag.pulled, problem.tag, toothpick, lv.length))
 
+clip$trt <- fct_relevel(clip$trt, "drought", "control", "irrigated")
 
 #clip.sub filtered out the plots with very few observations
 
@@ -179,23 +185,257 @@ ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
 Boxplot for number of seeds made across clipping treatment
 
 ```{r}
-no.seeds.boxplot.trt <- ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
+no.seeds.boxplot.trt <- 
+  ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds, color = trt))+
   geom_boxplot(aes(color = trt))+
-  facet_wrap(~trt)+
-  scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
+  #facet_wrap(~trt)+
+  scale_color_manual(values = c(Z[5], Z[3], Z[1]))+
   labs(y = "Log(total seeds)", x = "Number of flowers clipped")+
-  theme(legend.position = "none")
+  theme(legend.title=element_blank())
 no.seeds.boxplot.trt
-ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 6, height = 6, dpi = 300)
 
-no.seeds.boxplot <- ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
+#ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 8, height = 6, dpi = 300)
+
+#no.seeds.boxplot <- 
+  ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
   geom_boxplot()+
   scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
   labs(y = "Log(total seeds)", x = "Number of flowers clipped")
 no.seeds.boxplot
-ggsave(plot = no.seeds.boxplot, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.png", width = 6, height = 6, dpi = 300)
+#ggsave(plot = no.seeds.boxplot, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.png", width = 6, height = 6, dpi = 300)
 ```
 
+
+
+#_ROUND 3 LRT:_
+Notes from Jenn's meeting with Jenny Gremer:
+"Meeting with Jenny G – July 5, 2023
+
+Vital rate (in t+1) ~ size t + cliptrt (or #seeds t) + preciptrt + cliptrt* preciptrt + size*cliptrt + size*preciptrt + size*cliptrt*preciptrt + (1|plot)
+
+Responses: Size(t+1), p(flower t+1), number flowers(t+1), survival(t+1)
+
+Model selection vs. hypothesis testing – we really do have hypotheses! We want to know if these things matter more than we want to find the best model.
+
+Jenna also tried soil moisture reading/plot (instead of preciptrt) solve this first -->
+
+Use likelihood ratio tests (nested models) as anova. Start with big model (3 way interaction gets at the crux of what we want to know) – how does status influence costs of reproduction? Run full model, take out 3 way interaction, compare with LL ratio test. (anova (m1, m2, test=LRT?)). Take out 2 way interactions one at a time, then test each of those (models 3, 4, 5 are taking out pairwise interactions with full replacement – comparing to model with all the 2-way interactions. Save stats into table as you go (in some way or another, could be as simple as a dataframe you fill.)
+
+If interactions are significant, keep main effects – this approach is good because if interactions are significant, then main effects may not be. And worry less about the singular problem.
+ 
+(probably people would have used model selection 20 years ago when it was new – not so useful for an experiment!"
+
+-> We used likelihood ratio tests on nested models to evaluate the significance of main effects (if p>0.05 -> coefficient removed is not significant)
+Null-hypothesis testing is (relatively) easy: just fit the nested models (with
+and without the focal parameter fixed to zero) and find the p (tail) value
+associated with χ
+2
+1
+for the deviance difference (−2 × ∆ log L) (remember
+not to use REML estimates!)
+interpretation of the results that the model with the least df gets preferred in case of a significant difference.???
+likelihood ratio tests comparing two models (one with and without a predictor) should be performed to determine whether a variable of interest is statistically significant, rather than using the p-values for estimates of individual predictors from the summary() function of a linear model.
+A significant likelihood ratio test would be an indication that the model that has A as a predictor provides a better fit to your data whereas an insignificant likelihood ratio test would indicate that A is not needed to model the outcome C. 
+
+A likelihood ratio test tests whether the additional parameters present in the larger model are jointly different from zero (i.e., whether any of them are different from zero). Failing to reject the null hypothesis indicates that the smaller model is to be preferred. For you, this is model 1.
+
+Significance of fixed effects was assessed with likelihood ratio tests and DAIC values comparing models with each factor added to or removed from the best fit model
+(one can estimate confidence intervals by parametric bootstrapping — that is, by simulating data from the fitted model, refitting the model, and extracting the new estimated parameters (or any other quantities of interest))
+we used likelihood ratio tests (LRTs) as an addi- tional method to quantify the difference between models with or without traits. A significant χ2 value (p< 0.05) from an LRT indicated that including trait values signifi- cantly changes model fit.
+The inset tables show the results of a likelihood ratio test comparing a model accounting for covariates to a simpler model that ignores the covariates. P < 0.05 indicates significant support for the more complex model.
+
+The significance of each fixed effect in the best-fit model was tested using likelihood ratio tests on nested models. The
+
+Can't use LRT for models comparing fixed effects and interactions: don’t test main effects at all in the presence of interactions (Ben Bolker) - https://bbolker.github.io/stat4c03/notes/inference.pdf
+
+
+```{r growth LRT}
+growth_LRT = data.frame(var = NA,
+                        chi = NA, 
+                        pvalue = NA)
+#colnames(growth_LRT) <- c("var", "chi", "p-value")
+
+growth_full <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, REML= F)
+growth_no3way <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, REML= F)
+a1 <- anova(growth_full, growth_no3way, test="LRT") #LRT test - removing 3 way interaction does not significantly change model
+growth_LRT[1,] <- c("size:seeds:trt", a1[2,6], a1[2,8])
+
+
+growth_no.seed.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, REML= F)
+a2 <- anova(growth_no3way, growth_no.seed.trt, test="LRT") #LRT test - removing seed:trt interaction does not significantly change model
+growth_LRT[2,] <- c("seeds:trt", a2[2,6], a2[2,8])
+
+growth_no.size.seeds <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:trt + (1|plot), data = clip, REML= F)
+a3 <- anova(growth_no3way, growth_no.size.seeds, test="LRT") #LRT test - removing size:seed interaction does not significantly change model
+growth_LRT[3,] <- c("size:seed", a3[2,6], a3[2,8])
+
+
+growth_no.size.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + (1|plot), data = clip, REML= F)
+a4 <- anova(growth_no3way, growth_no.size.trt, test="LRT") #LRT test - removing size:trt does not significantly change model
+growth_LRT[4,] <- c("size:trt", a4[2,6], a4[2,8])
+
+#the above seem fine, but not sure what to do with these - Jenn and i talked about then just dropping terms from this model and not comparing this model to the one with interactions
+growth_no.int <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + trt + (1|plot), data = clip, REML= F)
+growth_no.seeds <- lmer(log.ros.areaT1 ~ log.ros.area + trt + (1|plot), data = clip, REML= F)
+a5 <- anova(growth_no.int, growth_no.seeds, test="LRT") #LRT test
+growth_LRT[5,] <- c("totalseeds", a5[2,6], a5[2,8])
+# 
+# 
+growth_no.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, REML= F)
+a6 <- anova(growth_no.trt, growth_no.int , test="LRT") #LRT test
+growth_LRT[6,] <- c("trt", a6[2,6], a6[2,8])
+
+# 
+growth_alone <- lmer(log.ros.areaT1 ~ log.ros.area + (1|plot), data = clip, REML= F)
+a7 <- anova(growth_no.trt, growth_alone , test="LRT") #LRT test
+a8 <- anova(growth_no.seeds, growth_alone , test="LRT")
+a9 <- anova(growth_no.int, growth_alone , test="LRT")
+
+
+a7
+a8
+a9
+
+#growth_LRT[7,] <- c("trt", a7[2,6], a7[2,8])
+
+# 
+# 
+#write.csv(x = growth_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/growth_LRT.csv")
+
+drop1(growth_no.int,test="Chisq")
+
+#parametric bootstrapping
+#pbnmx1 <- pbnm(growth_no.int,gmmDx1,nsim=5,tasks=10,cores=2,seed=31221743)
+#summary(pbnmx1)
+```
+
+
+```{r plower}
+pflower_LRT = data.frame(var = NA,
+                        chi = NA, 
+                        pvalue = NA)
+#colnames(pflower_LRT) <- c("var", "chi", "p-value")
+
+pflower_full <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
+pflower_no3way <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+a1 <- anova(pflower_full, pflower_no3way, test="LRT") #LRT test - removing 3 way interaction does not significantly change model
+pflower_LRT[1,] <- c("size:seeds:trt", a1[2,6], a1[2,8])
+
+
+pflower_no.seed.trt <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+a2 <- anova(pflower_no3way, pflower_no.seed.trt, test="LRT") #LRT test - removing seed:trt interaction does not significantly change model
+pflower_LRT[2,] <- c("seeds:trt", a2[2,6], a2[2,8])
+
+pflower_no.size.seeds <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+a3 <- anova(pflower_no3way, pflower_no.size.seeds, test="LRT") #LRT test - removing size:seed interaction does not significantly change model
+pflower_LRT[3,] <- c("size:seed", a3[2,6], a3[2,8])
+
+
+pflower_no.size.trt <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + (1|plot), data = clip, family = "binomial")
+a4 <- anova(pflower_no3way, pflower_no.size.trt, test="LRT") #LRT test - removing size:trt does not significantly change model
+pflower_LRT[4,] <- c("size:trt", a4[2,6], a4[2,8])
+
+pflower_no.int <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + trt + (1|plot), data = clip, family = "binomial")
+pflower_no.trt <- glmer(pflowerT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, family = "binomial")
+
+a5 <- anova(pflower_no.int, pflower_no.trt, test="LRT") #LRT test - removing size:trt does not significantly change model
+pflower_LRT[5,] <- c("trt", a5[2,6], a5[2,8])
+
+pflower_no.seeds <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot), data = clip, family = "binomial")
+a6 <- anova(pflower_no.int, pflower_no.seeds, test="LRT")
+pflower_LRT[6,] <- c("totalseeds", a6[2,6], a6[2,8])
+
+
+pflower_sizealone <- glmer(pflowerT1 ~ log.ros.area + (1|plot), data = clip, family = "binomial")
+anova(pflower_no.seeds, pflower_sizealone, test="LRT")
+
+
+#write.csv(x = pflower_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/pflower_LRT.csv")
+
+drop1(pflower_no3way, test = "Chisq")
+```
+
+
+
+```{r survival}
+survival_LRT = data.frame(var = NA,
+                        chi = NA, 
+                        pvalue = NA)
+#colnames(survival_LRT) <- c("var", "chi", "p-value")
+
+survival_full <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "binomial")
+survival_no3way <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+a1 <- anova(survival_full, survival_no3way, test="LRT") #LRT test - removing 3 way interaction does not significantly change model
+survival_LRT[1,] <- c("size:seeds:trt", a1[2,6], a1[2,8])
+
+
+survival_no.seed.trt <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+a2 <- anova(survival_no3way, survival_no.seed.trt, test="LRT") #LRT test - removing seed:trt interaction does not significantly change model
+survival_LRT[2,] <- c("seeds:trt", a2[2,6], a2[2,8])
+
+survival_no.size.seeds <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:trt + (1|plot), data = clip, family = "binomial")
+a3 <- anova(survival_no3way, survival_no.size.seeds, test="LRT") #LRT test - removing size:seed interaction does not significantly change model
+survival_LRT[3,] <- c("size:seed", a3[2,6], a3[2,8])
+
+
+survival_no.size.trt <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + (1|plot), data = clip, family = "binomial")
+a4 <- anova(survival_no3way, survival_no.size.trt, test="LRT") #LRT test - removing size:trt does not significantly change model
+survival_LRT[4,] <- c("size:trt", a4[2,6], a4[2,8])
+
+survival_no.int <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + trt + (1|plot), data = clip, family = "binomial")
+survival_no.seeds <- glmer(psurvivalT1 ~ log.ros.area + trt + (1|plot), data = clip, family = "binomial")
+survival_no.trt <- glmer(psurvivalT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, family = "binomial")
+
+a5 <- anova(survival_no.int, survival_no.seeds, test="LRT") #LRT test - removing size:trt does not significantly change model
+survival_LRT[5,] <- c("totalseeds", NA, NA) #model has weird errors
+a6 <- anova(survival_no.int, survival_no.trt, test="LRT") #LRT test - removing size:trt does not significantly change model
+survival_LRT[6,] <- c("trt", NA, NA) #model has weird errors
+
+#write.csv(x = survival_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/survival_LRT.csv")
+```
+
+```{r no.flowers}
+no.flowers_LRT = data.frame(var = NA,
+                        chi = NA, 
+                        pvalue = NA)
+#colnames(no.flowers_LRT) <- c("var", "chi", "p-value")
+
+no.flowers_full <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + log.ros.area:log.total.seeds:trt + (1|plot), data = clip, family = "poisson")
+no.flowers_no3way <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
+a1 <- anova(no.flowers_full, no.flowers_no3way, test="LRT") #LRT test - removing 3 way interaction does not significantly change model
+no.flowers_LRT[1,] <- c("size:seeds:trt", a1[2,6], a1[2,8])
+
+
+no.flowers_no.seed.trt <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.ros.area:log.total.seeds + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
+a2 <- anova(no.flowers_no3way, no.flowers_no.seed.trt, test="LRT") #LRT test - removing seed:trt interaction does not significantly change model
+no.flowers_LRT[2,] <- c("seeds:trt", a2[2,6], a2[2,8])
+
+no.flowers_no.size.seeds <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:trt + (1|plot), data = clip, family = "poisson")
+a3 <- anova(no.flowers_no3way, no.flowers_no.size.seeds, test="LRT") #LRT test - removing size:seed interaction does not significantly change model
+no.flowers_LRT[3,] <- c("size:seed", a3[2,6], a3[2,8])
+
+
+no.flowers_no.size.trt <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + log.total.seeds:trt + log.ros.area:log.total.seeds + (1|plot), data = clip, family = "poisson")
+a4 <- anova(no.flowers_no3way, no.flowers_no.size.trt, test="LRT") #LRT test - removing size:trt does not significantly change model
+no.flowers_LRT[4,] <- c("size:trt", a4[2,6], a4[2,8])
+
+no.flowers_no.int <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + trt + (1|plot), data = clip, family = "poisson")
+no.flowers_no.seeds <- glmer(no.flowersT1 ~ log.ros.area + trt + (1|plot), data = clip, family = "poisson")
+no.flowers_no.trt <- glmer(no.flowersT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, family = "poisson")
+
+a5 <- anova(no.flowers_no.int, no.flowers_no.trt, test="LRT") #LRT test
+no.flowers_LRT[5,] <- c("trt", a5[2,6], a5[2,8])
+a6 <- anova(no.flowers_no.int, no.flowers_no.seeds, test="LRT") #LRT test
+no.flowers_LRT[6,] <- c("totalseeds", a6[2,6], a6[2,8])
+
+
+no.flowers_no.seeds <- glmer(no.flowersT1 ~ log.ros.area + trt + (1|plot), data = clip, family = "poisson")
+
+#write.csv(x = no.flowers_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/no.flowers_LRT.csv")
+```
+
+
+##_ROUND 2_
 
 #These are the vital rate models we want to build:
 
@@ -269,17 +509,17 @@ pred.dat.output <- cbind(pred.dat, pred.output) %>%
 growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
   geom_point()+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "violet")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", size = 1.25)+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", size = 1)+
+ # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1", linetype = "longdash", size = 1.25)+
+ # geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
+  #scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
+  #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
 growth
-#ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/growth.png", width = 6, height = 6, dpi = 300)
+ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/growth3 for pres.png", width = 4, height = 4, dpi = 300)
 ```
 
 ```{r growth figures - 2nd lowest AIC - log.ros.area + sm_avg + log.total.seeds}
@@ -378,17 +618,17 @@ pred.dat.output <- cbind(pred.dat, pred.output) %>%
 
 pflower.fig <- ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
   geom_jitter(height = .01)+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "violet")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", size = 1.25)+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", size = 1)+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1", linetype = "longdash", size = 1.25)+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
+  #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "Probability of Flowering in 2022")
 pflower.fig
 
-#ggsave(plot = pflower.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/pflower.png", width = 6, height = 6, dpi = 300)
+#ggsave(plot = pflower.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/pflower.png", width = 4, height = 4, dpi = 300)
 ```
 
 ```{r pflower fig 1 - pf.3}
@@ -727,7 +967,7 @@ anova(gnull, gnull2, test="Chisq") #this is LRT
 # step package:
 # https://search.r-project.org/CRAN/refmans/lmerTest/html/step.lmerModLmerTest.html
 # backwards selection:
-growth.full<- lmerTest::lmer(log.ros.areaT1 ~ log.ros.area*treatment*trt + (1|plot), data = join, REML= F)
+growth.full<- lmerTest::lmer(log.ros.areaT1 ~ log.ros.area*log.total.seeds*trt + (1|plot), data = subset(!(is.na(clip$log.total.seeds))), REML= F)
 
 
 step_fm <- lmerTest::step(growth.full,reduce.random=FALSE)
@@ -1008,11 +1248,8 @@ no.seeds <- ggplot(subset(clip, pseeds == 1), aes(x=log.ros.area, y=total.seeds)
     #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
 
 no.seeds
-<<<<<<< HEAD
 #ggsave(plot = no.seeds, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/poisson.seedproduction.png", width = 6, height = 6, dpi = 300)
-=======
-ggsave(plot = no.seeds, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/poisson.seedproduction.png", width = 6, height = 6, dpi = 300)
->>>>>>> 11c530e92c08f2fdbaa6aae50be61e1e920bc909
+
 
 ```
 
