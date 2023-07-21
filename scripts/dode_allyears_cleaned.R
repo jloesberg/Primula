@@ -2,6 +2,8 @@
 
 library(tidyverse)
 ################################################################################
+#PROBLEM: something's going on with the dormany plants when I read them back in (ie plant 1881)
+
 #Eventually to do
 
 ##### - dormany problem - make reproducible and add 2022 plants
@@ -196,29 +198,31 @@ dode2021$notes[dode2021$tag == "852"] <- "NPNT"
 dode2021 <- subset(dode2021, tag != "1754")
 #change 8307 to tagged in 2018
 dode2021$YrTag[dode2021$tag == "8307"] <- "2018"
-# 805 was replaced and was recorded under 8315 this year
-dode2021 <- subset(dode2021, tag != "805")
-#change 8315 to tagged in 2017
-dode2021$YrTag[dode2021$tag == "8315"] <- "2017"
+
+#these are the same plant 7/12/23
+# # 805 was replaced and was recorded under 8315 this year
+# dode2021 <- subset(dode2021, tag != "805")
+# #change 8315 to tagged in 2017
+# dode2021$YrTag[dode2021$tag == "8315"] <- "2017"
 
 # 864 was replaced and was recorded under 8312 this year
 dode2021 <- subset(dode2021, tag != "864")
-#change 8315 to tagged in 2017
+#change 8312 to tagged in 2017
 dode2021$YrTag[dode2021$tag == "8312"] <- "2017"
 
-# #81 replaced by 1881
-dode2021 <- subset(dode2021, tag != "81")
-#change 1881 to tagged in 2016
-dode2021$YrTag[dode2021$tag == "1881"] <- "2016"
+# # #81 replaced by 1881
+# dode2021 <- subset(dode2021, tag != "81")
+# #change 1881 to tagged in 2016
+# dode2021$YrTag[dode2021$tag == "1881"] <- "2016"
 
-# 562 replaced by 1183
-dode2021 <- subset(dode2021, tag != "562")
-#change 1183 to tagged in 2016
-dode2021$YrTag[dode2021$tag == "1183"] <- "2016"
+# # 562 replaced by 1183
+ dode2021 <- subset(dode2021, tag != "562")
+# #change 1183 to tagged in 2016
+ dode2021$YrTag[dode2021$tag == "1183"] <- "2016"
 
-#214 replaced by 8317
-dode2021 <- subset(dode2021, tag != "214")
-#change 8317 to tagged in 2017 (tag found from last year in 2018)
+# #214 replaced by 8317
+ dode2021 <- subset(dode2021, tag != "214")
+# #change 8317 to tagged in 2017 (tag found from last year in 2018)
 dode2021$YrTag[dode2021$tag == "8317"] <- "2017"
 
 #49 replaced by 8319 - 2023/1/19 - actually tag 49 died a while ago!  8319 is new in 2021
@@ -226,7 +230,7 @@ dode2021$YrTag[dode2021$tag == "8317"] <- "2017"
 #change 8319 to tagged in 2017
 #dode2021$YrTag[dode2021$tag == "8319"] <- "2017"
 
-#215 replaced by 8311
+#215 replaced by 8311 - they are the same plant, pulled 215 in 2022
 dode2021 <- subset(dode2021, tag != "215")
 #change 8311 to tagged in 2017
 dode2021$YrTag[dode2021$tag == "8311"] <- "2017"
@@ -270,13 +274,10 @@ dode2021 <- dode2021 %>%
          Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
+#####################################################################################
 
-###################################################################################
-#2022 data
 dode2022<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_Demography_Data.csv", header=T)
 
-
-#dealing with problem tags
 
 #	Found original tag (1498), replacement tag (1452) pulled. Changed them in 2021, in 2022 csv: take out
 ### 1452
@@ -357,6 +358,21 @@ dode2022$problem.tag[dode2022$tag == "1270"] <- 0
 #1946 was tagged in 2018
 dode2022$YrTag[dode2022$tag == "1946"] <- "2018"
 
+#215 replaced by 8311 - they are the same plant, pulled 215 in 2022
+dode2022 <- subset(dode2022, tag != "215")
+#change 8311 to tagged in 2017
+dode2022$YrTag[dode2022$tag == "8311"] <- "2017"
+
+# # 562 replaced by 1183
+dode2022 <- subset(dode2022, tag != "562")
+# #change 1183 to tagged in 2016
+dode2022$YrTag[dode2022$tag == "1183"] <- 2016
+
+# #214 replaced by 8317
+dode2022 <- subset(dode2022, tag != "214")
+# #change 8317 to tagged in 2017 (tag found from last year in 2018)
+dode2022$YrTag[dode2022$tag == "8317"] <- 2017
+
 #making a clean df for next year's datasheet
 ### taking out pulled tags
 dode2022clean <- dode2022 %>% filter(tag.pulled != "1") %>% 
@@ -373,6 +389,44 @@ dode2022 <- dode2022 %>%
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
 ################################################################################
+
+################################################################################
+#2022 data
+dode2023<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2023_Dodecatheon_Demography_Data.csv", header=T)
+#dealing with problem tags
+
+dode2023 <- subset(dode2023, tag != "215")
+#change 8311 to tagged in 2017
+dode2023$YrTag[dode2023$tag == "8311"] <- 2017
+
+# # 562 replaced by 1183
+dode2023 <- subset(dode2023, tag != "562")
+# #change 1183 to tagged in 2016
+dode2023$YrTag[dode2023$tag == "1183"] <- 2016
+
+# #214 replaced by 8317
+dode2023 <- subset(dode2023, tag != "214")
+# #change 8317 to tagged in 2017 (tag found from last year in 2018)
+dode2023$YrTag[dode2023$tag == "8317"] <- 2017
+
+#553: saw it this year, hadnt been seen since 2018, so I'm guessing it's new!
+dode2023$tag[dode2023$tag == "553"] <- "553.new"
+dode2023$YrTag[dode2023$tag == "553.new"] <- 2023
+#904: saw it this year, hadnt been seen since 2018, so I'm guessing it's new!
+dode2023$tag[dode2023$tag == "904"] <- "904.new"
+dode2023$YrTag[dode2023$tag == "904.new"] <- 2023
+#1965: saw it this year, hadnt been seen since 2018, so I'm guessing it's new!
+dode2023$tag[dode2023$tag == "1965"] <- "1965.new"
+dode2023$YrTag[dode2023$tag == "1965.new"] <- 2023
+
+
+
+dode2023 <- dode2023 %>% 
+  mutate(plot = as.factor(plot),
+         tag = as.character(tag),
+         YrTag = as.numeric(YrTag),
+         Xcoor = as.character(Xcoor),
+         psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 ### getting a df for clipping experiment tags: 
 
 #clip.tags <- dode2021 %>% filter(clipping_exp =="1") %>% select(tag)
@@ -380,7 +434,7 @@ dode2022 <- dode2022 %>%
 
 ################################################################################
 #Putting it all together:
-Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022) 
+Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023) 
 # it gives warnings, but looks like everything is there!
 
 # in 2021, replaced some tags. Doing this in the big df:
@@ -390,20 +444,20 @@ Dodecatheon$tag[Dodecatheon$tag == "625"] <- "1585"
 # 1754 was replaced by 8307
 Dodecatheon$tag[Dodecatheon$tag == "1754"] <- "8307"
 
-# 805 was replaced by 8315
-Dodecatheon$tag[Dodecatheon$tag == "805"] <- "8315"
+# # 805 was replaced by 8315
+# Dodecatheon$tag[Dodecatheon$tag == "805"] <- "8315"
 
 # 864 was replaced by 8312
 Dodecatheon$tag[Dodecatheon$tag == "864"] <- "8312"
 
-#81 replaced by 1881
-Dodecatheon$tag[Dodecatheon$tag == "81"] <- "1881"
+# #81 replaced by 1881
+# Dodecatheon$tag[Dodecatheon$tag == "81"] <- "1881"
 
 # 562 replaced by 1183
 Dodecatheon$tag[Dodecatheon$tag == "562"] <- "1183"
 
-#214 replaced by 8317
-Dodecatheon$tag[Dodecatheon$tag == "214"] <- "8317"
+# #214 replaced by 8317
+ Dodecatheon$tag[Dodecatheon$tag == "214"] <- "8317"
 
 #49 repleaced by 8319
 #Dodecatheon$tag[Dodecatheon$tag == "49"] <- "8319"
@@ -411,8 +465,8 @@ Dodecatheon$tag[Dodecatheon$tag == "214"] <- "8317"
 #215 replaced by 8311
 Dodecatheon$tag[Dodecatheon$tag == "215"] <- "8311"
 
-#852 replaced by 1471
-Dodecatheon$tag[Dodecatheon$tag == "852"] <- "1471"
+# #852 replaced by 1471
+# Dodecatheon$tag[Dodecatheon$tag == "852"] <- "1471"
 
 #1937 is actually 1397
 Dodecatheon$tag[Dodecatheon$tag == "1937"] <- "1397"
@@ -461,6 +515,7 @@ which(duplicated(dode2020$tag))
 which(duplicated(dode2017$tag))
 which(duplicated(dode2021$tag))
 which(duplicated(dode2022$tag))
+which(duplicated(dode2023$tag))
 
 ################################################################################
 #dont need these anymore:
@@ -499,24 +554,30 @@ dormant <- Dodecatheon %>%
   select(tag, year, psurvival) %>%
   dplyr::group_by(tag) %>%
  pivot_wider(names_from = "year", values_from = "psurvival") %>% 
-  unnest(cols = c(`2016`, `2017`, `2018`, `2019`, `2020`, `2021`, `2022`))
+  unnest(cols = c(`2016`, `2017`, `2018`, `2019`, `2020`, `2021`, `2022`, '2023'))
 
-  #mutate(years.above = rowSums(across(where(is.numeric)), na.rm = T))
+ #this checks if there are duplicates
+Dodecatheon %>%
+  dplyr::group_by(tag, year) %>%
+  dplyr::summarise(n = dplyr::n(), .groups = "drop") %>%
+  dplyr::filter(n > 1L) 
+
+
 
 # this is pretty atrocious, but can't think of another way!
 # First, open that csv in excel. Then, go through by hand and assign plants stages in each year - future Jenna will have
 # to do it over again in next years
 ## Now that we have 2022 data, I can go back and tell which plants are actually dead and when.
-#write.csv(dormant, "./data/dormant.table2022.csv")
+#write.csv(dormant, "./data/dormant.table2023.csv")
 Dodecatheon <- Dodecatheon %>% 
   mutate(year = as.character(year))
 
-dtable <- read.csv("../data/dormant.table.as.stages2022.csv")
-dtable <- dtable %>% select(c(tag, X2016, X2017, X2018, X2019, X2020, X2021, X2022)) %>% # now pivot longer:
+dtable <- read.csv("../data/dormant.table.as.stages2023.csv")
+dtable <- dtable %>% select(c(tag, X2016, X2017, X2018, X2019, X2020, X2021, X2022, X2023)) %>% # now pivot longer:
   pivot_longer(!tag, names_to = "year", values_to = "state", names_prefix = "X")
 #here we have fates for each tag for each year - now to put it into the Dodecatheon df
 
-#test <- left_join(Dodecatheon, dtable)
+
 
 #adding life stages
 #V = vegetative, F = flowering, U = Underground/Dormant, D = dead..but for now leaving it as NA. Havent decided when a plant is dead vs when its still dormant AND what to do with unsurveyed plants. Hmm...
@@ -528,24 +589,23 @@ Dodecatheon <- Dodecatheon %>%
   
 dor_fates <- left_join(Dodecatheon, dtable, by = c("tag", "year"))
 dor_fates$life_st[dor_fates$state == "dormant"] <- "dormant"
-dor_fates$life_st[dor_fates$state == "underground"] <- "underground"
+#dor_fates$life_st[dor_fates$state == "underground"] <- "underground"
 dor_fates$life_st[dor_fates$state == "dead"] <- "dead"
 
 #855 is having a problem!
 
 dor_fates$psurvival[dor_fates$life_st == "dormant"] <- "1"
 dor_fates$psurvival[dor_fates$life_st == "dead"] <- "0"
-dor_fates$psurvival[dor_fates$life_st == "underground"] <- "1"
+#dor_fates$psurvival[dor_fates$life_st == "underground"] <- "1"
 dor_fates$ros.area[dor_fates$life_st == "dormant"] <- NA
 dor_fates$pflower[dor_fates$life_st == "dormant"] <- "0"
 # can change more things for the dead ones (pflower, etc), but models should be ok for now
 
 # #Putting these onto the main data file:
 Dodecatheon <- dor_fates %>% 
-  select(-state) %>% 
-  filter(tag !="855") #fix this at some point!
+  select(-state) 
 
-remove(dormant, dor_fates, dtable)
+
 # ################################################################################
 # #Adding in eaten data from 2019!
 # eaten_original <- read.csv("/Users/Jenna/Dropbox/Jenna/fall_dode/dode/Dodecatheon_data/2019 Prelim/2019_Dodecatheon_Demography_Data_Resurveys_TS3.csv",  fileEncoding="UTF-8-BOM")
