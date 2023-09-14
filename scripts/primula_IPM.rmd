@@ -14,11 +14,16 @@ library(popbio)
 theme_set(theme_classic()) #for ggplot
 ```
 
-- To do: use sarah's code with the townsendia solution to having multiple growth functions feed into one IPM big marrix!
-first, just write out the params to have 6 rows (for each combination of reproduction and trt! )
+DONE- To do: use sarah's code with the townsendia solution to having multiple growth functions feed into one IPM big marrix!
+first, just write out the params to have 6 rows (for each combination of reproduction and trt! ) 
+    - What I ended up doing: making the params df "long", so each row was for a specific trt and reproduction, and then feeding each row into the big matrix. And it works! Great!!
+    
+    Next Steps:
+    -Add temperature in! Make a loop for the parameters
+    -Figure out whats happening with those tags in the cleaning script
 
 ```{r}
-#this is code from Sarah that has one function!! 
+#this is code from Sarah that has one function for the townsendia df!! I've edited it below to get it to work for the primula data
 # 
 #  g.yx<-function(lifehist, xp,x,params){
 #    xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
@@ -111,12 +116,24 @@ Eventually do to:
 ##IPM for Primula data
 ```{r}
 #load best fit models from primula_climate_VR.r"
+# 
+# gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt * grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula) ###
+#   growth_var <- as.data.frame(VarCorr(gm17)) #assumes same variance across all, not sure if thats ok
+# fm.f16 <- glmer(pflowerT1 ~ log.ros.area * pflower + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
+# sm10lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial") ###
+# noflow9 <- glm(flow.sum ~ log.ros.area + grow.season.mean.min.temp, data = subset(primula, flow.sum > 0), family = "poisson")
 
-gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt * grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula) ###
-  growth_var <- as.data.frame(VarCorr(gm17)) #assumes same variance across all, not sure if thats ok
-fm.f16 <- glmer(pflowerT1 ~ log.ros.area * as.factor(pflower) + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-sm10lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial") ###
-noflow9 <- glm(flow.sum ~ log.ros.area + grow.season.mean.min.temp, data = subset(primula, flow.sum > 0), family = "poisson")
+fm.base.cor.int <- glmer(pflowerT1 ~ log.ros.area*as.factor(pflower) + (1|plot) + (1|year), data = primula, family = "binomial")
+sm.gs.av.temp <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+gm.gs.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*as.factor(pflower)*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+noflowers.base.cor <- glmer(flow.sum ~ log.ros.area + pflower + (1|plot) + (1|year), data = subset(primula, flow.sum > 0), family = "poisson")
+seed3  <- glmer(total.seeds~log.ros.area*trt + (1|year)+ (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
+
+
+growth_var <- as.data.frame(VarCorr(gm.gs.precip.cor.int3)) #assumes same variance across all, not sure if thats ok
+coef(summary(gm.gs.precip.cor.int3))
+#coef(fm.base.cor.int)
+
 ```
 
 
@@ -131,7 +148,8 @@ GOAL FOR 4/5: just make some these up for now and make a model that runs!
 ```{r}
 
 prob.flower.makes.seeds <- 0.73 #this is a made up number
-no.seeds <- 80 #if you make seeds, this is how many seeds you make per capsule (so per capita?? does this need to be multiplied by number of capsules?) this is actually size dependent, I think - will need more work here.
+## I need to change this because this is treatment dependent!
+no.seeds <- 36 #if you make seeds, this is on averge how many seeds you make 
 prob.seed.germ <- .001 #made up, will change later (after seed addition data comes in )
 prob.seedling.to.1leaf <- .1
 prob.1leaf.to.1leaf <- .1
@@ -158,17 +176,21 @@ max.size <-maxRealsize+1.5 #upper
 
 This is a little tricky! There are a lot of variables in the models, so be careful here with the equations for the mixed models
 Also ~ how do deal with temperature in these?? Just add the variable in to get the slope??
-I've just added in the mean temp, so these are specific to one specific temperature (in the future, I think I can write a loop to get a range of temperatures?)
+I've just added in the mean temp, so these are specific to one specific temperature (in the future, I can write a loop to get a range of temperatures?)
 
 
 ```{r parameter vector, echo=FALSE}
-#whats the average growing season max temp? Eventually, will need to do a loop here for different climate variables...
-av.grow.max.temp <- climate_percentiles$maxT_mean[1]
-av.grow.min.temp <- climate_percentiles$minT_mean[1]
 
+# pflower
+
+# av.grow.max.temp <- climate_percentiles$maxT_mean[1]
+# av.grow.min.temp <- climate_percentiles$minT_mean[1]
+#rows <- expand.grid(precip= c(mean(climate$grow.season.tot.precip), min(climate$grow.season.tot.precip), max(climate$grow.season.tot.precip)), temp = c(mean(climate$grow.season.mean.mean.temp), min(climate$grow.season.mean.mean.temp), max(climate$grow.season.mean.mean.temp)), reproduction = c("veg","flowered"))
+rows <- expand.grid(precip= seq(min(climate$grow.season.tot.precip), max(climate$grow.season.tot.precip), by = 25), temp = seq(min(climate$grow.season.mean.mean.temp), max(climate$grow.season.mean.mean.temp), by = .75), reproduction = c("veg","flowered"))
+rows <- rows %>% mutate(temp = round(temp, 2))
 
 params=data.frame(
-	growth.int = c(NA,NA, NA, NA, NA, NA),
+	growth.int = c(NA),
 	#growth.int.control = c(NA,NA, NA, NA, NA, NA),
 	#growth.int.irr = NA,
 	#growth.int.drought = NA,
@@ -200,34 +222,57 @@ params=data.frame(
 	prob.seed.germ = NA
 	#pdorm.int=NA
 )
+params <- bind_cols(params, rows)
 
-params$trt <- c("irrigated", "irrigated", "control", "control", "drought", "drought")
-params$reproduction <- c("flowered", "veg", "flowered", "veg", "flowered", "veg")
+#params$trt <- c("irrigated", "irrigated", "control", "control", "drought", "drought")
+##params$reproduction <- c("flowered", "veg")
+#params$precip <- c(mean(climate$grow.season.tot.precip), min(climate$grow.season.tot.precip), max(climate$grow.season.tot.precip))
+#params$temp <- c(mean(climate$grow.season.mean.mean.temp), min(climate$grow.season.mean.mean.temp), max(climate$grow.season.mean.mean.temp))
 
-#growth intercepts - different for each treatment
-params$growth.int[params$trt == "control"] <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp
-params$growth.int[params$trt == "irrigated"] <-fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp +   fixef(gm17)[7]*av.grow.max.temp
-params$growth.int[params$trt == "drought"] <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp
+#gm.gs.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
+
+
+
+#growth intercepts
+for (i in 1:length(params$growth.int[params$reproduction == "veg"])) {
+  params$growth.int[params$reproduction == "veg"][i] <- fixef(gm.gs.precip.cor.int3)[1] + fixef(gm.gs.precip.cor.int3)[4]*params$precip[i]
+  params$growth.int[params$reproduction == "flowered"][i] <- fixef(gm.gs.precip.cor.int3)[1] + fixef(gm.gs.precip.cor.int3)[4]*params$precip[i] + fixef(gm.gs.precip.cor.int3)[3] + fixef(gm.gs.precip.cor.int3)[7]*params$precip[i]
+}
+# params$growth.int[params$trt == "irrigated"] <-fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp +   fixef(gm17)[7]*av.grow.max.temp
+# params$growth.int[params$trt == "drought"] <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp
 
 #things get messy here, check that these all make sense...[can add written out equations here...]
 # params$growth.int.control <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp # growth intercept for control
 # params$growth.int.drought <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp # growth intercept for drought
 # params$growth.int.irr <- fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[7]*av.grow.max.temp# growth intercept for irr
 
-#because temp is constant here, no need for varying slopes! they are all the same (for now...)
-params$growth.slope <- fixef(gm17)[2] # growth slope size t for control
+#slope for growth
+for (i in 1:length(params$growth.slope[params$reproduction == "veg"])) {
+  params$growth.slope[params$reproduction == "veg"][i] <- fixef(gm.gs.precip.cor.int3)[2] + fixef(gm.gs.precip.cor.int3)[6]*params$precip[i]
+  params$growth.slope[params$reproduction == "flowered"][i] <- fixef(gm.gs.precip.cor.int3)[2] + fixef(gm.gs.precip.cor.int3)[6]*params$precip[i]+ fixef(gm.gs.precip.cor.int3)[5]+ fixef(gm.gs.precip.cor.int3)[8]*params$precip[i]
+}
+
 params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
 
-params$surv.int <- fixef(sm10lag)[1] + fixef(sm10lag)[3]*av.grow.min.temp # survival intercept
-params$surv.slope <- fixef(sm10lag)[2] + fixef(sm10lag)[4]*av.grow.min.temp # survival size t
 
-params$pflow.int[params$reproduction == "veg"] <- fixef(fm.f16)[1] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept for pflower == 0
-params$pflow.int[params$reproduction == "flowered"] <- fixef(fm.f16)[1] + fixef(fm.f16)[3] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept
-params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.f16)[2] # probability of flowering slope for veg plants
-params$pflow.slope[params$reproduction == "flowered"] <- fixef(fm.f16)[2] + fixef(fm.f16)[5] # probability of flowering slope for flowered plants
+#sm.gs.av.temp- i think there needs to be a loop here for each temp value - yes great
+for (i in 1:length(params$temp)) {
+  params$surv.int[i] <- fixef(sm.gs.av.temp)[1] + fixef(sm.gs.av.temp)[3]*params$temp[i]
+}
+ # survival slope
+params$surv.slope <- fixef(sm.gs.av.temp)[2] # survival size t
 
-params$no.flow.int <- coef(noflow9)[1] + coef(noflow9)[3]*av.grow.min.temp # flower number production intercept at certain temp
-params$no.flow.slope <- coef(noflow9)[2] # flower number production size t
+#params$pflow.int[params$reproduction == "veg"] <- fixef(fm.f16)[1] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept for pflower == 0
+params$pflow.int[params$reproduction == "veg"] <- fixef(fm.base.cor.int)[1] # probability of flowering intercept for pflower == 0
+# params$pflow.int[params$reproduction == "flowered"] <- fixef(fm.f16)[1] + fixef(fm.f16)[3] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept
+params$pflow.int[params$reproduction == "flowered"] <- fixef(fm.base.cor.int)[1] + fixef(fm.base.cor.int)[3] # probability of flowering intercept
+
+
+params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.base.cor.int)[2] # probability of flowering slope for veg plants
+params$pflow.slope[params$reproduction == "flowered"] <- fixef(fm.base.cor.int)[2] + fixef(fm.base.cor.int)[4] # probability of flowering slope for flowered plants
+
+params$no.flow.int <- fixef(noflowers.base.cor)[1] 
+params$no.flow.slope <- fixef(noflowers.base.cor)[2] # flower number production size t
 
 #params$pdorm.int <-fixef(dorm_model)[1] #intercept of dormancy model to calculate prob of dormancy (not size dependent)
 #note that the IPM doesn't use dormancy parameter or the dormancy model
@@ -277,7 +322,7 @@ s.x=function(x,params) {
   #dnorm(y,mean=params$growth.int.drought + params$growth.slope*x,sd=params$growth.sd)
 
 #}
-#GROWTH FROM SIZE X TO Y for IRRIGATED
+#GROWTH FROM SIZE X TO Y; just using one function! No need to seperate it out for each trt. Later on different params will be fed into this
 g.yx<-function(y,x,params){
     #ignoring eviction here...
   #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
@@ -323,6 +368,7 @@ pf.x <-function(x,params){
 #     params$prob.seed.germ)
 #  #is this right? I want a number of seedlings that are made.
 # }
+
 f.yx=function(x,params) { 		
 	return(pf.x(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)*
     params$p.flower.makes.seed*params$no.seeds*params$prob.seed.germ)
@@ -336,7 +382,7 @@ recruit.size<-function(y,params){
 ```
 
 ```{r setting up stage matrices}
-params_list <-  filter(params) %>% split(., seq(nrow(.))) #this splits up params into 6 rows, which I can feed into the function below
+params_list <-  filter(params) %>% split(., seq(nrow(.))) #this splits up params into 18 rows, which I can feed into the function below
 #params_in <- params_list[[1]] #to test it!
 # BIGMATRIX ---------------------------------------------------------------
 #building off of code from Tom Miller:
@@ -377,7 +423,7 @@ bigmatrix<-function(params_list, mat.size)
   IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation of fertility and transition matrix
   out_matrix <- list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y)
   
-  out_lamb <- data.frame(lambda = lambda(IPMmat), trt = params_list$trt, reproduction = params_list$reproduction)
+  out_lamb <- data.frame(lambda = lambda(IPMmat), precip = params_list$precip, temp = params_list$temp, reproduction = params_list$reproduction)
   #return(out_matrix) #can check this to have a list of all of the matrices listed above
   return(out_lamb) #for now, I just want lambdas
 
@@ -394,6 +440,7 @@ primula_lambda <- do.call(rbind, lamb_lists)
 #                            mat.size = mat.size) %>% bind_rows()
 
 
+#this is code that works for just one set of params
 # primula_lambda <- bigmatrix(params = params_in,
 #                             mat.size = mat.size)
 # lambda(primula_lambda$IPMmat)
@@ -408,6 +455,27 @@ abline(0,1,lwd=3)
 ## And I'm not sure that the F kernel - axis should be flipped, anyway
 ```
 
+
+
+```{r}
+#now to make a graph:
+
+ipm <- primula_lambda %>% 
+  ggplot(aes(x = precip, y = lambda, linetype = reproduction))+
+  geom_line(data = subset(primula_lambda, temp == 8.14), aes(x = precip, y = lambda), color = "lightblue2",  size = 1.25)+
+  geom_line(data = subset(primula_lambda, temp == 9.64), aes(x = precip, y = lambda), color = "darkgrey", size = 1.25)+
+  geom_line(data = subset(primula_lambda, temp == 11.14), aes(x = precip, y = lambda), color = "firebrick", size = 1.25)+
+  labs(x = "Growing Season Total Precipitation (mm)", y = "Lambda")+
+  scale_linetype_manual(values=c("longdash", "solid"))+
+  theme(legend.position="none")
+
+# ggplot(primula_lambda, aes(x = precip, y = lambda, fill = temp)) +
+#   geom_tile(color = "black") +
+#   scale_fill_gradient(low = "white", high = "red")
+
+ggsave(plot = ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/ipm climate.png", width = 5, height = 5, dpi = 300)
+
+```
 
 
 
