@@ -28,71 +28,179 @@ They are:
     
 - The number of seeds produced when seeds are made
     - The data we have for this: resurvey and seed counts in 2021, 2022 [size of capsules - I need to do     some thinking for this], (2023)
-    - Will this be plot or treatment specific? Will need to see how variable it is - _decision:_     treatment specific 
-    - size dependent? yes
+    - Will this be plot or treatment specific? Will need to see how variable it is 
     
 ```{r}
-seeds21 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Seed_Counts.csv")
+#2021 data
+clip <- read.csv("../data/2021_Primula_Clipping.csv")
+clip <- clip %>% 
+  select(1:8, -c(coor, date.of.clipping)) %>% 
+  mutate(tag = as.character(tag),
+         plot = as.character(plot),
+         initial.flower = no.flowers.at.start +no.buds.at.start)
 
+seeds21 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Seed_Counts.csv")
+#I want 2 data sets from this:
+## 1) seeds per capsule with capsule area
+## 2) seeds per plant
+
+#volume of a prolate ellipsoid: 
+### 4/3*pi*a*b^2
 seeds21 <- seeds21 %>% 
   mutate(plot = as.character(plot),
          tag = as.character(tag),
          pseeds = if_else(no.seeds > 0, 1, 0),
-         cap.area = 4/3*pi*capsule.L*capsule.W^2,
+         cap.area = 4/3*pi*(capsule.L/2)*(capsule.W/2)*(capsule.W/2),#this is actuall volume!
+         #cap.area = pi*(capsule.L/2)*(capsule.W/2),
          year = "2021")
 seeds21$pseeds[is.na(seeds21$pseeds)] <- 1 #assuming the plants where we couldn't count capsules separately had all their capsules contribute to seed total
-
 seeds21 <- left_join(seeds21, plots)
 
-#volume of a prolate ellipsoid: 
-### 4/3*pi*a*b^2
 
+cap <- seeds21 %>% group_by(tag, plot) %>% 
+  dplyr::summarize(no.success.cap = sum(pseeds),
+            total.seeds = sum(no.seeds))
+cap$total.seeds[cap$tag == 1556] <- 29
+cap$total.seeds[cap$tag == 1988] <- 58
+cap$total.seeds[cap$tag == 282] <- 50
+cap$total.seeds[cap$tag == 494] <-98
+
+#adding cap to the clip df
+
+cap <- full_join(clip, cap) %>% 
+  mutate(total.seeds = if_else(no.success.cap == 0, 0, total.seeds))
+cap$total.seeds[is.na(cap$total.seeds)] <- 0
+cap$no.success.cap[is.na(cap$no.success.cap)] <- 0
+cap$initial.flower[cap$tag == 1490] <- 6
+cap$initial.flower[cap$tag == 5769] <- 5
+cap$initial.flower[cap$tag == 962] <- 6
+cap$initial.flower[cap$tag == 5746] <- 5
+cap$no.success.cap[cap$tag == 540] <- 4
+cap$no.success.cap[cap$tag == 693] <- 2
+seedset21 <- cap %>% 
+  mutate(seed.set = no.success.cap/initial.flower,
+         year = "2021") %>% 
+  select(year, plot, tag, initial.flower, no.success.cap, seed.set) %>% 
+  rename(no.successful.cap = no.success.cap,
+         no.at.start = initial.flower)
+remove(clip)
+```
+
+
+
+```{r}
+#2022 just measured capsule sizes:
+
+#get data frame with just number of flowers in demog
+flowers22 <- Dodecatheon %>% 
+  filter(year == "2022") %>% 
+  select(c(1:3), no.flowers) 
+
+seeds22 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_Capsule_Measurements.csv")
+seeds22 <- seeds22 %>% 
+  mutate(cap.area = 4/3*pi*(capsule.L/2)*(capsule.W/2)*(capsule.W/2),
+         year = "2022",
+         year = as.character(year))
+seeds22$pseeds <- 1
+seeds22$pseeds[is.na(seeds22$cap.area)] <- 0 
+seedset22 <- seeds22 %>% 
+  group_by(plot, tag) %>% 
+  summarize(no.successful.cap = sum(pseeds)) 
+seedset22 <- seedset22 %>% 
+  mutate(plot = as.character(plot))
+
+seedset22 <- left_join(seedset22, flowers22) %>% 
+  rename(no.at.start=no.flowers) %>% 
+  mutate(seed.set = ifelse(no.at.start == 0, 0, no.successful.cap/no.at.start)) %>% 
+  filter(tag!="div")
+#seedset22[is.na(seedset22)] <- 0
+
+
+seeds22 <- seeds22 %>% 
+  mutate(plot = as.character(plot))
+seeds22 <- left_join(seeds22, plots)
+# seedset22 <- seeds22 %>% 
+#   mutate(pseeds = if_else(no.seeds > 0, 1, 0)) %>% 
+# 
+#   group_by(tag, plot) %>% 
+#   dplyr::summarize(no.success.cap = sum(pseeds))
+
+
+
+#2023 just measured capsule sizes:
+seeds23 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2023_Dodecatheon_Capsule_Measurements.csv")
+seeds23 <- seeds23 %>% 
+  mutate(plot = as.character(plot),
+         tag = as.character(tag),
+         year = "2023")
+seedset23 <- seeds23 %>% 
+  mutate(seed.set = ifelse(no.at.start == 0, 0, no.successful.cap/no.at.start),
+         plot = as.character(plot),
+         tag = as.character(tag)) %>% 
+  select(c(year, plot, tag,no.successful.cap, no.at.start,seed.set)) %>% 
+  group_by(tag) %>% 
+  slice(1)
+seedset <- bind_rows(seedset21, seedset22, seedset23)
+remove(seedset21, seedset22, seedset23)
+
+seeds23 <- left_join(seeds23, plots)
+seeds23 <- seeds23 %>% select(1:5, trt, year) %>% 
+  mutate(cap.area = 4/3*pi*(capsule.L/2)*(capsule.W/2)*(capsule.W/2))
+```
+
+```{r}
+
+```
+
+```{r}
+###
 seeds21.model <- seeds21 %>% 
   filter(seeds.lost != "Y") %>% 
   filter(no.seeds>0,
-         cap.area < 4)
+         cap.area < .5)
 ggplot(seeds21.model, aes(cap.area, no.seeds))+
   geom_point()+
   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
   facet_wrap(~trt)
+# ggplot(seeds21.model, aes(cap.vol, no.seeds))+
+#   geom_point()+
+#   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
+#   facet_wrap(~trt)
 
 #seed <- glm(no.seeds~cap.area, data = seeds21, family = "poisson")
 #summary(seed)
-#seed.trt <- glm(no.seeds~cap.area + trt, data = seeds21, family = "poisson")
-#summary(seed.trt)
+seed.trt <- glm(no.seeds~cap.area + trt, data = seeds21, family = "poisson")
+summary(seed.trt)
 seed.trt.1 <- glm(no.seeds~cap.area*trt, data = seeds21.model, family = "poisson")
 summary(seed.trt.1)
 coef(seed.trt.1)
 
-#2022 just measured capsule sizes:
-
-seeds22 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_Capsule_Measurements.csv")
-seeds22 <- seeds22 %>% 
-  mutate(cap.area = 4/3*pi*capsule.L*capsule.W^2,
-         year = "2022")
-seeds22 <- seeds22 %>% 
-  mutate(plot = as.character(plot))
-seeds22 <- left_join(seeds22, plots)
-
+#gettign no.seeds per capsule
 #using model from above to get no.seeds:
-reg<- as.data.frame(predict(seed.trt.1, newdata = seeds22, type = "response"))
+tot.seeds <- bind_rows(seeds22, seeds23)
+
+
+reg<- as.data.frame(predict(seed.trt, newdata = tot.seeds, type = "response"))
 colnames(reg)[1] <- "no.seeds"
-seeds22 <- cbind(seeds22, reg)
+tot.seeds <- cbind(tot.seeds, reg)
 remove(reg)
-seeds22 <- seeds22 %>% 
-  mutate(no.seeds = ceiling(no.seeds),
-         pseeds = if_else(no.seeds > 0, 1, 0))
-seeds22$pseeds[is.na(seeds22$pseeds)] <- 0 
-seeds22$no.seeds[is.na(seeds22$no.seeds)] <- 0
+
+tot.seeds <- bind_rows(tot.seeds, seeds21)
+# seeds22 <- seeds22 %>% 
+#   mutate(no.seeds = ceiling(no.seeds),
+#          pseeds = if_else(no.seeds > 0, 1, 0))
+# seeds22$pseeds[is.na(seeds22$pseeds)] <- 0 
+#seeds22$no.seeds[is.na(seeds22$no.seeds)] <- 0
 #ok great, now I have no.seeds for 2022 (for all of the plants that made seeds!)
 
-###
-tot.seeds <- full_join(seeds21, seeds22)
+
+#tot.seeds <- full_join(seeds21, seeds22)
 
 
-tot.seeds <- tot.seeds %>% group_by(year, tag, plot) %>% 
-  summarize(no.success.cap = sum(pseeds),
-            total.seeds = sum(no.seeds))
+tot.seeds <- tot.seeds %>% group_by(year, tag, plot, trt) %>% 
+  summarize(#no.success.cap = sum(pseeds),
+            total.seeds = sum(no.seeds, na.rm = T)) %>% 
+  mutate(total.seeds = round(total.seeds, 0))
 #these are ones where I didnt count seeds separately in each capsule
 tot.seeds$total.seeds[tot.seeds$tag == 1556 & tot.seeds$year == "2021"] <- 29
 tot.seeds$total.seeds[tot.seeds$tag == 1988 & tot.seeds$year == "2021"] <- 58
@@ -101,21 +209,55 @@ tot.seeds$total.seeds[tot.seeds$tag == 282 & tot.seeds$year == "2021"] <- 50
 tot.seeds$total.seeds[tot.seeds$tag == 494 & tot.seeds$year == "2021"] <-98
 
 #adding pseeds back in:
-tot.seeds <- tot.seeds %>% 
-  mutate(pseeds = if_else(total.seeds>0, 1, 0),
-         pseeds = as.character(pseeds))
+# tot.seeds <- tot.seeds %>% 
+#   mutate(pseeds = if_else(total.seeds>0, 1, 0),
+#          pseeds = as.character(pseeds))
 #693 did make seeds, just don't know how much
-tot.seeds$pseeds[tot.seeds$tag == 693 & tot.seeds$year == "2021"] <-"1"
+#tot.seeds$pseeds[tot.seeds$tag == 693 & tot.seeds$year == "2021"] <-"1"
+#write.csv(tot.seeds, "C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_Seed_Counts.csv", row.names = F)
+tot.seeds <- tot.seeds %>% 
+  mutate(plot= as.character(plot),
+         year = as.character(year))
 
 remove(seeds21, seeds22, seed.trt.1, seeds21.model)
 Dodecatheon <- left_join(Dodecatheon, tot.seeds) #add it to main demography file
 #ok, done!
 #tot.seeds is the end df - it has no.seeds made by all flowering plants in 2021 and 2023
 ```
+
+
 ```{r}
+# (3) how many flowers get to make seeds - successful fruitset - can this be a constant or does it vary across treatments, year, etc
+test <- left_join(Dodecatheon, seedset)
+test <- test %>% filter(!is.na(seed.set))
+hist(test$seed.set)
+
+ggplot(test, aes(x = log.ros.area, y = seed.set))+
+  geom_point()+
+  #geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
+  facet_wrap(~trt)
+
+ggplot(test, aes(x = trt, y = seed.set))+
+  geom_boxplot()
+#what am i trying to ask here - does fruitset differ between treatments?
+
+seed.set.trt <- test %>% 
+  group_by(trt, year) %>% 
+  summarize(mean = mean(seed.set),
+            sd = sd(seed.set))
+#so seed set definitely varies by year and treatment. And is surprisingly low!
+
+
+```
+
+
+
+
+```{r}
+#if you make seeds, how many do you make
 #Now, make a model for number of seeds produced:
 #first some graphs
-ggplot(subset(Dodecatheon, total.seeds >0), aes(x = log.ros.area, y = total.seeds, color = year))+
+ggplot(subset(Dodecatheon, total.seeds >0), aes(x = log.ros.area, y = total.seeds))+
   geom_point()+
   geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
   facet_wrap(~trt)

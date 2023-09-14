@@ -519,7 +519,7 @@ which(duplicated(dode2023$tag))
 
 ################################################################################
 #dont need these anymore:
-remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots)
+remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots, dode2023)
 
 # 2020 problems:
 #146 = solved
@@ -605,7 +605,7 @@ dor_fates$pflower[dor_fates$life_st == "dormant"] <- "0"
 Dodecatheon <- dor_fates %>% 
   select(-state) 
 
-
+remove(dor_fates, dormant, dtable)
 # ################################################################################
 # #Adding in eaten data from 2019!
 # eaten_original <- read.csv("/Users/Jenna/Dropbox/Jenna/fall_dode/dode/Dodecatheon_data/2019 Prelim/2019_Dodecatheon_Demography_Data_Resurveys_TS3.csv",  fileEncoding="UTF-8-BOM")
@@ -660,10 +660,11 @@ Dodecatheon <- Dodecatheon %>%
   mutate(ros.areaT1 = lead(ros.area),
          no.capsulesT1 = lead(no.capsules),
          pflowerT1 = lead(pflower),
-         pflower = as.numeric(pflower),
-         pflowerT1 = as.numeric(pflowerT1),
+         pflower = as.factor(pflower),
+         pflowerT1 = as.factor(pflowerT1),
          psurvivalT1 = lead(psurvival),
-         psurvivalT1 = as.numeric(psurvivalT1),
+         psurvival = as.factor(psurvival),
+         psurvivalT1 = as.factor(psurvivalT1),
          life_stT1 = lead(life_st),
          ros.areaTminus1 = lag(ros.area),
          pflowerTminus1 = lag(pflower),
@@ -725,7 +726,9 @@ Dodecatheon <- Dodecatheon %>%
   replace_na(list(no.flowers = 0, no.capsules = 0, no.aborted = 0, no.eaten = 0)) %>% 
   dplyr::mutate(flow.sum = no.capsules+ no.flowers,
                 flow.sum = flow.sum+no.aborted,
-                 flow.sum = flow.sum+no.eaten)
+                 flow.sum = flow.sum+no.eaten) %>% 
+  group_by(tag) %>% 
+  mutate(flow.sumT1 = lead(flow.sum))
                 
 #here, Sum = total number of reproductive parts the plant made, regardless of if those made seeds
 # Next step: add total number of flowers that made seeds
@@ -757,3 +760,29 @@ Dodecatheon <- Dodecatheon %>%
 
 remove(tiny, extiny)
 
+### the graph that shows how often plants reflower
+# flower.plot <- primula%>% 
+#   group_by(tag) %>% 
+#   arrange(tag, year)
+# flower.plot <- flower.plot[c(1:1500),]
+# 
+# 
+# ggplot(flower.plot, aes(x = year, y = as.numeric(pflower)-1, group = tag, color = tag))+
+#   geom_line(aes(color =tag), position=position_jitter(width=0.2, h = 0.02))+
+#   facet_wrap(~trt)+
+#   theme(legend.position = "none")+
+#   labs(y = "pflower")
+
+#ggsave(file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/misc/flower.plot all.png", width = 10, height = 6, dpi = 300)
+
+################
+#adding in total seeds
+tot.seeds <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_Seed_Counts.csv")
+tot.seeds <- tot.seeds %>% 
+  mutate(plot= as.character(plot),
+         year = as.character(year))
+Dodecatheon <-  left_join(Dodecatheon, tot.seeds)
+Dodecatheon <- Dodecatheon %>% 
+  group_by(tag) %>%
+  arrange(tag, year) %>% 
+  mutate(total.seedsT1 = lead(total.seeds))
