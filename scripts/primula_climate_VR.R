@@ -11,29 +11,7 @@ Z <- wes_palettes$Zissou1
 R <- wes_palettes$Royal2
 I <- wes_palettes$IsleofDogs1
 
-# Read in data ------------------------------------------------------------------------
 
-### read in all years of Primula data and weather data from the Cowichan
-# Add in climate data:
-source("./scripts/Cowichan_climatevalues.R")
-
-# Add in demography data:
-source("./scripts/dode_allyears_cleaned.R")
-
-## Join climate data to demography data by year
-primula <- left_join(Dodecatheon, climate, by = "year") %>% 
-  filter(tag!= "1881") %>% 
-  filter(tag!= "1471") %>% 
-  filter(tag!= "1183") %>% 
-  filter(tag!= "8317") %>% 
-  filter(tag!= "8311") %>% 
-  filter(tag!= "8315") %>% 
-  mutate(pflower = as.factor(pflower))
-#there's a problem with these tags that I don't want to deal with rn
-
-remove(climate, Dodecatheon)
-theme_set(theme_classic()) #for ggplot
-## Now to build the models. 
 
 # Growth Vital Rates ------------------------------------------------------
 #####################################################################################################
@@ -278,6 +256,7 @@ gm84 <- lmer(log.ros.areaT1 ~ log.ros.area*winter.max.temp.1yearlag + trt + (1|p
 
 
 ###
+#make a list and write a function that drops them through time
 growth <- mget(ls(pattern = "^gm")) #make a list of all of those models that start with gm (^ means start with)
 growth_AICc<-aictab(cand.set = growth, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
