@@ -6,6 +6,7 @@
 library(tidyverse)
 library(lubridate)
 library(wesanderson)
+library("GGally")
 #library(ggpubr)
 theme_set(theme_classic())
 Z <- wes_palettes$Zissou1
@@ -29,7 +30,16 @@ weather$Date <- parse_date_time(weather$Date, "Y-m-d")
 weather$month_year <- format(as.Date(weather$Date), "%Y-%m")
 
 #because the 2012 data has NA's, only include the December values (no na's)
-weather <- weather %>% filter(Date >= as.Date("2012-12-01"))
+weather <- weather %>% filter(Date >= as.Date("2012-12-01"),
+                              Date <= as.Date("2023-08-15"))
+annual <- weather %>% 
+  mutate(month = month(Date), year = year(Date)) %>%
+  group_by(year) %>% 
+  summarize(annual.tot.precip = sum(total_precip_mm),
+            annual.mean.min.temp = round(mean(minTemp_C), 3),
+            annual.mean.max.temp = round(mean(maxTemp_C),3),
+            annual.mean.temp = round(mean(AveTemp_C),3)) %>% 
+  mutate( year = as.character(year))
 
 # growing season values and lagged 1 year and 2 year values
 ### I'm classifying "growing season" as March - May, so the same as spring for the climate NA data
@@ -39,17 +49,25 @@ grow_season <- weather %>%
          month < 6)%>% 
   dplyr::group_by(year) %>%
   dplyr::summarize(grow.season.tot.precip = sum(total_precip_mm),
-            grow.season.mean.min.temp = mean(minTemp_C),
-            grow.season.mean.max.temp = mean(maxTemp_C),
-            grow.season.mean.mean.temp = mean(AveTemp_C)) %>% 
+            grow.season.mean.min.temp = round(mean(minTemp_C), 3),
+            grow.season.mean.max.temp = round(mean(maxTemp_C),3),
+            grow.season.mean.temp = round(mean(AveTemp_C),3)) %>% 
   mutate(grow.season.precip.1yearlag = lag(grow.season.tot.precip),
          grow.season.precip.2yearlag = lag(grow.season.precip.1yearlag),
          grow.season.min.temp.1yearlag = lag(grow.season.mean.min.temp),
-         grow.season.ave.temp.1yearlag = lag(grow.season.mean.mean.temp),
+         grow.season.ave.temp.1yearlag = lag(grow.season.mean.temp),
          grow.season.min.temp.2yearlag = lag(grow.season.min.temp.1yearlag),
          grow.season.max.temp.1yearlag = lag(grow.season.mean.max.temp),
          grow.season.max.temp.2yearlag = lag(grow.season.max.temp.1yearlag),
          grow.season.ave.temp.2yearlag = lag(grow.season.ave.temp.1yearlag))
+#
+weather %>% 
+  mutate(month = month(Date)) %>%
+  filter(month > 2,
+         month < 6) %>% 
+  ggplot(aes(Date, total_precip_mm))+
+  geom_point()
+
 #this gives a df where we have values for each year
 
 #double check that this is what I want here - probably better to not take the mean of a mean? coudl I just use percentiles from daily averges in teh growign season?
@@ -73,9 +91,9 @@ winter <- weather %>%
   mutate(year = if_else(month == 12, year+1, year)) %>% # need to make december the same time frame as Jan and Feb
   group_by(year) %>%
   dplyr::summarize(winter.tot.precip = sum(total_precip_mm),
-            winter.mean.min.temp = mean(minTemp_C),
-            winter.mean.max.temp = mean(maxTemp_C),
-            winter.mean.temp = mean(AveTemp_C)) %>%
+            winter.mean.min.temp = round(mean(minTemp_C), 3),
+            winter.mean.max.temp = round(mean(maxTemp_C), 3),
+            winter.mean.temp = round(mean(AveTemp_C), 3)) %>%
   mutate(winter.precip.1yearlag = lag(winter.tot.precip),
          winter.precip.2yearlag = lag(winter.precip.1yearlag),
          winter.min.temp.1yearlag = lag(winter.mean.min.temp),
@@ -102,9 +120,9 @@ summer <- weather %>%
          month < 9) %>% 
   group_by(year) %>%
   dplyr::summarize(summer.tot.precip = sum(total_precip_mm),
-            summer.mean.min.temp = mean(minTemp_C),
-            summer.mean.max.temp = mean(maxTemp_C),
-            summer.mean.temp = mean(AveTemp_C)) %>% 
+            summer.mean.min.temp = round(mean(minTemp_C), 3),
+            summer.mean.max.temp = round(mean(maxTemp_C), 3),
+            summer.mean.temp = round(mean(AveTemp_C), 3)) %>% 
   mutate(summer.precip.1yearlag = lag(summer.tot.precip),
          summer.precip.2yearlag = lag(summer.precip.1yearlag),
          summer.min.temp.1yearlag = lag(summer.mean.min.temp),
@@ -123,14 +141,138 @@ s_percentile <- summer %>%
             maxT_75th = quantile(summer.mean.max.temp, 0.75),
             maxT_mean = mean(summer.mean.max.temp))
 
+# #we had the idea of looking at certain time periods where climate may be more important for primula:
+# weather$month_day <- format(as.Date(weather$Date), "%m-%d")
+# 
+# ##(1) just April 1-May 30th climate
+# 
+# aprilmay <-  weather %>%
+#   mutate(month = month(Date), year = year(Date)) %>%
+#   filter(month > 3,
+#          month < 6)
+# aprilmay <- aprilmay %>% 
+#   group_by(year) %>%
+#   dplyr::summarize(aprilmay.tot.precip = sum(total_precip_mm),
+#                    aprilmay.mean.min.temp = mean(minTemp_C),
+#                    aprilmay.mean.max.temp = mean(maxTemp_C),
+#                    aprilmay.mean.temp = mean(AveTemp_C))
+# 
+# 
+# ##(2) just April 15-May 15 climate - this is clunky but whatever
+# 
+# april15 <-  weather %>%
+#   mutate(month = month(Date), year = year(Date), day = day(Date)) %>%
+#   filter(month == 4 & day >= 15)
+# may15 <-  weather %>%
+#   mutate(month = month(Date), year = year(Date), day = day(Date)) %>%
+#   filter(month == 5 & day <= 15)
+# 
+# april15may15 <- bind_rows(april15, may15)
+# remove(april15, may15)
+# 
+# april15may15 <- april15may15 %>% 
+#   group_by(year) %>%
+#   dplyr::summarize(april15may15.tot.precip = sum(total_precip_mm),
+#                    april15may15.mean.min.temp = mean(minTemp_C),
+#                    april15may15.mean.max.temp = mean(maxTemp_C),
+#                    april15may15.mean.temp = mean(AveTemp_C))
+# 
+# #test <- left_join(aprilmay, april15may15) %>% 
+#   #left_join(grow_season)
+# 
+# 
+# grow_season %>% 
+#   ggplot(aes(x = year, y = grow.season.tot.precip))+
+#   geom_col(fill = wes_palettes$Darjeeling2[2], color = "black")+
+#   labs(y = "Spring (March-May) total precipitation (mm)", x = "Year")+
+#   scale_y_continuous(expand = c(0,0), n.breaks = 15) 
+# april15may15 %>% 
+#   ggplot(aes(x = year, y = april15may15.tot.precip))+
+#   geom_col(fill = wes_palettes$Darjeeling2[2], color = "black")+
+#   labs(y = "April15 - May15 total precipitation (mm)", x = "Year")+
+#   scale_y_continuous(expand = c(0,0), n.breaks = 15) 
+# aprilmay %>% 
+#   ggplot(aes(x = year, y = aprilmay.tot.precip))+
+#   geom_col(fill = wes_palettes$Darjeeling2[2], color = "black")+
+#   labs(y = "April 1 - May 31 total precipitation (mm)", x = "Year")+
+#   scale_y_continuous(expand = c(0,0), n.breaks = 15)
+# 
+# grow_season %>% 
+#   ggplot(aes(x = year, y = grow.season.mean.max.temp))+
+#   geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
+#   geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[5]), linewidth = 1.25)+  
+#   geom_line(aes(y = grow.season.mean.temp, group = 1, color = "grey"), linewidth = 1.25, color = Z[3])+
+#   labs(y = "Growing Season (March-May) Temperature (C)", x = "Year")+
+#   theme(legend.position="none")
+# 
+# april15may15 %>% 
+#   ggplot(aes(x = year, y = april15may15.mean.max.temp))+
+#   geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
+#   geom_line(aes(y = april15may15.mean.min.temp, group = 1, color = Z[5]), linewidth = 1.25)+  
+#   geom_line(aes(y = april15may15.mean.temp, group = 1, color = "grey"), linewidth = 1.25, color = Z[3])+
+#   labs(y = "April 15 - May 15 Temperature (C)", x = "Year")+
+#   theme(legend.position="none")
+# 
+# aprilmay %>% 
+#   ggplot(aes(x = year, y = aprilmay.mean.max.temp))+
+#   geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
+#   geom_line(aes(y = aprilmay.mean.min.temp, group = 1, color = Z[5]), linewidth = 1.25)+  
+#   geom_line(aes(y = aprilmay.mean.temp, group = 1, color = "grey"), linewidth = 1.25, color = Z[3])+
+#   labs(y = "April 1 - May 31 Temperature (C)", x = "Year")+
+#   theme(legend.position="none")
+# 
+# #what we want to know is: Is the whole growing season more/less/same variable as smaller time chunks (ie maybe early march/april are always the same, and differences only matter later on)
+# 
+# remove(april15may15, aprilmay)
+###################################################################################
+
 ## put these together:
 climate <- left_join(grow_season, winter, by = "year")
 climate <- left_join(climate, summer, by = "year") %>% 
-  mutate(year = as.character(year))
+  mutate(year = as.character(year)) 
+climate <- left_join(climate, annual, by = "year")
 
 climate_percentiles <- rbind(GS_percentile, s_percentile, w_percentile)
 climate_percentiles$season <- c("growseason", "summer", "winter")
 remove(grow_season, summer, winter, weather, GS_percentile, s_percentile, w_percentile) # take away the dfs I dont need
+
+
+#here I'm scaling the climate varibles
+climate <- climate %>% 
+  select(1, c(ends_with("tot.precip"), ends_with("mean.temp"))) %>% 
+  mutate(grow.season.tot.precip.scale = c(scale(grow.season.tot.precip)),
+         grow.season.mean.temp.scale = c(scale(grow.season.mean.temp)),
+         summer.tot.precip.scale = c(scale(summer.tot.precip)),
+         summer.mean.temp.scale = c(scale(summer.mean.temp)),
+         winter.tot.precip.scale = c(scale(winter.tot.precip)),
+         winter.mean.temp.scale = c(scale(winter.mean.temp))) %>% 
+  mutate_if(is.numeric, round, 3)
+
+###################################################################################
+## making correlation scatterplot figure:
+
+corr.unscale <- climate %>% 
+  select(c(ends_with("tot.precip"), ends_with("mean.temp"), ends_with("min.temp"), ends_with("max.temp"))) %>% 
+  tibble %>% 
+  select(sort(colnames(.)))
+  
+
+corr.scale <- climate %>% 
+  mutate(across(where(is.numeric), ~ c(scale(.)))) %>% 
+  # mutate(grow.season.tot.precip.scale = c(scale(grow.season.tot.precip)),
+  #        grow.season.mean.temp.scale = c(scale(grow.season.mean.temp)),
+  #        summer.tot.precip.scale = c(scale(summer.tot.precip)),
+  #        summer.mean.temp.scale = c(scale(summer.mean.temp)),
+  #        winter.tot.precip.scale = c(scale(winter.tot.precip)),
+  #        winter.mean.temp.scale = c(scale(winter.mean.temp))) %>% 
+  mutate_if(is.numeric, round, 3) %>% 
+  select(c(ends_with("tot.precip"), ends_with("mean.temp"), ends_with("min.temp"), ends_with("max.temp"))) %>% 
+  tibble %>% 
+  select(sort(colnames(.)))
+#ggpairs(corr.unscale)
+#ggsave(file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate/unscaled corr.png", width = 18, height = 18, dpi = 300)
+#ggpairs(corr.scale)
+#ggsave(file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate/scaled corr.png", width = 18, height = 18, dpi = 300)
 
 
 ### 
@@ -155,7 +297,7 @@ TaveSP<- longterm$Tave_sp[[1]]
 temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) + 
   geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
   geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[5]), linewidth = 1.25)+  
-  geom_line(aes(y = grow.season.mean.mean.temp, group = 1, color = Z[3]), linewidth = 1.25, color = Z[3])+
+  geom_line(aes(y = grow.season.mean.temp, group = 1, color = Z[3]), linewidth = 1.25, color = Z[3])+
   labs(y = "Temperature (C)", x = "Year")+
   theme(legend.position="none")+
   geom_hline(yintercept = TmaxSP, linetype='dashed', color = Z[5])+
@@ -171,4 +313,4 @@ temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) +
 temp
 #ggsave("./Figures/climate/gs.temp.climateNA.png", width = 8, height = 8)
 #arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
-remove(precip, temp)
+remove(precip, temp, longterm, annual, corr.scale, corr.unscale)
