@@ -786,3 +786,4 @@ Dodecatheon <- Dodecatheon %>%
   group_by(tag) %>%
   arrange(tag, year) %>% 
   mutate(total.seedsT1 = lead(total.seeds))
+remove(tot.seeds)
