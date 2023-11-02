@@ -3,13 +3,17 @@
 # Reads in cleaned weather station data, makes a single df with mean values and lagged years
 #also reads in long term data from climate NA and makes some graphs
 
+#################################################################################
+
 library(tidyverse)
 library(lubridate)
 library(wesanderson)
-library("GGally")
+
 #library(ggpubr)
 theme_set(theme_classic())
 Z <- wes_palettes$Zissou1
+
+#################################################################################
 
 # read in data from ClimateNA (long term averages)
 longterm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerData/ClimateNA/ClimateNA_CGOP_ClimateData.csv")
@@ -26,12 +30,12 @@ longterm <- longterm %>%
 ## read in cleaned, extrapolated weather station data from WeatherStnInterp_Cowichan_Aug20...
 weather <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerData/weather station/WS_cleaned/cgop_weather_daily_interp.csv")
 weather$Date <- parse_date_time(weather$Date, "Y-m-d")
-
 weather$month_year <- format(as.Date(weather$Date), "%Y-%m")
 
 #because the 2012 data has NA's, only include the December values (no na's)
 weather <- weather %>% filter(Date >= as.Date("2012-12-01"),
                               Date <= as.Date("2023-08-15"))
+#get total precip, round
 annual <- weather %>% 
   mutate(month = month(Date), year = year(Date)) %>%
   group_by(year) %>% 
@@ -41,6 +45,9 @@ annual <- weather %>%
             annual.mean.temp = round(mean(AveTemp_C),3)) %>% 
   mutate( year = as.character(year))
 
+#################################################################################
+
+##GROWING SEASON
 # growing season values and lagged 1 year and 2 year values
 ### I'm classifying "growing season" as March - May, so the same as spring for the climate NA data
 grow_season <- weather %>%
@@ -70,7 +77,7 @@ weather %>%
 
 #this gives a df where we have values for each year
 
-#double check that this is what I want here - probably better to not take the mean of a mean? coudl I just use percentiles from daily averges in teh growign season?
+#get percentiles
 GS_percentile <- grow_season %>% 
   summarize(precip_25th = quantile(grow.season.tot.precip, 0.25),
             precip_75th = quantile(grow.season.tot.precip, 0.75),
@@ -82,13 +89,15 @@ GS_percentile <- grow_season %>%
             maxT_75th = quantile(grow.season.mean.max.temp, 0.75),
             maxT_mean = mean(grow.season.mean.max.temp))
 
+#################################################################################
 
+##WINTER
 #winter values and lagged 1 year and 2 year values
 ## winter is January-March # changing this to Dec, Jan, Feb. This is hard bc it spans 2 years
 winter <- weather %>%
   mutate(month = month(Date), year = year(Date)) %>%
   filter(month < 3 | month == 12) %>% 
-  mutate(year = if_else(month == 12, year+1, year)) %>% # need to make december the same time frame as Jan and Feb
+  mutate(year = if_else(month == 12, year+1, year)) %>% # need to make December the same time frame as Jan and Feb
   group_by(year) %>%
   dplyr::summarize(winter.tot.precip = sum(total_precip_mm),
             winter.mean.min.temp = round(mean(minTemp_C), 3),
@@ -112,6 +121,9 @@ w_percentile <- winter %>%
             maxT_75th = quantile(winter.mean.max.temp, 0.75, na.rm = T),
             maxT_mean = mean(winter.mean.max.temp, na.rm = T))
 
+#################################################################################
+
+##SUMMER
 #summer values and lagged 1 year and 2 year values
 ## summer is June-August
 summer <- weather %>%
@@ -140,6 +152,40 @@ s_percentile <- summer %>%
             maxT_25th = quantile(summer.mean.max.temp, 0.25),
             maxT_75th = quantile(summer.mean.max.temp, 0.75),
             maxT_mean = mean(summer.mean.max.temp))
+
+#################################################################################
+
+##FALL
+#fall values and lagged 1 year and 2 year values
+## fall is September-November
+fall <- weather %>%
+  mutate(month = month(Date), year = year(Date)) %>%
+  filter(month > 9,
+         month < 12) %>% 
+  group_by(year) %>%
+  dplyr::summarize(fall.tot.precip = sum(total_precip_mm),
+                   fall.mean.min.temp = round(mean(minTemp_C), 3),
+                   fall.mean.max.temp = round(mean(maxTemp_C), 3),
+                   fall.mean.temp = round(mean(AveTemp_C), 3)) %>% 
+  mutate(fall.precip.1yearlag = lag(fall.tot.precip),
+         fall.precip.2yearlag = lag(fall.precip.1yearlag),
+         fall.min.temp.1yearlag = lag(fall.mean.min.temp),
+         fall.min.temp.2yearlag = lag(fall.min.temp.1yearlag),
+         fall.max.temp.1yearlag = lag(fall.mean.max.temp),
+         fall.max.temp.2yearlag = lag(fall.max.temp.1yearlag))
+
+F_percentile <- fall %>% 
+  summarize(precip_25th = quantile(fall.tot.precip, 0.25),
+            precip_75th = quantile(fall.tot.precip, 0.75),
+            precip_mean = mean(fall.tot.precip),
+            minT_25th = quantile(fall.mean.min.temp, 0.25),
+            minT_75th = quantile(fall.mean.min.temp, 0.75),
+            minT_mean = mean(fall.mean.min.temp),
+            maxT_25th = quantile(fall.mean.max.temp, 0.25),
+            maxT_75th = quantile(fall.mean.max.temp, 0.75),
+            maxT_mean = mean(fall.mean.max.temp))
+
+#################################################################################
 
 # #we had the idea of looking at certain time periods where climate may be more important for primula:
 # weather$month_day <- format(as.Date(weather$Date), "%m-%d")
@@ -224,63 +270,50 @@ s_percentile <- summer %>%
 # #what we want to know is: Is the whole growing season more/less/same variable as smaller time chunks (ie maybe early march/april are always the same, and differences only matter later on)
 # 
 # remove(april15may15, aprilmay)
+
 ###################################################################################
 
 ## put these together:
-climate <- left_join(grow_season, winter, by = "year")
-climate <- left_join(climate, summer, by = "year") %>% 
+climate <- left_join(left_join(left_join(grow_season, winter), summer), fall) %>% 
   mutate(year = as.character(year)) 
 climate <- left_join(climate, annual, by = "year")
 
-climate_percentiles <- rbind(GS_percentile, s_percentile, w_percentile)
-climate_percentiles$season <- c("growseason", "summer", "winter")
-remove(grow_season, summer, winter, weather, GS_percentile, s_percentile, w_percentile) # take away the dfs I dont need
+climate_percentiles <- rbind(GS_percentile, s_percentile, w_percentile, F_percentile)
+climate_percentiles$season <- c("growseason", "summer", "winter", "fall")
+remove(grow_season, summer, winter, fall, weather, GS_percentile, s_percentile, w_percentile, F_percentile) # take away the dfs I dont need
 
+###################################################################################
+
+#make df of lagged:
+climate_lagged <- climate
 
 #here I'm scaling the climate varibles
+climate_scale <- climate %>% 
+  select(1, c(ends_with("tot.precip"), ends_with(".temp")))
+
+j <- sapply(climate_scale, is.numeric)
+climate_scale[j] <- scale(climate_scale[j])
+climate_scale <- climate_scale %>% 
+    mutate_if(is.numeric, round, 3)
+
 climate <- climate %>% 
-  select(1, c(ends_with("tot.precip"), ends_with("mean.temp"))) %>% 
+  select(1, c(ends_with("tot.precip"), ends_with(".temp"))) %>% 
   mutate(grow.season.tot.precip.scale = c(scale(grow.season.tot.precip)),
-         grow.season.mean.temp.scale = c(scale(grow.season.mean.temp)),
-         summer.tot.precip.scale = c(scale(summer.tot.precip)),
-         summer.mean.temp.scale = c(scale(summer.mean.temp)),
-         winter.tot.precip.scale = c(scale(winter.tot.precip)),
-         winter.mean.temp.scale = c(scale(winter.mean.temp))) %>% 
+       grow.season.mean.temp.scale = c(scale(grow.season.mean.temp)),
+       summer.tot.precip.scale = c(scale(summer.tot.precip)),
+       summer.mean.temp.scale = c(scale(summer.mean.temp)),
+       winter.tot.precip.scale = c(scale(winter.tot.precip)),
+       winter.mean.temp.scale = c(scale(winter.mean.temp)),
+       fall.mean.temp.scale =c(scale(fall.mean.temp)),
+       fall.tot.precip.scale =c(scale(fall.tot.precip))) %>%
   mutate_if(is.numeric, round, 3)
 
 ###################################################################################
-## making correlation scatterplot figure:
 
-corr.unscale <- climate %>% 
-  select(c(ends_with("tot.precip"), ends_with("mean.temp"), ends_with("min.temp"), ends_with("max.temp"))) %>% 
-  tibble %>% 
-  select(sort(colnames(.)))
-  
-
-corr.scale <- climate %>% 
-  mutate(across(where(is.numeric), ~ c(scale(.)))) %>% 
-  # mutate(grow.season.tot.precip.scale = c(scale(grow.season.tot.precip)),
-  #        grow.season.mean.temp.scale = c(scale(grow.season.mean.temp)),
-  #        summer.tot.precip.scale = c(scale(summer.tot.precip)),
-  #        summer.mean.temp.scale = c(scale(summer.mean.temp)),
-  #        winter.tot.precip.scale = c(scale(winter.tot.precip)),
-  #        winter.mean.temp.scale = c(scale(winter.mean.temp))) %>% 
-  mutate_if(is.numeric, round, 3) %>% 
-  select(c(ends_with("tot.precip"), ends_with("mean.temp"), ends_with("min.temp"), ends_with("max.temp"))) %>% 
-  tibble %>% 
-  select(sort(colnames(.)))
-#ggpairs(corr.unscale)
-#ggsave(file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate/unscaled corr.png", width = 18, height = 18, dpi = 300)
-#ggpairs(corr.scale)
-#ggsave(file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate/scaled corr.png", width = 18, height = 18, dpi = 300)
-
-
-### 
-#Let's look at cliamte across the years of the experiment - how variable is precipitation and temperature?
+#Let's look at climate across the years of the experiment - how variable is precipitation and temperature?
 #what I really want is to make a graphw tih 2 axes, but ggplot is not making that easy! 
 #deciding to use the4 1961-1990 long term average - it is not that different from more recent time frames (ie 1991-2020 and 1981-2010)
 PPT_sp <- longterm$PPT_sp[[1]]
-
 
 precip <- climate %>% ggplot(aes(x = year, y = grow.season.tot.precip))+
   geom_col(fill = wes_palettes$Darjeeling2[2], color = "black")+
@@ -308,9 +341,8 @@ temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) +
   annotate("text", x = "2021", y = TaveSP, label = "1961-1990 Spring Mean Temp", vjust = -0.5)+
   scale_y_continuous(n.breaks=15)
 
-  
-  
 temp
 #ggsave("./Figures/climate/gs.temp.climateNA.png", width = 8, height = 8)
 #arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
-remove(precip, temp, longterm, annual, corr.scale, corr.unscale)
+
+remove(precip, temp, longterm, annual, climate_lagged)
