@@ -4,12 +4,10 @@ author: "JL"
 date: "`r Sys.Date()`"
 output: html_document
 ---
-
+ This is an updated script to filter out the small individual that fower (and are potentially throwing the models off by doing weird things)
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-Check to see if something is weird with the scaled values - for growth the coefficients should be the same for scaled/unscaled
 
 
 
@@ -48,13 +46,6 @@ source("../scripts/dode_allyears_cleaned.R")
 
 ## Join climate data to demography data by year
 primula <- left_join(Dodecatheon, climate, by = "year") %>%
-  #i solved these:
-  # filter(tag!= "1881") %>% 
-  # filter(tag!= "1471") %>% 
-  # filter(tag!= "1183") %>% 
-  # filter(tag!= "8317") %>% 
-  # filter(tag!= "8311") %>% 
-  # filter(tag!= "8315") %>% 
   mutate(pflower = as.factor(pflower),
          pflowerT1 = as.factor(pflowerT1),
          psurvivalT1 = as.factor(psurvivalT1))
@@ -63,8 +54,32 @@ primula <- left_join(Dodecatheon, climate, by = "year") %>%
 ## its some thing with the dormancy addition - not sure how to fix it just yet, so leaving it
 
 remove(climate, Dodecatheon)
+```
+Who are the tiny ones that flower??
+Here looking at 5 smallest ones that flowered (decided on 5 because those are the ones outside of the cloud of data in the pflowering plots)
+
+```{r}
+primula %>% filter(!is.na(pflowerT1)) %>% 
+  ggplot(aes(x = log.ros.area, y = pflowerT1)) +
+  geom_jitter() + 
+  geom_smooth(method="glm", method.args=list(family="binomial"), se = F)
+smol <- primula %>% 
+  filter(pflowerT1 == "1") %>% 
+  arrange(log.ros.area)
+smol <- smol[1:7,]
+#the first 3  all die after flowering. so seems fine to exlcude
+primula <- primula %>% 
+  filter(!tag == "351",
+         !tag == "1588",
+         !tag == "710",
+         !tag == "1734",
+         !tag == "2342")
 
 ```
+
+
+
+
 
 ```{r growth prelim figures}
 # Growth Vital Rates ------------------------------------------------------
@@ -419,26 +434,29 @@ pred.dat.output <- cbind(pred.dat, pred.output) %>%
 #   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
 #   labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
 
+ temp <- c("royalblue4", "grey", "indianred3")
 
-irrgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha= 0.5, color = Z[1])+
+irrgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1, fill = pflower))+
+  geom_point(alpha= 0.5)+
+  scale_fill_manual(values=c(Z[1], "blue"))+
   geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
   geom_line(data = subset(pred.dat.output, trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp.scale), linetype = pflower),linewidth = 1)+
   #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c("royalblue4", "grey", "indianred3"))+
+  scale_color_manual(values = temp)+
   scale_linetype_manual(values=c("dashed", "solid")) +  
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
   labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")+
   annotate("text",x = .75, y = 5.75, label = "a) irrigated")+ 
   theme(legend.position="none")
+irrgrowth
 ggsave(plot = irrgrowth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth irr.png", width = 6, height = 6, dpi = 300)
 cgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_point(alpha= 0.5, color = Z[3])+
   geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
   geom_line(data = subset(pred.dat.output, trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp.scale), linetype = pflower),linewidth = 1)+
   #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c("royalblue4", "grey", "indianred3"))+
+  scale_color_manual(values = temp)+
   scale_linetype_manual(values=c("dashed", "solid")) +  
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
@@ -452,7 +470,7 @@ drgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "drought"), a
   geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
   geom_line(data = subset(pred.dat.output, trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp.scale), linetype = pflower),linewidth = 1)+
   #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c("royalblue4", "grey", "indianred3"))+
+  scale_color_manual(values = temp)+
   scale_linetype_manual(values=c("dashed", "solid")) +  
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
@@ -855,6 +873,12 @@ summary(fm.gs.precip.cor.trt.int10
 fm.summer.precip.cor.trt.int6 <- glmer(pflowerT1 ~ log.ros.area*pflower + trt*summer.tot.precip.scale + (1|plot) + (1|year), data = primula, family = "binomial")
 summary(fm.summer.precip.cor.trt.int6
         )
+
+summary(fm.gs.av.temp.cor.trt.int10)
+summary(fm.summer.precip.cor.trt.int10)
+summary(fm.gs.av.temp.cor.int3)
+summary(fm.gs.av.temp.cor.trt.int5)
+summary(fm.summer.precip.cor.trt.int6)
 ```
 
 ```{r}

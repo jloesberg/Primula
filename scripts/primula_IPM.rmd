@@ -453,7 +453,7 @@ recruit.size<-function(y,params){
 ```{r setting up stage matrices}
 params_list <-  filter(params) %>% split(., seq(nrow(.))) #this splits up params into X rows, which I can feed into the function below
 
-#params_list <- params_list[1] #to test it!
+#params_in <- params_list[1] #to test it!
 # BIGMATRIX ---------------------------------------------------------------
 #building off of code from Tom Miller:
 mat.size = 100 #dimensions of continuous matrix
@@ -555,27 +555,27 @@ sp <- primula_lambda %>%
   filter(near(gs.temp, 0, tol = .1)) %>% 
   filter(near(winter.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = summer.precip, y = lambda, linetype = reproduction, color = trt))+
-  geom_line(linewidth = 1)+
+  geom_line(linewidth = 1.5)+
   scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("dashed", "solid"), labels = c("no cost", "cost"), name = "")+
+  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Summer Precipitation")
 st <- primula_lambda %>% 
   filter(near(summer.precip, 0, tol = .1)) %>% 
   filter(near(gs.temp, 0, tol = .1)) %>% 
   filter(near(winter.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = summer.temp, y = lambda, linetype = reproduction, color = trt))+
-  geom_line(linewidth = 1)+
+  geom_line(linewidth = 1.5)+
   scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("dashed", "solid"), labels = c("no cost", "cost"), name = "")+
+  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Summer Temperature")
 gst <- primula_lambda %>% 
   filter(near(summer.precip, 0, tol = .1)) %>% 
   filter(near(summer.temp, 0, tol = .1)) %>% 
   filter(near(winter.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = gs.temp, y = lambda, linetype = reproduction, color = trt))+
-  geom_line(linewidth = 1)+
+  geom_line(linewidth = 1.5)+
   scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("dashed", "solid"), labels = c("no cost", "cost"), name = "")+
+  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Spring Temperature")
 
 wt <- primula_lambda %>% 
@@ -583,17 +583,17 @@ wt <- primula_lambda %>%
   filter(near(summer.temp, 0, tol = .1)) %>% 
   filter(near(gs.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = winter.temp, y = lambda, linetype = reproduction, color = trt))+
-  geom_line(linewidth = 1)+
+  geom_line(linewidth = 1.5)+
   scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("dashed", "solid"), labels = c("no cost", "cost"), name = "")+
+  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Winter Temperature")
 
 
 
-#ggsave(plot = sp, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/sp.png", width = 7, height = 6, dpi = 300)
-#ggsave(plot = st, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/st.png", width = 7, height = 6, dpi = 300)
-#ggsave(plot = gst, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/gst.png", width = 7, height = 6, dpi = 300)
-#ggsave(plot = wt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/wt.png", width = 7, height = 6, dpi = 300)
+ggsave(plot = sp, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/sp.png", width = 5, height = 4, dpi = 300)
+ggsave(plot = st, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/st.png", width = 5, height = 4, dpi = 300)
+ggsave(plot = gst, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/gst.png", width =5, height = 4, dpi = 300)
+ggsave(plot = wt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/wt.png", width = 5, height = 4, dpi = 300)
 
 ```
 

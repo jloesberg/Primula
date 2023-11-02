@@ -15,7 +15,7 @@ To do:
   - change clipping trt to ln(seeds) and log(fruits produced) - a better measure of reproductive effort! 
   We will have to treat clipping and abortion the same way, which is maybe questionable...
   - ^we can compare which one is better
-  - Throw in soil moisture in case that fits better - daily average soil moisutre
+  - Throw in soil moisture in case that fits better - daily average soil moisture
   April-end of May
 - 7/6 update:
   - Jenny Gremer to the rescue:
@@ -51,6 +51,11 @@ clip <- clip %>%
   mutate(tag = as.character(tag),
          plot = as.character(plot),
          initial.flower = no.flowers.at.start +no.buds.at.start)
+#clip <- clip %>% 
+#  mutate(total.seeds = if_else(no.success.cap == 0, 0, total.seeds))
+remove(cap)
+
+
 
 #adding in soil moisture data
 sm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Students/Jenna/loggerdata/cleaned.data/SM_AprilMayavg_allyears.csv")
@@ -65,26 +70,26 @@ seeds21 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_
 #seeds21 <- subset(seeds21, tag != 1998) # not an experiment plant
 #seeds21 <- subset(seeds21, tag != 1813)
 seeds21 <- seeds21 %>% 
-  mutate(pseeds = if_else(no.seeds > 0, 1, 0),
-         tag = as.character(tag),
-         plot = as.character(plot))
-seeds21$pseeds[is.na(seeds21$pseeds)] <- 1 #assuming the plants where we couldn't count capsules separately had all their capsules contribute to seed total
+   mutate(pseeds = if_else(no.seeds > 0, 1, 0))
+ seeds21$pseeds[is.na(seeds21$pseeds)] <- 1 #assuming the plants where we couldn't count capsules separately had all their capsules contribute to seed total
+# 
+# 
 
-
-cap <- seeds21 %>% group_by(tag, plot) %>% 
-  dplyr::summarize(no.success.cap = sum(pseeds),
-            total.seeds = sum(no.seeds))
-cap$total.seeds[cap$tag == 1556] <- 29
-cap$total.seeds[cap$tag == 1988] <- 58
-cap$total.seeds[cap$tag == 1988] <- 58
-cap$total.seeds[cap$tag == 282] <- 50
-cap$total.seeds[cap$tag == 494] <-98
+# cap$total.seeds[cap$tag == 1556] <- 29
+# cap$total.seeds[cap$tag == 1988] <- 58
+# cap$total.seeds[cap$tag == 1988] <- 58
+# cap$total.seeds[cap$tag == 282] <- 50
+# cap$total.seeds[cap$tag == 494] <-98
 
 #adding cap to the clip df
-
-clip <- full_join(clip, cap) %>% 
-  mutate(total.seeds = if_else(no.success.cap == 0, 0, total.seeds))
-remove(cap)
+ seeds21 <- seeds21 %>% group_by(tag, plot) %>% 
+   dplyr::summarize(no.success.cap = sum(pseeds),
+             total.seeds = sum(no.seeds)) %>% 
+   mutate( plot = as.character(plot),
+           tag = as.character(tag))
+clip <- left_join(clip, seeds21) %>% 
+  mutate(total.seeds = if_else(no.success.cap == 0, 0, total.seeds)) %>% 
+  select(!total.seeds)
 clip$no.success.cap[is.na(clip$no.success.cap)] <- 0
 clip$initial.flower[clip$tag == 1490] <- 6
 clip$initial.flower[clip$tag == 5769] <- 5
@@ -106,7 +111,7 @@ clip <-  left_join(clip, Dodecatheon, by = c("tag", "plot")) %>%
 
 # these are all of the tags in the clipping experiment for 2021 and 2022
 #add soil moisture:
-clip <- left_join(clip, sm)
+#clip <- left_join(clip, sm)
 
 #subsetting - get rid of 12 and 14 (only 3 observations per plot - maybe this will help?)
 clip <- clip %>% filter(plot != "12") %>% 
@@ -155,7 +160,7 @@ clip <- clip %>%
           total.seeds = if_else(fruitset == 0, 0, total.seeds),
           pseeds = if_else(total.seeds > 0, 1, 0),
           log.total.seeds = log(total.seeds + 1), #because there are zeros 
-         psurvivalT1 = if_else(is.na(psurvivalT1), 0, psurvivalT1),
+         psurvivalT1 = if_else(is.na(psurvivalT1), "0", psurvivalT1),
          trt = as.factor(trt)) %>% 
   filter(!is.na(log.total.seeds))
 clip <- clip %>%
@@ -190,11 +195,14 @@ no.seeds.boxplot.trt <-
   geom_boxplot(aes(color = trt))+
   #facet_wrap(~trt)+
   scale_color_manual(values = c(Z[5], Z[3], Z[1]))+
-  labs(y = "Log(total seeds)", x = "Number of flowers clipped")+
-  theme(legend.title=element_blank())
+  labs(y = "Total seeds", x = "Number of flowers clipped")+
+   theme(legend.position="none")+
+    scale_y_continuous(breaks=log(c(0.25, 1,2,5,10,20,100)), labels=c(0,0,2,5, 10,20, 100))
+
+#at=log(c(0.25, 1,2,5,10,20,100)), labels=c(0.25,1,2,5, 10,20, 100)
 no.seeds.boxplot.trt
 
-#ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 8, height = 6, dpi = 300)
+ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 5, height = 4, dpi = 300)
 
 #no.seeds.boxplot <- 
   ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
@@ -202,7 +210,7 @@ no.seeds.boxplot.trt
   scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
   labs(y = "Log(total seeds)", x = "Number of flowers clipped")
 no.seeds.boxplot
-#ggsave(plot = no.seeds.boxplot, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.png", width = 6, height = 6, dpi = 300)
+#ggsave(plot = no.seeds.boxplot, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.png", width = 5, height = 5, dpi = 300)
 ```
 
 
@@ -344,10 +352,14 @@ pflower_LRT[5,] <- c("trt", a5[2,6], a5[2,8])
 pflower_no.seeds <- glmer(pflowerT1 ~ log.ros.area + trt + (1|plot), data = clip, family = "binomial")
 a6 <- anova(pflower_no.int, pflower_no.seeds, test="LRT")
 pflower_LRT[6,] <- c("totalseeds", a6[2,6], a6[2,8])
-
+a6
 
 pflower_sizealone <- glmer(pflowerT1 ~ log.ros.area + (1|plot), data = clip, family = "binomial")
 anova(pflower_no.seeds, pflower_sizealone, test="LRT")
+
+
+
+anova(pflower_no.trt, pflower_sizealone, test="LRT")
 
 
 #write.csv(x = pflower_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/pflower_LRT.csv")
@@ -500,26 +512,28 @@ summary(growth.16)
 #create df with all possible x values
 #this is for model without an interaction
 pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(growth.16, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
+pred.output <- predict(growth_no.trt, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
 pred.output <- as.data.frame(pred.output)
 pred.dat.output <- cbind(pred.dat, pred.output) %>% 
   rename(log.ros.areaT1 = pred.output)
 
 #graph it
 growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
+  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
   geom_point()+
   geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", size = 1.25)+
   #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
-  #geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", size = 1)+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", size = 1.25)+
  # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1", linetype = "longdash", size = 1.25)+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", size = 1.25)+
  # geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
   #scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
 growth
-ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/growth3 for pres.png", width = 4, height = 4, dpi = 300)
+ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/growth result fig.png", width = 6, height = 6, dpi = 300)
+
+# if you made 5 seeds, 3.393949 next year. if you make 3.614709	
 ```
 
 ```{r growth figures - 2nd lowest AIC - log.ros.area + sm_avg + log.total.seeds}
@@ -1183,17 +1197,27 @@ seed3 <- glmer(as.factor(pseeds) ~ log.ros.area + trt + (1|plot), data = join, f
 #Seed production ~ treatment*size (data = plants that made seeds, this is Poisson)
 ```{r seed production}
 #of plants that made seeds, did that differ between treatment?
+no.seeds_LRT = data.frame(var = NA,
+                        chi = NA, 
+                        pvalue = NA)
+#colnames(no.flowers_LRT) <- c("var", "chi", "p-value")
+
 noseeds<- glmer(total.seeds ~ 1 + (1|plot), data = subset(clip, pseeds ==1), family = "poisson")
 noseeds1 <- glmer(as.numeric(total.seeds) ~ log.ros.area + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
-anova(noseeds, noseeds1 ,test="Chisq") #LTR test
+a1 <- anova(noseeds, noseeds1 ,test="Chisq") #LTR test
+no.seeds_LRT[1,] <- c("size", a1[2,6], a1[2,8])
+
 #yep its better
 
 noseeds2 <- glmer(total.seeds ~ log.ros.area + trt + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
-anova(noseeds1, noseeds2 ,test="Chisq") #LTR test
+a2 <- anova(noseeds1, noseeds2 ,test="Chisq") #LTR test
+no.seeds_LRT[2,] <- c("treatment", a2[2,6], a2[2,8])
 #yep
 
 noseeds3 <- glmer(total.seeds ~ log.ros.area*trt + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
-anova(noseeds2, noseeds3 ,test="Chisq") #LTR test
+a3 <- anova(noseeds2, noseeds3 ,test="Chisq") #LTR test
+no.seeds_LRT[3,] <- c("size x treatment", a3[2,6], a3[2,8])
+
 #yep!
 summary(noseeds2)
 
@@ -1209,6 +1233,11 @@ anova(noseeds2, noseeds5 ,test="Chisq") #LTR test
 
 noseeds6 <- glmer(total.seeds ~ log.ros.area + trt*treatment + (1|plot), data = subset(clip, pseeds == 1), family = "poisson")
 anova(noseeds2, noseeds6 ,test="Chisq") #LTR test
+
+a1 <- anova(growth_full, growth_no3way, test="LRT") #LRT test - removing 3 way interaction does not significantly change model
+growth_LRT[1,] <- c("size:seeds:trt", a1[2,6], a1[2,8])
+
+write.csv(x = no.seeds_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/seeds_LRT.csv")
 
 ```
 Great, it's significant - now make a graph
@@ -1238,17 +1267,18 @@ pred.drought <- predict(noseeds3, newdata = pred.dat.drought, type="response", r
 pred.drought <- as.data.frame(pred.drought)
 pred.drought <- cbind(pred.dat.drought, pred.drought)
 
-no.seeds <- ggplot(subset(clip, pseeds == 1), aes(x=log.ros.area, y=total.seeds))+
+no.seeds <- 
+  ggplot(subset(clip, pseeds == 1), aes(x=log.ros.area, y=total.seeds, color = trt))+
   geom_jitter(height = 0.025, size = 2, alpha= 0.5) +
-  geom_line(data = pred.drought, aes(x = log.ros.area, y = pred.drought), color = Z[5], linewidth = 1) +
-  geom_line(data = pred.irrigated, aes(x = log.ros.area, y = pred.irrigated), color = Z[1], linewidth = 1) + 
-  geom_line(data = pred.control, aes(x = log.ros.area, y = pred.control), color = Z[3], linewidth = 1) + 
+  geom_line(data = pred.drought, aes(x = log.ros.area, y = pred.drought), color = Z[5], linewidth = 1.25) +
+  geom_line(data = pred.irrigated, aes(x = log.ros.area, y = pred.irrigated), color = Z[1], linewidth = 1.25) + 
+  geom_line(data = pred.control, aes(x = log.ros.area, y = pred.control), color = Z[3], linewidth = 1.25) + 
   labs(x = "log(Rosette Area) in 2021", y = "Total seeds in 2021") +
-  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 15))#+
-    #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))
-
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 15))+ 
+    scale_color_manual(values = c("irrigated" = Z[1],"control" = Z[3], "drought" = Z[5]))+
+    theme(legend.position="none")
 no.seeds
-#ggsave(plot = no.seeds, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/poisson.seedproduction.png", width = 6, height = 6, dpi = 300)
+#ggsave(plot = no.seeds, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/poisson.seedproduction.png", width = 5, height = 5, dpi = 300)
 
 
 ```
