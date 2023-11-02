@@ -1,0 +1,120 @@
+---
+title: "ClimatePCA"
+author: "JL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library("GGally")
+library(corrplot)
+library(ggfortify)
+
+```
+
+```{r}
+# Add in climate data:
+source("../scripts/Cowichan_climatevalues.R")
+```
+
+#First, make correlation plot
+This is hard because there's so many climate variables...
+```{r}
+###################################################################################
+#Here is where to decide what climate variables to include. Here I'm just choosing the ones from the VR selection
+climate <- climate_scale %>% 
+  filter(year != "2023") %>%
+  select(1, c(ends_with("tot.precip"), ends_with("mean.temp"))) %>% 
+  select(1, c(starts_with("winter"), starts_with("summer"), starts_with("grow.season")))
+clim.names <- colnames(climate)
+year <- climate[,1]
+
+
+#MAKE CORRELATION MATRIX
+M<-cor(climate[,-1])
+corrplot(M, method="circle",type="upper")
+#so yes, some are correlated! onwards
+remove(M)
+```
+
+Ok, the PCA!
+The goal of PCA is to explain most of the variability in the data with a smaller number of variables than the original data set.
+From Tom miller's paper: Loadings of seasonal climate variables onto PC1-3. Because climate data were standardized to mean zero and unit variance, loadings can be interpreted as the correlation between the climate variable and the PC.
+```{r}
+pca_result <- prcomp(climate[,-1], scale = F)
+#pca_result$rotation <- -pca_result$rotation #eigenvectors in R point in the negative direction
+
+pca_result$rotation
+
+autoplot(pca_result, data = climate, loadings=T,loadings.label=T, label = T)
+#or
+biplot(pca_result, scale = 0)
+
+
+#save df with just loadings for PC1:4
+pca_loadings <- as.data.frame(pca_result$rotation) %>% select(1:4)
+pca_loadings <- tibble::rownames_to_column(pca_loadings, "climate.var")
+#this gives us the loadings for each climate variable, loadings can be interpreted as the correlation between the climate variable and the PC.
+#Now, get scores for each year
+pca_scores <- as.data.frame(pca_result$x)
+pca_scores <- bind_cols(year,pca_scores ) %>% 
+  select(1:5)
+
+#make the scree plot: 
+summary(pca_result)
+VE <- pca_result$sdev^2
+PVE <- VE / sum(VE)
+PVE <- round(PVE, 2)
+
+qplot(c(1:6), PVE) + 
+  geom_col() + 
+  xlab("Principal Component") + 
+  ylab("PVE") +
+  ggtitle("Scree Plot") +
+  ylim(0, 1)
+
+# Cumulative PVE plot
+qplot(c(1:6), cumsum(PVE)) + 
+  geom_col() + 
+  xlab("Principal Component") + 
+  ylab(NULL) + 
+  ggtitle("Cumulative Scree Plot") +
+  ylim(0,1)
+# pro.var <- as.data.frame(summary(pca_result)$importance[2,])
+# cumu.pro <- as.data.frame(summary(pca_result)$importance[3,])
+# scree <- bind_cols(pro.var, cumu.pro)
+# colnames(scree) <- c("proportional.var", "cumulative.va")
+# scree <- tibble::rownames_to_column(scree, "pc")
+# 
+# ggplot(scree, aes(y = pc, x = proportional.var))+
+#   geom_bar()
+
+#PVE <- as.data.frame(PVE)
+#PVE$pc <- c(1:6)
+#PVE$CVE <- cumsum(PVE$PVE)
+
+# TO DO IT BY HAND:
+# # Calculate eigenvalues & eigenvectors
+# climate.cov <- cov(climate)
+# climate.eigen <- eigen(climate.cov)
+# str(climate.eigen)
+# 
+# #extract loadings:
+# (clim.loadings <- climate.eigen$vectors[,1:2])
+# 
+# #rename
+# clim.loadings <- -clim.loadings
+# row.names(clim.loadings) <- c(clim.names)
+# colnames(clim.loadings) <- c("PC1", "PC2")
+# 
+# # Calculate Principal Components scores
+# PC1 <- as.matrix(climate) %*% clim.loadings[,1]
+# PC2 <- as.matrix(climate) %*% clim.loadings[,2]
+# 
+# # Create data frame with Principal Components scores
+# PC <- data.frame(climate.var = clim.names, PC1, PC2)
+# head(PC)
+
+```
+
