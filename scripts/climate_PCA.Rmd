@@ -17,9 +17,10 @@ library(ggfortify)
 # Add in climate data:
 source("../scripts/Cowichan_climatevalues.R")
 ```
+What this script does:
 
+Uses cleaned climate data from Cowichan and does a PCA to help determine best 4 climate variables to include in model selection
 #First, make correlation plot
-This is hard because there's so many climate variables...
 ```{r}
 ###################################################################################
 #Here is where to decide what climate variables to include. Here I'm just choosing the ones from the VR selection
@@ -30,11 +31,29 @@ climate <- climate_scale %>%
 clim.names <- colnames(climate)
 year <- climate[,1]
 
+#choose this one for all climate varibles minus annual
+climate <- climate_scale %>% 
+  filter(year != "2023") %>%
+  select(-c(starts_with("annual")))
+clim.names <- colnames(climate)
+year <- climate[,1]
+
 
 #MAKE CORRELATION MATRIX
 M<-cor(climate[,-1])
-corrplot(M, method="circle",type="upper")
+res1 <- cor.mtest(climate[,-1], conf.level = 0.95)
+ord <- corrMatOrder(M, order = "AOE")
+M2 <- M[ord,ord]
+
+corrplot(M, p.mat = res1$p, insig = "blank")
+corrplot(M, p.mat = res1$p, insig = "p-value")
+corrplot(M, p.mat = res1$p, insig = "p-value", sig.level = -1) ## add all p-values
+
+corrplot.mixed(M2)
+
+corrplot(M, method="circle",type="upper",insig = "p-value", sig.level=.1)
 #so yes, some are correlated! onwards
+#note - jenn wants p-vaues here!
 remove(M)
 ```
 
@@ -52,8 +71,8 @@ autoplot(pca_result, data = climate, loadings=T,loadings.label=T, label = T)
 biplot(pca_result, scale = 0)
 
 
-#save df with just loadings for PC1:4
-pca_loadings <- as.data.frame(pca_result$rotation) %>% select(1:4)
+#save df with just loadings for PC1:X
+pca_loadings <- as.data.frame(pca_result$rotation) %>% select(1:10)
 pca_loadings <- tibble::rownames_to_column(pca_loadings, "climate.var")
 #this gives us the loadings for each climate variable, loadings can be interpreted as the correlation between the climate variable and the PC.
 #Now, get scores for each year
@@ -67,12 +86,13 @@ VE <- pca_result$sdev^2
 PVE <- VE / sum(VE)
 PVE <- round(PVE, 2)
 
-qplot(c(1:6), PVE) + 
+qplot(c(1:10), PVE) + 
   geom_col() + 
   xlab("Principal Component") + 
-  ylab("PVE") +
-  ggtitle("Scree Plot") +
-  ylim(0, 1)
+  ylab("Proportion of Variance Explained") +
+  #ggtitle("Scree Plot") +
+  ylim(0, 1)+
+  scale_x_continuous(breaks = c(1,2,3, 4,5, 6,7, 8, 9, 10))
 
 # Cumulative PVE plot
 qplot(c(1:6), cumsum(PVE)) + 
@@ -116,5 +136,12 @@ qplot(c(1:6), cumsum(PVE)) +
 # PC <- data.frame(climate.var = clim.names, PC1, PC2)
 # head(PC)
 
+```
+PC1 had the strongest loadings for winter temperature and growing season temperature
+PC2 had strongest loadings for summer temperature, growing season precipitation, fall temperature, and winter precipitation
+```{r}
+loadings.save <- pca_loadings %>% 
+  arrange(desc(abs(PC1)))
+write.csv(x = loadings.save, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/figures/climate/PCA long list/loadings table.csv")
 ```
 
