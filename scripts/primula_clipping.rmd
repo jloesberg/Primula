@@ -202,7 +202,7 @@ no.seeds.boxplot.trt <-
 #at=log(c(0.25, 1,2,5,10,20,100)), labels=c(0.25,1,2,5, 10,20, 100)
 no.seeds.boxplot.trt
 
-ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 5, height = 4, dpi = 300)
+#ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 5, height = 4, dpi = 300)
 
 #no.seeds.boxplot <- 
   ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds))+
@@ -521,17 +521,17 @@ pred.dat.output <- cbind(pred.dat, pred.output) %>%
 growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
   geom_point()+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", size = 1.25)+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", linewidth = 1.25)+
   #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", size = 1.25)+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.25)+
  # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", size = 1.25)+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.25)+
  # geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
-  #scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
-  #scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
 growth
-ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/growth result fig.png", width = 6, height = 6, dpi = 300)
+ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/growth result fig.png", width =5, height =5, dpi = 300)
 
 # if you made 5 seeds, 3.393949 next year. if you make 3.614709	
 ```
