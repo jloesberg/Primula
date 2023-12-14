@@ -533,7 +533,7 @@ growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
 growth
 ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/growth result fig.png", width =5, height =5, dpi = 300)
 
-# if you made 5 seeds, 3.393949 next year. if you make 3.614709	
+
 ```
 
 ```{r growth figures - 2nd lowest AIC - log.ros.area + sm_avg + log.total.seeds}
