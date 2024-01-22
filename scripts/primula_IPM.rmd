@@ -12,15 +12,12 @@ library(AICcmodavg)
 library(lme4)
 library(popbio)
 theme_set(theme_classic()) #for ggplot
+library(wesanderson) # for colors
+Z <- wes_palettes$Zissou1
+
 ```
 
-DONE- To do: use sarah's code with the townsendia solution to having multiple growth functions feed into one IPM big marrix!
-first, just write out the params to have 6 rows (for each combination of reproduction and trt! ) 
-    - What I ended up doing: making the params df "long", so each row was for a specific trt and reproduction, and then feeding each row into the big matrix. And it works! Great!!
-    
-    Next Steps:
-    -Add temperature in! Make a loop for the parameters
-    -Figure out whats happening with those tags in the cleaning script
+
 
 ```{r}
 #this is code from Sarah that has one function for the townsendia df!! I've edited it below to get it to work for the primula data
@@ -90,59 +87,76 @@ source("../scripts/Cowichan_climatevalues.R")
 source("../scripts/dode_allyears_cleaned.R")
 
 ## Join climate data to demography data by year
-primula <- left_join(Dodecatheon, climate, by = "year") %>%
-  #i solved these:
-  # filter(tag!= "1881") %>% 
-  # filter(tag!= "1471") %>% 
-  # filter(tag!= "1183") %>% 
-  # filter(tag!= "8317") %>% 
-  # filter(tag!= "8311") %>% 
-  # filter(tag!= "8315") %>% 
+primula <- left_join(Dodecatheon, climate_scale, by = "year") %>%
   mutate(pflower = as.factor(pflower),
          pflowerT1 = as.factor(pflowerT1),
          psurvivalT1 = as.factor(psurvivalT1))
-remove( Dodecatheon)
 
-#gives a warning but I think it's fine!
+remove(climate, climate_scale, Dodecatheon)
 
+#these are for the new plants - we wren't consistent with what we called a new adult
 new.plants <- primula %>%   
   mutate(leaves = if_else(year == 2022, no.smleaf + no.bigleaf, leaves)) %>% 
   filter(year == YrTag) %>% ##need to filter cases where year tagged == year (so newly tagged that year)
   filter(pflower == 0) %>% ## actual new plants definitely can't flower in the first year
-  filter(leaves < 3) %>% 
+  filter(leaves < 3) %>% ## can't have more than 3 leaves
   filter(!is.na(log.ros.area))
 ```
 
 
 
-
-Eventually do to:
-
-
-
 ##IPM for Primula data
 ```{r}
-#load best fit models from primula_climate_VR.r"
-# 
-# gm17 <- lmer(log.ros.areaT1 ~ log.ros.area + trt * grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula) ###
-#   growth_var <- as.data.frame(VarCorr(gm17)) #assumes same variance across all, not sure if thats ok
-# fm.f16 <- glmer(pflowerT1 ~ log.ros.area * pflower + grow.season.mean.max.temp+ (1|plot) + (1|year), data = primula, family = "binomial")
-# sm10lag <- glmer(psurvivalT1 ~ log.ros.area*grow.season.min.temp.1yearlag+ (1|plot) + (1|year), data = primula, family = "binomial") ###
-# noflow9 <- glm(flow.sum ~ log.ros.area + grow.season.mean.min.temp, data = subset(primula, flow.sum > 0), family = "poisson")
-
-#fm.gs.precip.cor.trt.int10 <- glmer(pflowerT1 ~ log.ros.area*grow.season.tot.precip.scale*pflower + trt + (1|plot) + (1|year), data = primula, family = "binomial")
-fm.summer.precip.cor.trt.int6 <- glmer(pflowerT1 ~ log.ros.area*pflower + trt*summer.tot.precip.scale + (1|plot) + (1|year), data = primula, family = "binomial")
-sm.gs.av.temp <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.temp.scale + (1|plot) + (1|year), data = primula, family = "binomial")
-gm.summer.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt*summer.mean.temp.scale + (1|plot) + (1|year), data = primula, REML = F)
-noflowers.winter.av.temp <- glmer(flow.sumT1 ~ log.ros.area + winter.mean.temp.scale + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
-seed3  <- glmer(total.seeds~log.ros.area*trt + (1|year)+ (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
+#number of bootstrap samples:
+boot = 5
+###
 
 
-growth_var <- as.data.frame(VarCorr(gm.summer.av.temp.cor.trt.int6)) #assumes same variance across all, not sure if thats ok
-coef(summary(gm.summer.av.temp.cor.trt.int6))
-summary(fm.summer.precip.cor.trt.int6)
-#coef(fm.base.cor.int)
+fm.gs.av.temp.cor.int1 <- glmer(pflowerT1 ~ log.ros.area*pflower + grow.season.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+#parametric bootstrap
+require(MASS)
+#make matrix of random draws
+pflower_samp = mvrnorm(n=boot, mu=fixef(fm.gs.av.temp.cor.int1), Sigma=vcov(fm.gs.av.temp.cor.int1))
+pflower_samp
+apply(pflower_samp,2,mean) #double check that the means are similar to fixef
+fixef(fm.gs.av.temp.cor.int1)
 
+
+####
+sm.gs.av.temp <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+#parametric bootstrap
+require(MASS)
+#make matrix of random draws
+psurv_samp = mvrnorm(n=boot, mu=fixef(sm.gs.av.temp), Sigma=vcov(sm.gs.av.temp))
+psurv_samp
+apply(psurv_samp,2,mean) #double check that the means are similar to fixef
+fixef(sm.gs.av.temp)
+###
+
+gm.summer.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+#parametric bootstrap
+require(MASS)
+#make matrix of random draws
+grow_samp = mvrnorm(n=boot, mu=fixef(gm.summer.av.temp.cor.trt.int6), Sigma=vcov(gm.summer.av.temp.cor.trt.int6))
+grow_samp
+apply(grow_samp,2,mean) #double check that the means are similar to fixef
+fixef(gm.summer.av.temp.cor.trt.int6)
+
+#variance for growth:
+growth_var <- as.data.frame(VarCorr(gm.summer.av.temp.cor.trt.int6)) #assumes same variance across all
+###
+
+noflowers.winter.av.temp <- glmer(flow.sumT1 ~ log.ros.area + winter.mean.temp + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
+#parametric bootstrap
+require(MASS)
+#make matrix of random draws
+noflowers_samp = mvrnorm(n=boot, mu=fixef(noflowers.winter.av.temp), Sigma=vcov(noflowers.winter.av.temp))
+noflowers_samp
+apply(noflowers_samp,2,mean) #double check that the means are similar to fixef
+fixef(noflowers.winter.av.temp)
+
+
+#seed3  <- glmer(total.seeds~log.ros.area*trt + (1|year)+ (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
 ```
 
 
@@ -159,7 +173,7 @@ GOAL FOR 4/5: just make some these up for now and make a model that runs!
 #prob.flower.makes.seeds <- 0.73 #this is a made up number
 ## I need to change this because this is treatment dependent!
 #no.seeds <- 36 #if you make seeds, this is on average how many seeds you make. But, this needs to be a function below
-prob.seed.germ <- .001 #made up, will change later (after seed addition data comes in )
+prob.seed.germ <- .022 #this is from the seed addition data - average seed has 0.022 chance of germination
 prob.seedling.to.1leaf <- .1
 prob.1leaf.to.1leaf <- .1
 prob.1leaf.to.2leaf <- .1
@@ -177,7 +191,6 @@ minRealsize <- min(primula$log.ros.area, na.rm=T)
 maxRealsize <- 1.1* max(primula$log.ros.area,na.rm=T)
 
 #now add a new min & max size to keep the plants in for eviction
-#note - this was code from Townsenia code - will need to revisit for Primula!
 min.size <-minRealsize-1 #lower
 max.size <-maxRealsize+1.5 #upper
 ```
@@ -189,135 +202,92 @@ I've just added in the mean temp, so these are specific to one specific temperat
 
 
 ```{r parameter vector, echo=FALSE}
+#this is for range of climates
+rows <- expand.grid(summer.mean.temp = seq(-2, 2, by = .5), grow.season.mean.temp = seq(-2, 2, by = .5),  winter.mean.temp = seq(-2, 2, by = .5), reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"))
 
-# pflower
-
-# av.grow.max.temp <- climate_percentiles$maxT_mean[1]
-# av.grow.min.temp <- climate_percentiles$minT_mean[1]
-#rows <- expand.grid(precip= c(mean(climate$grow.season.tot.precip), min(climate$grow.season.tot.precip), max(climate$grow.season.tot.precip)), temp = c(mean(climate$grow.season.mean.mean.temp), min(climate$grow.season.mean.mean.temp), max(climate$grow.season.mean.mean.temp)), reproduction = c("veg","flowered"))
-#rows <- expand.grid(precip= seq(min(climate$grow.season.tot.precip), max(climate$grow.season.tot.precip), by = 25), temp = seq(min(climate$grow.season.mean.mean.temp), max(climate$grow.season.mean.mean.temp), by = .75), reproduction = c("veg","flowered"))
-rows <- expand.grid(summer.precip= seq(-2, 2, by = .5), summer.temp = seq(-2, 2, by = .5), gs.temp = seq(-2, 2, by = .5),  winter.temp = seq(-2, 2, by = .5), reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"))
-
+#this is per year
+#row <- climate_scale %>% 
+#  select(year, summer.tot.precip, summer.mean.temp, grow.season.mean.temp, winter.mean.temp)
+#rows <- expand.grid(reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"), year = seq(2016, 2023, by = 1))
+#rows$year <- as.character(rows$year)
+#rows <- full_join(row, rows)
+#rows <- na.omit(rows)
 #rows <- rows %>% mutate(temp = round(temp, 2))
 
+#set up an empty parameter df
 params=data.frame(
 	growth.int = c(NA),
-	#growth.int.control = c(NA,NA, NA, NA, NA, NA),
-	#growth.int.irr = NA,
-	#growth.int.drought = NA,
 	growth.slope  = NA,
-	#growth.slope.irr = NA,
-	#growth.slope.drought = NA,
 	growth.sd=NA,
-	
 	surv.int=NA,
 	surv.slope=NA,
-	
 	pflow.int = NA,
-	#pflow.int.flowered=NA,
-	#pflow.int.veg=NA,
 	pflow.slope = NA,
-	#pflow.slope.flowered=NA,
-	#pflow.slope.veg=NA,
-	
 	no.flow.int=NA,
 	no.flow.slope=NA,
-	no.seeds.int=NA,
-	no.seeds.slope=NA,
-	
 	recruit.size.mean=NA,
 	recruit.size.sd=NA,
-	
-	#p.flower.makes.seed=NA,
-	#no.seeds = NA,
 	prob.seed.germ = NA
-	#pdorm.int=NA
 )
 params <- bind_cols(params, rows)
+```
 
-#params$trt <- c("irrigated", "irrigated", "control", "control", "drought", "drought")
-##params$reproduction <- c("flowered", "veg")
-#params$precip <- c(mean(climate$grow.season.tot.precip), min(climate$grow.season.tot.precip), max(climate$grow.season.tot.precip))
-#params$temp <- c(mean(climate$grow.season.mean.mean.temp), min(climate$grow.season.mean.mean.temp), max(climate$grow.season.mean.mean.temp))
-
-#gm.gs.precip.cor.int3 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower*grow.season.tot.precip + (1|plot) + (1|year), data = primula, REML = F)
-
-
-
-#growth intercepts
-for (i in 1:6561) {
-    params$growth.int[params$reproduction == "veg" & params$trt == "control"][i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6]*params$summer.temp[i]
-
-    params$growth.int[params$reproduction == "flowered" & params$trt == "control"][i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6]*params$summer.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[3]
-
-    params$growth.int[params$reproduction == "veg" & params$trt == "irrigated"][i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6]*params$summer.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[5] + fixef(gm.summer.av.temp.cor.trt.int6)[8]*params$summer.temp[i]
-    params$growth.int[params$reproduction == "flowered" & params$trt == "irrigated"][i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6]*params$summer.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[3] + fixef(gm.summer.av.temp.cor.trt.int6)[5] + fixef(gm.summer.av.temp.cor.trt.int6)[8]*params$summer.temp[i]
-    
-    params$growth.int[params$reproduction == "veg" & params$trt == "drought"][i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6]*params$summer.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[4] + fixef(gm.summer.av.temp.cor.trt.int6)[7]*params$summer.temp[i]
-    params$growth.int[params$reproduction == "flowered" & params$trt == "drought"][i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6]*params$summer.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[3] + fixef(gm.summer.av.temp.cor.trt.int6)[4] + fixef(gm.summer.av.temp.cor.trt.int6)[7]*params$summer.temp[i]
-  
-  
-  #params$growth.int[params$reproduction == "veg"][i] <- fixef(gm.gs.precip.cor.int3)[1] + fixef(gm.gs.precip.cor.int3)[4]*params$precip[i]
-  #params$growth.int[params$reproduction == "flowered"][i] <- fixef(gm.gs.precip.cor.int3)[1] + fixef(gm.gs.precip.cor.int3)[4]*params$precip[i] + fixef(gm.gs.precip.cor.int3)[3] + fixef(gm.gs.precip.cor.int3)[7]*params$precip[i]
+Stick all the parameters in. And use coefficients from the parametric bootstrap:
+```{r parameters, echo=T}
+#growth:
+for (i in 1:nrow(params)) {
+  if (params$reproduction[i] == "veg" && params$trt[i] == "control") {
+    params$growth.int[i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6] * params$summer.mean.temp[i]
+  } else if (params$reproduction[i] == "flowered" && params$trt[i] == "control") {
+    params$growth.int[i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[6] * params$summer.mean.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[3]
+  } else if (params$reproduction[i] == "veg" && params$trt[i] == "irrigated") {
+    params$growth.int[i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + fixef(gm.summer.av.temp.cor.trt.int6)[5] + 
+      fixef(gm.summer.av.temp.cor.trt.int6)[6] * params$summer.mean.temp[i] +
+      fixef(gm.summer.av.temp.cor.trt.int6)[9] * params$summer.mean.temp[i]
+  } else if (params$reproduction[i] == "flowered" && params$trt[i] == "irrigated") {
+    params$growth.int[i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] +  fixef(gm.summer.av.temp.cor.trt.int6)[3] + fixef(gm.summer.av.temp.cor.trt.int6)[5] +
+      fixef(gm.summer.av.temp.cor.trt.int6)[6] * params$summer.mean.temp[i] +            fixef(gm.summer.av.temp.cor.trt.int6)[9] * params$summer.mean.temp[i]
+  } else if (params$reproduction[i] == "veg" && params$trt[i] == "drought") {
+    params$growth.int[i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] +   fixef(gm.summer.av.temp.cor.trt.int6)[4] + 
+      fixef(gm.summer.av.temp.cor.trt.int6)[8] * params$summer.mean.temp[i] + 
+      fixef(gm.summer.av.temp.cor.trt.int6)[6] * params$summer.mean.temp[i]
+  } else if (params$reproduction[i] == "flowered" && params$trt[i] == "drought") {
+    params$growth.int[i] <- fixef(gm.summer.av.temp.cor.trt.int6)[1] + #intercept
+      fixef(gm.summer.av.temp.cor.trt.int6)[3] + #pflower = 1 intercept
+      fixef(gm.summer.av.temp.cor.trt.int6)[4] + #trt = drought int
+      fixef(gm.summer.av.temp.cor.trt.int6)[6] * params$summer.mean.temp[i] + fixef(gm.summer.av.temp.cor.trt.int6)[8] * params$summer.mean.temp[i]
+  }
 }
-# params$growth.int[params$trt == "irrigated"] <-fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp +   fixef(gm17)[7]*av.grow.max.temp
-# params$growth.int[params$trt == "drought"] <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp
-
-#things get messy here, check that these all make sense...[can add written out equations here...]
-# params$growth.int.control <- fixef(gm17)[1] + fixef(gm17)[5]*av.grow.max.temp # growth intercept for control
-# params$growth.int.drought <- fixef(gm17)[1] + fixef(gm17)[3] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[6]*av.grow.max.temp # growth intercept for drought
-# params$growth.int.irr <- fixef(gm17)[1] + fixef(gm17)[4] + fixef(gm17)[5]*av.grow.max.temp + fixef(gm17)[7]*av.grow.max.temp# growth intercept for irr
-
-
 
 #slope for growth
-#for (i in 1:length(params)) {
-  params$growth.slope[params$reproduction == "veg"] <- fixef(gm.summer.av.temp.cor.trt.int6)[2]
-  params$growth.slope[params$reproduction == "flowered"]<- fixef(gm.summer.av.temp.cor.trt.int6)[2] + fixef(gm.summer.av.temp.cor.trt.int6)[7]
-#}
+params$growth.slope[params$reproduction == "veg"] <- fixef(gm.summer.av.temp.cor.trt.int6)[2]
+params$growth.slope[params$reproduction == "flowered"]<- fixef(gm.summer.av.temp.cor.trt.int6)[2] + fixef(gm.summer.av.temp.cor.trt.int6)[7]
 
 params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
 
-
-#sm.gs.av.temp
-for (i in 1:length(params$gs.temp)) {
-  params$surv.int[i] <- fixef(sm.gs.av.temp)[1] + fixef(sm.gs.av.temp)[3]*params$gs.temp[i]
+#survival = sm.gs.av.temp
+for (i in 1:nrow(params)) {
+  params$surv.int[i] <- fixef(sm.gs.av.temp)[1] + fixef(sm.gs.av.temp)[3]*params$grow.season.mean.temp[i]
 }
  # survival slope
 params$surv.slope <- fixef(sm.gs.av.temp)[2] # survival size t
 
 #pflower
-# intercepts - this doesnt really work - maybe i need a tidyverse solution (group by?)
-for (i in 1:6561) {
-    params$pflow.int[params$reproduction == "veg" & params$trt == "control"][i] <- fixef(fm.summer.precip.cor.trt.int6)[1] + fixef(fm.summer.precip.cor.trt.int6)[6]*params$summer.precip[i]
-    params$pflow.int[params$reproduction == "flowered" & params$trt == "control"][i] <- fixef(fm.summer.precip.cor.trt.int6)[1] + fixef(fm.summer.precip.cor.trt.int6)[6]*params$summer.precip[i] + fixef(fm.summer.precip.cor.trt.int6)[3]
-
-    params$pflow.int[params$reproduction == "veg" & params$trt == "irrigated"][i] <- fixef(fm.summer.precip.cor.trt.int6)[1] + fixef(fm.summer.precip.cor.trt.int6)[6]*params$summer.precip[i] + fixef(fm.summer.precip.cor.trt.int6)[5] + fixef(fm.summer.precip.cor.trt.int6)[9]*params$summer.precip[i]
-    params$pflow.int[params$reproduction == "flowered" & params$trt == "irrigated"][i] <- fixef(fm.summer.precip.cor.trt.int6)[1] + fixef(fm.summer.precip.cor.trt.int6)[6]*params$summer.precip[i] + fixef(fm.summer.precip.cor.trt.int6)[3] + fixef(fm.summer.precip.cor.trt.int6)[5] + fixef(fm.summer.precip.cor.trt.int6)[9]*params$summer.precip[i]
-    
-    params$pflow.int[params$reproduction == "veg" & params$trt == "drought"][i] <- fixef(fm.summer.precip.cor.trt.int6)[1] + fixef(fm.summer.precip.cor.trt.int6)[6]*params$summer.precip[i] + fixef(fm.summer.precip.cor.trt.int6)[4] + fixef(fm.summer.precip.cor.trt.int6)[8]*params$summer.precip[i]
-    params$pflow.int[params$reproduction == "flowered" & params$trt == "drought"][i] <- fixef(fm.summer.precip.cor.trt.int6)[1] + fixef(fm.summer.precip.cor.trt.int6)[6]*params$summer.precip[i] + fixef(fm.summer.precip.cor.trt.int6)[3] + fixef(fm.summer.precip.cor.trt.int6)[4] + fixef(fm.summer.precip.cor.trt.int6)[8]*params$summer.precip[i]
-  
-  
-  #params$growth.int[params$reproduction == "veg"][i] <- fixef(gm.gs.precip.cor.int3)[1] + fixef(gm.gs.precip.cor.int3)[4]*params$precip[i]
-  #params$growth.int[params$reproduction == "flowered"][i] <- fixef(gm.gs.precip.cor.int3)[1] + fixef(gm.gs.precip.cor.int3)[4]*params$precip[i] + fixef(gm.gs.precip.cor.int3)[3] + fixef(gm.gs.precip.cor.int3)[7]*params$precip[i]
+for (i in 1:nrow(params)) {
+  if (params$reproduction[i] == "veg") {
+    params$pflow.int[i] <- fixef(fm.gs.av.temp.cor.int1)[1] + fixef(fm.gs.av.temp.cor.int1)[4] * params$grow.season.mean.temp[i]
+  } else if (params$reproduction[i] == "flowered") {
+    params$pflow.int[i] <- fixef(fm.gs.av.temp.cor.int1)[1] + fixef(fm.gs.av.temp.cor.int1)[4] * params$grow.season.mean.temp[i] + fixef(fm.gs.av.temp.cor.int1)[3]
+  }
 }
 
-#params$pflow.int[params$reproduction == "veg"] <- fixef(fm.f16)[1] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept for pflower == 0
-#params$pflow.int[params$reproduction == "veg"] <- fixef(fm.base.cor.int)[1] # probability of flowering intercept for pflower == 0
-# params$pflow.int[params$reproduction == "flowered"] <- fixef(fm.f16)[1] + fixef(fm.f16)[3] + fixef(fm.f16)[4]*av.grow.max.temp # probability of flowering intercept
-#params$pflow.int[params$reproduction == "flowered"] <- fixef(fm.base.cor.int)[1] + fixef(fm.base.cor.int)[3] # probability of flowering intercept
-
 #slopes:
-#for (i in 1:length(params)) {
-  params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.summer.precip.cor.trt.int6)[2]
-  params$pflow.slope[params$reproduction == "flowered"]<- fixef(fm.summer.precip.cor.trt.int6)[2] + fixef(fm.summer.precip.cor.trt.int6)[7]
-#}
+params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.gs.av.temp.cor.int1)[2]
+params$pflow.slope[params$reproduction == "flowered"]<- fixef(fm.gs.av.temp.cor.int1)[2] + fixef(fm.gs.av.temp.cor.int1)[5]
 
-# params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.base.cor.int)[2] # probability of flowering slope for veg plants
-# params$pflow.slope[params$reproduction == "flowered"] <- fixef(fm.base.cor.int)[2] + fixef(fm.base.cor.int)[4] # probability of flowering slope for flowered plants
-for (i in 1:39366) {
-    params$no.flow.int[i] <- fixef(noflowers.winter.av.temp)[1] + fixef(noflowers.winter.av.temp)[3]*params$winter.temp[i]
+
+for (i in 1:nrow(params)) {
+    params$no.flow.int[i] <- fixef(noflowers.winter.av.temp)[1] + fixef(noflowers.winter.av.temp)[3]*params$winter.mean.temp[i]
 }
 
 params$no.flow.slope <- fixef(noflowers.winter.av.temp)[2] # flower number production size t
@@ -327,24 +297,25 @@ params$no.flow.slope <- fixef(noflowers.winter.av.temp)[2] # flower number produ
 
 #params$p.flower.makes.seed <- prob.flower.makes.seeds
 #seed3  <- glmer(total.seeds~log.ros.area*trt + (1|year)+ (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
-params$no.seeds.int[params$trt == "control"] <- fixef(seed3)[1]
-params$no.seeds.slope[params$trt == "control"] <- fixef(seed3)[2]
+# params$no.seeds.int[params$trt == "control"] <- fixef(seed3)[1]
+# params$no.seeds.slope[params$trt == "control"] <- fixef(seed3)[2]
+# 
+# params$no.seeds.int[params$trt == "drought"] <- fixef(seed3)[1] + fixef(seed3)[4]
+# params$no.seeds.slope[params$trt == "drought"] <- fixef(seed3)[2] + fixef(seed3)[6]
+# 
+# params$no.seeds.int[params$trt == "irrigated"] <- fixef(seed3)[1] + fixef(seed3)[3]
+# params$no.seeds.slope[params$trt == "irrigated"] <- fixef(seed3)[2] + fixef(seed3)[5]
 
-params$no.seeds.int[params$trt == "drought"] <- fixef(seed3)[1] + fixef(seed3)[4]
-params$no.seeds.slope[params$trt == "drought"] <- fixef(seed3)[2] + fixef(seed3)[6]
-
-params$no.seeds.int[params$trt == "irrigated"] <- fixef(seed3)[1] + fixef(seed3)[3]
-params$no.seeds.slope[params$trt == "irrigated"] <- fixef(seed3)[2] + fixef(seed3)[5]
-
+#currently, seeds per flower is not size dependent, but is treatment dependent
+#flowers in drought plots make 6 seeds, control make 11, irrigated make 13
+params$seeds[params$trt == "irrigated"] <- 13
+params$seeds[params$trt == "drought"] <- 6
+params$seeds[params$trt == "control"] <- 11
 
 #params$no.seeds <- no.seeds
 params$prob.seed.germ <- prob.seed.germ
 params$recruit.size.mean <- new_mean # mean new >1 leaf plant size
 params$recruit.size.sd<- new_sd # sd of new >1 leaf plant size
-
-
- test <- params %>% filter(summer.precip == 0 & summer.temp == 0 & gs.temp == 0 & winter.temp ==0)
-
 ```
 
 # Build the model!
@@ -359,67 +330,54 @@ params$recruit.size.sd<- new_sd # sd of new >1 leaf plant size
 s.x=function(x,params) {
 	u=exp(params$surv.int+params$surv.slope*x)
 	return(u/(1+u))
-    }
+}
 
-#GROWTH FROM SIZE X TO XP for CONTROL...here ive changed xp to y, as per Tom's code (I think that what makes the big matrix function work in the end...)
-  # Currently, seperate functions for growth for each IDE treatment. 
+#how to test this: 
+### run function for a plant of size 1 and for the first row of parameters
+#s.x(x = 1, params = params[1,])
+### run function for a plant of size 1 but for all rows of parameters (so get a list )
+#s.x(x = 1, params = params)
+#ok this works and seems to work for all rows of params. great.
+
+
+# #note - in the final code, just use the correct eviction function and comment out (or delete the other [JL - 1/9 made the corrected eviction one name g.yx.A/S]
+# g.yx.A<-function(xp,x,params){
+#   xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+#   growth_to_newsize <-params$growth.int.A + params$growth.slope*xb
+#   growth_sd <- params$growth.sd
+#   return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
+# }
+
+
+#GROWTH FROM SIZE X TO Y; 
   ## returns a *probability density distribution* for each x value
-#g.yx.control<-function(y,x,params){
-    #ignoring eviction here...this code will eventually fix it
-  #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-  #growth_to_newsize <-params$growth.int.control + params$growth.slope*xb
-  #growth_sd <- params$growth.sd
-  #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
- # dnorm(y,mean=params$growth.int.control + params$growth.slope*x,sd=params$growth.sd)
-
-#}
-
-#GROWTH FROM SIZE X TO Y for DROUGHT
-#g.yx.drought<-function(y,x,params){
-    #ignoring eviction here...
-  #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-  #growth_to_newsize <-params$growth.int.drought + params$growth.slope*x
-  #growth_sd <- params$growth.sd
-  #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
-  #dnorm(y,mean=params$growth.int.drought + params$growth.slope*x,sd=params$growth.sd)
-
-#}
-#GROWTH FROM SIZE X TO Y; just using one function! No need to seperate it out for each trt. Later on different params will be fed into this
 g.yx<-function(y,x,params){
-    #ignoring eviction here...
-  #xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-  #growth_to_newsize <-params$growth.int.irr + params$growth.slope*xb
-  #growth_sd <- params$growth.sd
-  #return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
-  dnorm(y,mean=params$growth.int + params$growth.slope*x,sd=params$growth.sd)
+    # eviction here...
+  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  growth_to_newsize <-params$growth.int + params$growth.slope*xb
+  growth_sd <- params$growth.sd
+  return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
+  #dnorm(y,mean=params$growth.int + params$growth.slope*x,sd=params$growth.sd)
 
 }
+#to test this:
+###well actually, maybe I don't know what the end product is supposed to look like - and is y the size it grows to ve
+#g.yx(y = 1, x = 1, params = params[1,])
 
 #Tom Miller's combined s and g kernel
 P <- function(y, x, params){
   s.x(x, params)*g.yx(y, x, params)
 }
-# P.irr <- function(y, x, params){
-#   s.x(x, params)*g.yx.irr(y, x, params)
-# }
-# P.drought <- function(y, x, params){
-#   s.x(x, params)*g.yx.drought(y, x, params)
-# }
 
 
-#PROBABILITY OF FLOWERING OF SIZE X individuals that flowered:
-# pf.x.flowered <-function(x,params){
-# 	u<-exp(params$pflow.int.flowered+params$pflow.slope.flowered*x)
-# 	return(u/(1+u))
-# 	}
-#PROBABILITY OF FLOWERING OF SIZE X individuals that did not flower:
+
+#PROBABILITY OF FLOWERING OF SIZE X individuals
 pf.x <-function(x,params){
 	u<-exp(params$pflow.int+params$pflow.slope*x)
 	return(u/(1+u))
 }
-x = 0
-test <- lapply(X = params_list, FUN = bigmatrix, mat.size = mat.size)
-f.yx(y,params_list)
+#testing this for a plant of size 5
+#pf.x(x = 8,params = params)
 
 # #PRODUCTION OF seedlings by X-SIZED plants that flowered the previous year
 ###Here i've put in the misc bits, but not sure if this is correct - seems ok for now
@@ -434,16 +392,18 @@ f.yx(y,params_list)
 # }
 
 f.yx=function(x,params) { 		
-	return(pf.x(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)* exp(params$no.seeds.int+params$no.seeds.slope*x) *
-    params$prob.seed.germ)
+	#return(pf.x(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)* exp(params$no.seeds.int+params$no.seeds.slope*x) *
+  return(pf.x(x,params)*exp(params$no.flow.int+params$no.flow.slope*x)* params$seeds * params$prob.seed.germ)
 }
-y=1
+##so this should be outputting the number of seedlings made? Yes
+#f.yx(x = 5,params = params)
 
-f.yx(y,params)
+##do big plants make a million flowers?
+#exp(params$no.flow.int+params$no.flow.slope*8) 
+## no they make a reasonable amount
 
 
-#SIZE DISTRIBUTION OF RECRUITS - separate function (before was part of f.yx). Now it feeds into a stage so won't be feeding back into the kernel
-
+#SIZE DISTRIBUTION OF RECRUITS - so the ones going from the 1 leaf stage into the continuous stage. I'm not sure that this is doing what I want it to - 
 recruit.size<-function(y,params){
     ## returns a *probability density distribution*
   dnorm(y,mean=params$recruit.size.mean,sd=params$recruit.size.sd)
@@ -493,37 +453,97 @@ bigmatrix<-function(params_list, mat.size)
   IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation of fertility and transition matrix
   out_matrix <- list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y)
   
-  out_lamb <- data.frame(lambda = lambda(IPMmat), summer.precip = params_list$summer.precip, summer.temp = params_list$summer.temp,  gs.temp = params_list$gs.temp, winter.temp = params_list$winter.temp, reproduction = params_list$reproduction, trt = params_list$trt)
-  #return(out_matrix) #can check this to have a list of all of the matrices listed above
+  out_lamb <- data.frame(lambda = lambda(IPMmat), summer.temp = params_list$summer.mean.temp,  gs.temp = params_list$grow.season.mean.temp, winter.temp = params_list$winter.mean.temp, reproduction = params_list$reproduction, trt = params_list$trt)
+ # return(out_matrix) #can check this to have a list of all of the matrices listed above
   return(out_lamb) #for now, I just want lambdas
+ # return(list(out_matrix = out_matrix, out_lamb = out_lamb))
 
 }
 
-#what I want returned is x lambdas
+#what I want returned is lambdas
 lamb_lists <- lapply(X = params_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
 #great~! now make it a df
 primula_lambda <- do.call(rbind, lamb_lists)
-#write.csv(primula_lambda, "../tables/primula.climate.lambdas.csv", row.names = F)
+#write.csv(primula_lambda, "../tables/primula.climate.lambdas.2023.01.09.csv", row.names = F)
 
 
-#code from meeting with Sarah that worked on the townsenia problem! Above I came up with a better solution for the primula data
-#model_out <- params_list %>% map(., .f = bigmatrix, params = params_list,
-#                            mat.size = mat.size) %>% bind_rows()
+```
 
+#just grab one of the matrices to see what's going on with the kernels
+```{r}
+save <- bigmatrix(params = params[10,], mat.size = mat.size)
 
 #this is code that works for just one set of params
 # primula_lambda <- bigmatrix(params = params_in,
 #                             mat.size = mat.size)
-# lambda(primula_lambda$IPMmat)
 
-image(primula_lambda$IPMmat,main='full kernel - control flowered')	
-image(primula_lambda$Fmat,main='F kernel - control flowered')	
-image(primula_lambda$Tmat,main='S+G kernel - control flowered')	
+popbio::image2(save$IPMmat)
+image(save$Fmat,main='F kernel - control flowered')	
+image(save$Tmat,main='S+G kernel - control flowered')	
 abline(0,1,lwd=3)	
+lambda(save$IPMmat)
+
+IPMmat <- save$IPMmat
+
+# Assuming save$IPMmat is a big matrix (e.g., 102 by 102)
+IPMmat <- save$IPMmat
+
+# Exclude the first two rows and columns
+subset_matrix <- IPMmat[3:nrow(IPMmat), 3:ncol(IPMmat)]
+
+# Create the image plot
+image(
+  1:(ncol(subset_matrix)),      # x-axis values
+  1:(nrow(subset_matrix)),      # y-axis values
+  subset_matrix,                # Matrix for z-axis values
+  main = "IPM Matrix",          # Main title
+  xlab = "Column Index",        # X-axis label
+  ylab = "Row Index"            # Y-axis label
+)
+
+mtext("e)", side = 3, cex = 0.9, adj = 0, line = 0.1)
 
 
-#definitely individuals are being evicted. who is the dark square on bottom left? Oh right it is the stage transitions
-## And I'm not sure that the F kernel - axis should be flipped, anyway
+#for the full kernel, is the Fmat gettign swamped out by the Tmat?
+# sometimes it's hard to see both the fecundity part of the kernel swamps the growth/survival part, so here's a plotting trick to level out the kernel
+image2(save$IPMmat^.3,main='full kernel^0.3') #ok, that works!	but these kernels look weird (ie the t+1 side is flipped and has wrong scale...not sure how to fix that)
+
+image.plot(save$IPMmat, xlab="Size (t)",ylab="Size (t+1)",
+col=topo.colors(100), main="IPM matrix")
+
+```
+```{r}
+#use this code to check and see how many seedlings are produced by each size class
+matrix <- as.data.frame(save$IPMmat)
+no.seedlings <- matrix[1,]
+no.seedlings <- no.seedlings %>% pivot_longer(
+    cols = starts_with("V"),
+    values_to = "no.seedlings",
+    names_to = "size",
+    names_pattern = "V(.*)")
+barplot(no.seedlings$no.seedlings, xlab = "Plant size (small to large)", ylab = "Number of seedlings produced")
+
+#and use this code to see p(1 leaf becomes a 2 leaf)* size distribution of new individuals into kernel
+new.cont <- matrix[3:102,2]
+barplot(new.cont, ylab = "Prob. 1 leaf becomes >2 leaf * size distribution of new >2 leafs", xlab = "Plant size (small to large)")
+
+```
+
+
+```{r}
+#Jenn's eviction from townsendia
+P.A.checkevict=G.A 								# placeholder;redefine P on the next line
+for(i in 1:n) P.A.checkevict[,i]=G.A[,i]  		# growth/survival kernel, where survival now =1
+frac.evictA<-1-colSums(P.A.checkevict)
+
+
+
+par(mfrow=c(1,1))
+plot(frac.evictA~y, type="l", xaxt="n", col=colA, lwd=2,
+     xlab="rosette area", ylab="proportion 'evicted'",
+     ylim=c(0,0.1), las=1, cex.axis=0.8)
+axis(side=1, at=log(c(0.1, 0.2,0.5,1,2,5,10,20,50,100,200)), labels=c(0.1, 0.2,0.5,1,2,5, 10,20, 50, 100,200), las=1, cex.axis=0.9)
+lines(frac.evictS~y, type="l", col=colS, lwd=2)
 ```
 
 
@@ -531,69 +551,93 @@ abline(0,1,lwd=3)
 ```{r}
 # #now to make a graph:
 # 
-# ipm <- primula_lambda %>% 
-#   ggplot(aes(x = precip, y = lambda, linetype = reproduction))+
-#   geom_line(data = subset(primula_lambda, temp == 8.14), aes(x = precip, y = lambda), color = "lightblue2",  size = 1.25)+
-#   geom_line(data = subset(primula_lambda, temp == 9.64), aes(x = precip, y = lambda), color = "darkgrey", size = 1.25)+
-#   geom_line(data = subset(primula_lambda, temp == 11.14), aes(x = precip, y = lambda), color = "firebrick", size = 1.25)+
-#   labs(x = "Growing Season Total Precipitation (mm)", y = "Lambda")+
-#   scale_linetype_manual(values=c("longdash", "solid"))+
-#   theme(legend.position="none")
-# 
-# # ggplot(primula_lambda, aes(x = precip, y = lambda, fill = temp)) +
-# #   geom_tile(color = "black") +
-# #   scale_fill_gradient(low = "white", high = "red")
+ipm <- primula_lambda %>%
+  ggplot(aes(x = precip, y = lambda, linetype = reproduction))+
+  geom_line(data = subset(primula_lambda, temp == 8.14), aes(x = precip, y = lambda), color = "lightblue2",  size = 1.25)+
+  geom_line(data = subset(primula_lambda, temp == 9.64), aes(x = precip, y = lambda), color = "darkgrey", size = 1.25)+
+  geom_line(data = subset(primula_lambda, temp == 11.14), aes(x = precip, y = lambda), color = "firebrick", size = 1.25)+
+  labs(x = "Growing Season Total Precipitation (mm)", y = "Lambda")+
+  scale_linetype_manual(values=c("longdash", "solid"))+
+  theme(legend.position="none")
+
+ggplot(primula_lambda, aes(x = summer.temp, y = gs.temp, fill = lambda)) +
+   geom_tile(color = "black") +
+   scale_fill_gradient(low = "white", high = "red")
 # 
 # ggsave(plot = ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/ipm climate.png", width = 5, height = 5, dpi = 300)
 
 ```
 
 ```{r}
+#looking at lambdas per year:
+primula_lambda %>% 
+  ggplot(aes(x = year, y = lambda, color = trt, shape = reproduction))+
+  geom_point(size = 2)+
+    scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
+  scale_shape_manual(values = c(1, 16))
+#change reproduction to cost vs no cost
+  
+
+```
+
+ 
+ 
+
+
+```{r}
 #summer.precip changing while summer precip, sumer temp, etc does not
-sp <- primula_lambda %>% 
-  filter(near(summer.temp, 0, tol = .1)) %>% 
-  filter(near(gs.temp, 0, tol = .1)) %>% 
-  filter(near(winter.temp, 0, tol = .2)) %>% 
-  ggplot(aes(x = summer.precip, y = lambda, linetype = reproduction, color = trt))+
-  geom_line(linewidth = 1.5)+
-  scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
-  labs(y = expression(paste("\u03BB")), x = "Summer Precipitation")
+# sp <- primula_lambda %>% 
+#   filter(near(summer.temp, 0, tol = .1)) %>% 
+#   filter(near(gs.temp, 0, tol = .1)) %>% 
+#   filter(near(winter.temp, 0, tol = .2)) %>% 
+#   ggplot(aes(x = summer.precip, y = lambda, linetype = reproduction, color = trt))+
+#   geom_line(linewidth = 1.5)+
+#   scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
+#   scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
+#   labs(y = expression(paste("\u03BB")), x = "Summer Precipitation")
 st <- primula_lambda %>% 
-  filter(near(summer.precip, 0, tol = .1)) %>% 
+  #filter(near(summer.temp, 0, tol = .1)) %>% 
   filter(near(gs.temp, 0, tol = .1)) %>% 
   filter(near(winter.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = summer.temp, y = lambda, linetype = reproduction, color = trt))+
   geom_line(linewidth = 1.5)+
-  scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
-  labs(y = expression(paste("\u03BB")), x = "Summer Temperature")
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+ scale_linetype_manual(values = c( "dashed","solid"), name = "")+
+  labs(y = expression(paste("\u03BB")), x = "Summer Temperature")+
+  scale_y_continuous(limits=c(.875,1))+ 
+  theme(legend.position = "none")+
+  geom_hline(yintercept = 1, color="grey", linetype="dashed", linewidth = 1.25)
 gst <- primula_lambda %>% 
-  filter(near(summer.precip, 0, tol = .1)) %>% 
   filter(near(summer.temp, 0, tol = .1)) %>% 
   filter(near(winter.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = gs.temp, y = lambda, linetype = reproduction, color = trt))+
   geom_line(linewidth = 1.5)+
-  scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
-  labs(y = expression(paste("\u03BB")), x = "Spring Temperature")
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_linetype_manual(values = c("dashed", "solid"), name = "")+
+  labs(y = expression(paste("\u03BB")), x = "Spring Temperature")+
+  scale_y_continuous(limits=c(.875,1))+
+  geom_hline(yintercept = 1, color="grey", linetype="dashed", linewidth = 1.25)+ 
+  theme(legend.position = "none")
 
 wt <- primula_lambda %>% 
-  filter(near(summer.precip, 0, tol = .1)) %>% 
   filter(near(summer.temp, 0, tol = .1)) %>% 
   filter(near(gs.temp, 0, tol = .2)) %>% 
   ggplot(aes(x = winter.temp, y = lambda, linetype = reproduction, color = trt))+
   geom_line(linewidth = 1.5)+
-  scale_color_manual(values = c("#E7B800", "#FC4E07", "#00AFBB"), name = "")+
-  scale_linetype_manual(values = c("solid", "dashed"), labels = c("cost", "no cost"), name = "")+
-  labs(y = expression(paste("\u03BB")), x = "Winter Temperature")
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_linetype_manual(values = c("dashed", "solid"), name = "")+
+  labs(y = expression(paste("\u03BB")), x = "Winter Temperature")+
+  scale_y_continuous(limits=c(.875,1))+ 
+  theme(legend.position = "none")+
+  geom_hline(yintercept = 1, color="grey", linetype="dashed", linewidth = 1.25)
 
 
 
-ggsave(plot = sp, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/sp.png", width = 5, height = 4, dpi = 300)
-ggsave(plot = st, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/st.png", width = 5, height = 4, dpi = 300)
-ggsave(plot = gst, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/gst.png", width =5, height = 4, dpi = 300)
-ggsave(plot = wt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/wt.png", width = 5, height = 4, dpi = 300)
+
+
+ggsave(plot = st, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/1st.png", width = 5, height = 4, dpi = 300)
+ggsave(plot = gst, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/1gst.png", width =5, height = 4, dpi = 300)
+ggsave(plot = wt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/1wt.png", width = 5, height = 4, dpi = 300)
 
 ```
 
