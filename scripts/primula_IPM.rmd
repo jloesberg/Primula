@@ -17,66 +17,6 @@ Z <- wes_palettes$Zissou1
 
 ```
 
-
-
-```{r}
-#this is code from Sarah that has one function for the townsendia df!! I've edited it below to get it to work for the primula data
-# 
-#  g.yx<-function(lifehist, xp,x,params){
-#    xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-#    if (lifehist=="Apo"){
-#          growth_to_newsize <-params$growth.int.A + params$growth.slope*xb
-#          growth_sd <- params$growth.sd
-#          return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))}
-#    else if(lifehist=="Sex"){
-#          growth_to_newsize <-params$growth.int.S + params$growth.slope*xb
-#          growth_sd <- params$growth.sd
-#          return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))}
-#  }
-# params_list <-  filter(params) %>% split(., seq(nrow(.)))
-# 
-# ### use the map function to change the inputs and so you can just write 1 function 
-# BFM <- function(params_in, y){
-#     if(exists('g.yx.A') == FALSE){
-#         print('missing g.yx.A function?')
-#     }
-#     
-#     repro_type = params_in[,'Reproduction']
-#     if(repro_type == "Sex"){
-#         G.S=h*outer(y,y,g.yx.S,params=params_in) 	# growth kernel
-#     S=s.x(y,params=params_in) 				# survival
-#     P.S=G.S 								# placeholder;redefine P on the next line
-#     for(i in 1:n) P.S[,i]=G.S[,i]*S[i]  	# growth/survival kernel
-#     F=h*outer(y,y,f.yx,params=params_in) 	    # reproduction kernel
-#             K.S=P.S+F 						# full kernel
-# 
-#     lambsite_ <-lambda(K.S) 
-#     }
-#     else if (repro_type == "Apo"){
-#     G.A=h*outer(y,y,g.yx.A,params=params_in) 	# growth kernel
-#     S=s.x(y,params=params_in) 				# survival
-#     P.A=G.A 								# placeholder;redefine P on the next line
-#     for(i in 1:n) P.A[,i]=G.A[,i]*S[i]  	# growth/survival kernel
-#     F=h*outer(y,y,f.yx,params=params_in) 	    # reproduction kernel
-#             K.A=P.A+F 						# full kernel
-# 
-#     lambsite_ <-lambda(K.A)  
-#     }
-#     out_c <- data.frame(site = params_in$Site, lambda= lambsite_)
-# return(out_c)
-# }
-# 
-# model_out <- params_list %>% map(., .f = BFM, y = y) %>% bind_rows()
-
-```
-
-
-- _what do f.yx functions need to return? Just number of seedlings? so some thing like the pf functions?_
--For the most part, I've just taken the average/made up the misc components. Which is fine for now but eventually will need to be dealt with!
-- I think Tom's code can help me figure out how to not have separate functions for each treatment (ie use some form of ifelse)
-
-
-
 ```{r}
 ### read in all years of Primula data and weather data from the Cowichan
 # Add in climate data:
@@ -103,31 +43,30 @@ new.plants <- primula %>%
   filter(!is.na(log.ros.area))
 ```
 
-
+I thought a lot here about parametric versus non parametric bootstrapping - I'm going with parametric because it seems easier, and we are running models that we have confidence in. Also we won't have the convergence problem that we had with the townsendia bootstrapped data (some bootstrapped data samples lead to models that wouldnt converge). It is also easier to code!
 
 ##IPM for Primula data
 ```{r}
-#number of bootstrap samples:
-boot = 5
+# set number of bootstrap samples:
+boot = 10
+
+#set seed so we have the same parameters each time
+set.seed(12345)
+
 ###
-
-
 fm.gs.av.temp.cor.int1 <- glmer(pflowerT1 ~ log.ros.area*pflower + grow.season.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 #parametric bootstrap
-require(MASS)
 #make matrix of random draws
-pflower_samp = mvrnorm(n=boot, mu=fixef(fm.gs.av.temp.cor.int1), Sigma=vcov(fm.gs.av.temp.cor.int1))
+pflower_samp = MASS::mvrnorm(n=boot, mu=fixef(fm.gs.av.temp.cor.int1), Sigma=vcov(fm.gs.av.temp.cor.int1))
 pflower_samp
 apply(pflower_samp,2,mean) #double check that the means are similar to fixef
 fixef(fm.gs.av.temp.cor.int1)
 
-
 ####
 sm.gs.av.temp <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 #parametric bootstrap
-require(MASS)
 #make matrix of random draws
-psurv_samp = mvrnorm(n=boot, mu=fixef(sm.gs.av.temp), Sigma=vcov(sm.gs.av.temp))
+psurv_samp = MASS::mvrnorm(n=boot, mu=fixef(sm.gs.av.temp), Sigma=vcov(sm.gs.av.temp))
 psurv_samp
 apply(psurv_samp,2,mean) #double check that the means are similar to fixef
 fixef(sm.gs.av.temp)
@@ -135,9 +74,8 @@ fixef(sm.gs.av.temp)
 
 gm.summer.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
 #parametric bootstrap
-require(MASS)
 #make matrix of random draws
-grow_samp = mvrnorm(n=boot, mu=fixef(gm.summer.av.temp.cor.trt.int6), Sigma=vcov(gm.summer.av.temp.cor.trt.int6))
+grow_samp = MASS::mvrnorm(n=boot, mu=fixef(gm.summer.av.temp.cor.trt.int6), Sigma=vcov(gm.summer.av.temp.cor.trt.int6))
 grow_samp
 apply(grow_samp,2,mean) #double check that the means are similar to fixef
 fixef(gm.summer.av.temp.cor.trt.int6)
@@ -148,9 +86,8 @@ growth_var <- as.data.frame(VarCorr(gm.summer.av.temp.cor.trt.int6)) #assumes sa
 
 noflowers.winter.av.temp <- glmer(flow.sumT1 ~ log.ros.area + winter.mean.temp + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
 #parametric bootstrap
-require(MASS)
 #make matrix of random draws
-noflowers_samp = mvrnorm(n=boot, mu=fixef(noflowers.winter.av.temp), Sigma=vcov(noflowers.winter.av.temp))
+noflowers_samp = MASS::mvrnorm(n=boot, mu=fixef(noflowers.winter.av.temp), Sigma=vcov(noflowers.winter.av.temp))
 noflowers_samp
 apply(noflowers_samp,2,mean) #double check that the means are similar to fixef
 fixef(noflowers.winter.av.temp)
@@ -162,15 +99,8 @@ fixef(noflowers.winter.av.temp)
 
 ###
 
-
-
-
 Then the other miscellany we'll need (size independent parameters):
-
-GOAL FOR 4/5: just make some these up for now and make a model that runs!
 ```{r}
-
-#prob.flower.makes.seeds <- 0.73 #this is a made up number
 ## I need to change this because this is treatment dependent!
 #no.seeds <- 36 #if you make seeds, this is on average how many seeds you make. But, this needs to be a function below
 prob.seed.germ <- .022 #this is from the seed addition data - average seed has 0.022 chance of germination
@@ -182,28 +112,26 @@ prob.1leaf.to.2leaf <- .1
 new_sd <- sd(new.plants$log.ros.area)
 new_mean <- mean(new.plants$log.ros.area)
 
-```
-
-Define the min and max size, which are the integration bounds of the IPM.
-```{r size bounds, echo=T}
+#Define the min and max size, which are the integration bounds of the IPM.
 minRealsize <- min(primula$log.ros.area, na.rm=T) 
-
 maxRealsize <- 1.1* max(primula$log.ros.area,na.rm=T)
 
 #now add a new min & max size to keep the plants in for eviction
 min.size <-minRealsize-1 #lower
 max.size <-maxRealsize+1.5 #upper
+
 ```
+
 ## Collect model parameters into a vector
 
 This is a little tricky! There are a lot of variables in the models, so be careful here with the equations for the mixed models
-Also ~ how do deal with temperature in these?? Just add the variable in to get the slope??
-I've just added in the mean temp, so these are specific to one specific temperature (in the future, I can write a loop to get a range of temperatures?)
 
-
-```{r parameter vector, echo=FALSE}
+These are for the ipm without the bootstrap
+```{r parameters without boot, echo=FALSE}
 #this is for range of climates
 rows <- expand.grid(summer.mean.temp = seq(-2, 2, by = .5), grow.season.mean.temp = seq(-2, 2, by = .5),  winter.mean.temp = seq(-2, 2, by = .5), reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"))
+
+#rows <- expand.grid(summer.mean.temp = 0, grow.season.mean.temp = 0,  winter.mean.temp = 0, reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"))
 
 #this is per year
 #row <- climate_scale %>% 
@@ -233,7 +161,296 @@ params <- bind_cols(params, rows)
 ```
 
 Stick all the parameters in. And use coefficients from the parametric bootstrap:
-```{r parameters, echo=T}
+```{r bootstrapped parameters}
+###
+summer.mean.temp = expand_grid(summer.mean.temp = seq(-2, 2, by = 1))
+#growth intercept:
+# data frame to store the results
+growth.int <- data.frame(
+  growth.int = numeric(6 * boot * nrow(summer.mean.temp)),
+  summer.mean.temp = numeric(6 * boot * nrow(summer.mean.temp)),
+  reproduction = character(6 * boot * nrow(summer.mean.temp)),
+  trt = character(6 * boot * nrow(summer.mean.temp)),
+  boot.group = numeric(6 * boot * nrow(summer.mean.temp))
+)
+
+# Counter to keep track of the row index
+row_index <- 1
+
+# Outer loop - for bootstrapped coefficients
+for (j in 1:boot) {
+  # Inner loop - for temperature values
+  for (i in 1:nrow(summer.mean.temp)) {
+    # Fill for veg control
+    growth.int[row_index, "growth.int"] <- grow_samp[j,1] + grow_samp[j,6]*summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "summer.mean.temp"] <- summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "reproduction"] <- "veg"
+    growth.int[row_index, "trt"] <- "control"
+    growth.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+
+    
+    # Increment the row index
+    row_index <- row_index + 1
+    
+    # Fill for flowered control
+    growth.int[row_index, "growth.int"] <- grow_samp[j,1] + grow_samp[j,6]*summer.mean.temp$summer.mean.temp[i] + grow_samp[j,3]
+    growth.int[row_index, "summer.mean.temp"] <- summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "reproduction"] <- "flowered"
+    growth.int[row_index, "trt"] <- "control"
+        growth.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+
+    
+    # Increment the row index
+    row_index <- row_index + 1
+    
+    # Fill for veg irrigated
+    growth.int[row_index, "growth.int"] <- grow_samp[j,1] + grow_samp[j,5] + grow_samp[j,6]*summer.mean.temp$summer.mean.temp[i] + grow_samp[j,9]*summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "summer.mean.temp"] <- summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "reproduction"] <- "veg"
+    growth.int[row_index, "trt"] <- "irrigated"
+        growth.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+
+    
+    # Increment the row index
+    row_index <- row_index + 1
+    
+    # Fill for flow irrigated
+    growth.int[row_index, "growth.int"] <- grow_samp[j,1] + grow_samp[j,3] + grow_samp[j,5] + grow_samp[j,6]*summer.mean.temp$summer.mean.temp[i] + grow_samp[j,9]*summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "summer.mean.temp"] <- summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "reproduction"] <- "flowered"
+    growth.int[row_index, "trt"] <- "irrigated"
+        growth.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+
+    
+    # Increment the row index
+    row_index <- row_index + 1
+        
+    # Fill for veg drought
+    growth.int[row_index, "growth.int"] <- grow_samp[j,1] + grow_samp[j,4] + grow_samp[j,8]*summer.mean.temp$summer.mean.temp[i] + grow_samp[j,6]*summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "summer.mean.temp"] <- summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "reproduction"] <- "veg"
+    growth.int[row_index, "trt"] <- "drought"
+        growth.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+
+    
+    # Increment the row index
+    row_index <- row_index + 1
+    
+    # Fill for flow drought
+    growth.int[row_index, "growth.int"] <- grow_samp[j,1] + 
+      grow_samp[j,3] +
+      grow_samp[j,4] + 
+      grow_samp[j,8]*summer.mean.temp$summer.mean.temp[i] + 
+      grow_samp[j,6]*summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "summer.mean.temp"] <- summer.mean.temp$summer.mean.temp[i]
+    growth.int[row_index, "reproduction"] <- "flowered"
+    growth.int[row_index, "trt"] <- "drought"
+        growth.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+
+    
+    # Increment the row index
+    row_index <- row_index + 1
+  }
+}
+
+# 
+# for (i in 1:nrow(summer.mean.temp)) {
+#   temp_df_veg_control <- data.frame(
+#     growth.int = grow_samp[,1] + grow_samp[,6]*summer.mean.temp$summer.mean.temp[i],
+#     summer.mean.temp = summer.mean.temp$summer.mean.temp[i],
+#     reproduction = "veg",
+#     trt = "control"
+#   )
+#   temp_df_flow_control <- data.frame(
+#     growth.int = grow_samp[,1] + grow_samp[,6]*summer.mean.temp$summer.mean.temp[i] + grow_samp[,3],
+#     summer.mean.temp = summer.mean.temp$summer.mean.temp[i],
+#     reproduction = "flowered",
+#     trt = "control" 
+#   )
+#   temp_df_veg_irrigated <- data.frame(
+#     growth.int = grow_samp[,1] + grow_samp[,5] + grow_samp[,6]*summer.mean.temp$summer.mean.temp[i] + grow_samp[,9]*summer.mean.temp$summer.mean.temp[i],
+#     summer.mean.temp = summer.mean.temp$summer.mean.temp[i],
+#     reproduction = "veg",
+#     trt = "irrigated" 
+#   )
+#     temp_df_flowered_irrigated <- data.frame(
+#     growth.int = grow_samp[,1] + grow_samp[,3] + grow_samp[,5] + grow_samp[,6]*summer.mean.temp$summer.mean.temp[i] + grow_samp[,9]*summer.mean.temp$summer.mean.temp[i],
+#     summer.mean.temp = summer.mean.temp$summer.mean.temp[i],
+#     reproduction = "flowered",
+#     trt = "irrigated" 
+#   )
+#      temp_df_veg_drought <- data.frame(
+#     growth.int = grow_samp[,1] + grow_samp[,4] + grow_samp[,8]*summer.mean.temp$summer.mean.temp[i] + grow_samp[,6]*summer.mean.temp$summer.mean.temp[i],
+#     summer.mean.temp = summer.mean.temp$summer.mean.temp[i],
+#     reproduction = "veg",
+#     trt = "drought" 
+#   )
+#      temp_df_flowered_drought <- data.frame(
+#     growth.int = grow_samp[,1] + 
+#       grow_samp[,3] +
+#       grow_samp[,4] + 
+#       grow_samp[,8]*summer.mean.temp$summer.mean.temp[i] + 
+#       grow_samp[,6]*summer.mean.temp$summer.mean.temp[i],
+#     summer.mean.temp = summer.mean.temp$summer.mean.temp[i],
+#     reproduction = "flowered",
+#     trt = "drought" 
+#   )
+#     growth.int<- rbind(growth.int, temp_df_veg_control, temp_df_flow_control, temp_df_flowered_drought, temp_df_veg_drought, temp_df_flowered_irrigated, temp_df_veg_irrigated)
+#     remove(temp_df_veg_control, temp_df_flow_control, temp_df_flowered_drought, temp_df_veg_drought, temp_df_flowered_irrigated, temp_df_veg_irrigated)
+# }
+
+#growth slope
+growth.slope <- data.frame(
+  growth.slope = c(grow_samp[, 2] + grow_samp[, 7], grow_samp[, 2]),
+  reproduction = c(rep("flowered", nrow(grow_samp)), rep("veg", nrow(grow_samp))),
+  boot.group = c(rep(1:nrow(grow_samp)), rep(1:nrow(grow_samp)))
+)
+
+
+growth <- left_join(growth.int, growth.slope)
+
+##################################
+#survival boot
+grow.season.mean.temp = expand_grid(grow.season.mean.temp = seq(-2, 2, by = 1))
+
+surv.slope <- data.frame(surv.slope = psurv_samp[, 2], boot.group = seq(1, boot, by = 1))
+
+surv.int <- data.frame()
+row_index <- 1
+
+# Outer loop - for bootstrapped coefficients
+for (j in 1:boot) {
+  # Inner loop - for temperature values
+  for (i in 1:nrow(grow.season.mean.temp)) {
+    # Fill for veg control
+    surv.int[row_index, "surv.int"] <-  psurv_samp[j, 1] + psurv_samp[j, 3] * grow.season.mean.temp$grow.season.mean.temp[i]
+    surv.int[row_index, "grow.season.mean.temp"] <- grow.season.mean.temp$grow.season.mean.temp[i]
+    surv.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+   # Increment the row index
+    row_index <- row_index + 1
+}}
+
+surv <-left_join(surv.int, surv.slope)
+
+###
+#####################
+#slopes:
+
+pflow.slope <- rbind(
+  data.frame(pflow.slope = pflower_samp[,2], reproduction = "veg", boot.group = rep(1:nrow(grow_samp))),
+  data.frame(pflow.slope = pflower_samp[,2] + pflower_samp[,5], reproduction = "flowered", boot.group = rep(1:nrow(grow_samp)))
+  
+)
+#intercepts:
+pflow.int <- data.frame()
+
+row_index <- 1
+
+# Outer loop - for bootstrapped coefficients
+for (j in 1:boot) {
+  # Inner loop - for temperature values
+  for (i in 1:nrow(grow.season.mean.temp)) {
+    # Fill for veg 
+    pflow.int[row_index, "pflow.int"] <-  pflower_samp[j, 1] + pflower_samp[j, 4] * grow.season.mean.temp$grow.season.mean.temp[i]
+    pflow.int[row_index, "grow.season.mean.temp"] <- grow.season.mean.temp$grow.season.mean.temp[i]
+    pflow.int[row_index, "reproduction"] <- "veg"
+    pflow.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+   # Increment the row index
+    row_index <- row_index + 1
+    
+    # Fill for flowered
+    pflow.int[row_index, "pflow.int"] <-  pflower_samp[j, 1] + pflower_samp[j, 4] * grow.season.mean.temp$grow.season.mean.temp[i] + pflower_samp[j, 3]
+    pflow.int[row_index, "grow.season.mean.temp"] <- grow.season.mean.temp$grow.season.mean.temp[i]
+    pflow.int[row_index, "reproduction"] <- "flowered"
+    pflow.int[row_index, "boot.group"] <- j  # Add the bootstrapped group index
+   # Increment the row index
+    row_index <- row_index + 1
+  }
+  }
+
+# for (i in 1:nrow(grow.season.mean.temp)) {
+#   temp_df_veg <- data.frame(
+#     pflow.int = pflower_samp[, 1] + pflower_samp[, 4] * grow.season.mean.temp$grow.season.mean.temp[i],
+#     grow.season.mean.temp = grow.season.mean.temp$grow.season.mean.temp[i],
+#     reproduction = "veg",
+#     boot.group = rep(i, nrow(pflower_samp))
+# 
+#   )
+#   
+#   temp_df_rep <- data.frame(
+#     pflow.int = pflower_samp[, 1] + pflower_samp[, 4] * grow.season.mean.temp$grow.season.mean.temp[i] + pflower_samp[, 3],
+#     grow.season.mean.temp = grow.season.mean.temp$grow.season.mean.temp[i],
+#     reproduction = "flowered",
+#     boot.group = rep(i, nrow(pflower_samp))
+#   )
+# 
+#   pflow.int<- rbind(pflow.int, temp_df_veg, temp_df_rep)
+# }
+
+pflow <- left_join(pflow.int, pflow.slope)
+
+###############################################################
+#boot
+winter.mean.temp = expand_grid(winter.mean.temp = seq(-2, 2, by = 1))
+
+no.flow.slope <- data.frame(no.flow.slope = noflowers_samp[, 2], boot.group = seq(1, boot, by = 1))
+
+no.flow.int <- data.frame()
+row_index <- 1
+
+# Outer loop - for bootstrapped coefficients
+for (j in 1:boot) {
+  # Inner loop - for temperature values
+  for (i in 1:nrow(winter.mean.temp)) {
+    no.flow.int[row_index, "no.flow.int"] <-  noflowers_samp[j, 1] + noflowers_samp[j, 3] * winter.mean.temp$winter.mean.temp[i]
+    no.flow.int[row_index, "winter.mean.temp"] <- winter.mean.temp$winter.mean.temp[i]
+    no.flow.int[row_index, "boot.group"] <- j  # Add the bootstrapped group indexj
+   # Increment the row index
+    row_index <- row_index + 1
+}}
+
+# no.flow.int <- data.frame()
+# for (i in 1:nrow(winter.mean.temp)) {
+#   temp_df <- data.frame(
+#     no.flow.int = noflowers_samp[, 1] + noflowers_samp[, 3] * winter.mean.temp$winter.mean.temp[i],
+#     winter.mean.temp = winter.mean.temp$winter.mean.temp[i],
+#     boot.group = rep(i, nrow(noflowers_samp))
+#   )
+#   no.flow.int <- rbind(no.flow.int, temp_df)
+# }
+
+no.flow <- left_join(no.flow.slope, no.flow.int)
+
+
+##stick these into one df
+boot.params <- left_join(surv, no.flow)
+boot.params <- left_join(boot.params, growth)
+boot.params <- left_join(boot.params, pflow)
+
+
+#Ok great, this looks like it works!
+
+#####
+
+#currently, seeds per flower is not size dependent, but is treatment dependent
+#flowers in drought plots make 6 seeds, control make 11, irrigated make 13
+boot.params$seeds[boot.params$trt == "irrigated"] <- 13
+boot.params$seeds[boot.params$trt == "drought"] <- 6
+boot.params$seeds[boot.params$trt == "control"] <- 11
+
+#params$no.seeds <- no.seeds
+boot.params$prob.seed.germ <- prob.seed.germ
+boot.params$recruit.size.mean <- new_mean # mean new >1 leaf plant size
+boot.params$recruit.size.sd<- new_sd # sd of new >1 leaf plant size
+
+boot.params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
+
+
+```
+
+
+
+```{r original parameters, echo=T}
 #growth:
 for (i in 1:nrow(params)) {
   if (params$reproduction[i] == "veg" && params$trt[i] == "control") {
@@ -265,13 +482,15 @@ params$growth.slope[params$reproduction == "flowered"]<- fixef(gm.summer.av.temp
 
 params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
 
+###########################################################################################
 #survival = sm.gs.av.temp
 for (i in 1:nrow(params)) {
   params$surv.int[i] <- fixef(sm.gs.av.temp)[1] + fixef(sm.gs.av.temp)[3]*params$grow.season.mean.temp[i]
 }
- # survival slope
-params$surv.slope <- fixef(sm.gs.av.temp)[2] # survival size t
 
+#slope
+params$surv.slope <- fixef(sm.gs.av.temp)[2] # survival size t
+###########################################################################################
 #pflower
 for (i in 1:nrow(params)) {
   if (params$reproduction[i] == "veg") {
@@ -284,27 +503,14 @@ for (i in 1:nrow(params)) {
 #slopes:
 params$pflow.slope[params$reproduction == "veg"] <- fixef(fm.gs.av.temp.cor.int1)[2]
 params$pflow.slope[params$reproduction == "flowered"]<- fixef(fm.gs.av.temp.cor.int1)[2] + fixef(fm.gs.av.temp.cor.int1)[5]
-
-
+##############################################################################################
+# no.flowers
 for (i in 1:nrow(params)) {
     params$no.flow.int[i] <- fixef(noflowers.winter.av.temp)[1] + fixef(noflowers.winter.av.temp)[3]*params$winter.mean.temp[i]
 }
 
 params$no.flow.slope <- fixef(noflowers.winter.av.temp)[2] # flower number production size t
-
-#params$pdorm.int <-fixef(dorm_model)[1] #intercept of dormancy model to calculate prob of dormancy (not size dependent)
-#note that the IPM doesn't use dormancy parameter or the dormancy model
-
-#params$p.flower.makes.seed <- prob.flower.makes.seeds
-#seed3  <- glmer(total.seeds~log.ros.area*trt + (1|year)+ (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
-# params$no.seeds.int[params$trt == "control"] <- fixef(seed3)[1]
-# params$no.seeds.slope[params$trt == "control"] <- fixef(seed3)[2]
-# 
-# params$no.seeds.int[params$trt == "drought"] <- fixef(seed3)[1] + fixef(seed3)[4]
-# params$no.seeds.slope[params$trt == "drought"] <- fixef(seed3)[2] + fixef(seed3)[6]
-# 
-# params$no.seeds.int[params$trt == "irrigated"] <- fixef(seed3)[1] + fixef(seed3)[3]
-# params$no.seeds.slope[params$trt == "irrigated"] <- fixef(seed3)[2] + fixef(seed3)[5]
+#####
 
 #currently, seeds per flower is not size dependent, but is treatment dependent
 #flowers in drought plots make 6 seeds, control make 11, irrigated make 13
@@ -316,13 +522,16 @@ params$seeds[params$trt == "control"] <- 11
 params$prob.seed.germ <- prob.seed.germ
 params$recruit.size.mean <- new_mean # mean new >1 leaf plant size
 params$recruit.size.sd<- new_sd # sd of new >1 leaf plant size
+
+params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
+
 ```
 
 # Build the model!
 
 ### Step 1. Build vital rate functions (components of the kernel)
 
-```{r VR functions}
+```{r without bootstrap functions}
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ###         Load functions
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -338,16 +547,6 @@ s.x=function(x,params) {
 ### run function for a plant of size 1 but for all rows of parameters (so get a list )
 #s.x(x = 1, params = params)
 #ok this works and seems to work for all rows of params. great.
-
-
-# #note - in the final code, just use the correct eviction function and comment out (or delete the other [JL - 1/9 made the corrected eviction one name g.yx.A/S]
-# g.yx.A<-function(xp,x,params){
-#   xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
-#   growth_to_newsize <-params$growth.int.A + params$growth.slope*xb
-#   growth_sd <- params$growth.sd
-#   return(dnorm(xp,mean=growth_to_newsize,sd=growth_sd))
-# }
-
 
 #GROWTH FROM SIZE X TO Y; 
   ## returns a *probability density distribution* for each x value
@@ -410,8 +609,88 @@ recruit.size<-function(y,params){
 }
 ```
 
-```{r setting up stage matrices}
+
+```{r with bootstrap functions}
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+###         Load functions
+###~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#SURVIVAL AT SIZE X
+s.x=function(x,boot.params) {
+	u=exp(boot.params$surv.int+boot.params$surv.slope*x)
+	return(u/(1+u))
+}
+
+#how to test this: 
+### run function for a plant of size 1 and for the first row of parameters
+#s.x(x = 1, boot.params = boot.params[1,])
+### run function for a plant of size 1 but for all rows of parameters (so get a list )
+#s.x(x = 1, boot.params = boot.params)
+#ok this works and seems to work for all rows of boot.params. great.
+
+#GROWTH FROM SIZE X TO Y; 
+  ## returns a *probability density distribution* for each x value
+g.yx<-function(y,x,boot.params){
+    # eviction here...
+  xb=pmin(pmax(x,minRealsize),maxRealsize) #Transforms all values below/above limits in min/max size (floor & ceiling)
+  growth_to_newsize <-boot.params$growth.int + boot.params$growth.slope*xb
+  growth_sd <- boot.params$growth.sd
+  return(dnorm(y,mean=growth_to_newsize,sd=growth_sd))
+  #dnorm(y,mean=boot.params$growth.int + boot.params$growth.slope*x,sd=boot.params$growth.sd)
+
+}
+#to test this:
+###well actually, maybe I don't know what the end product is supposed to look like - and is y the size it grows to ve
+#g.yx(y = 1, x = 1, boot.params = boot.params[1,])
+
+#Tom Miller's combined s and g kernel
+P <- function(y, x, boot.params){
+  s.x(x, boot.params)*g.yx(y, x, boot.params)
+}
+
+
+
+#PROBABILITY OF FLOWERING OF SIZE X individuals
+pf.x <-function(x,boot.params){
+	u<-exp(boot.params$pflow.int+boot.params$pflow.slope*x)
+	return(u/(1+u))
+}
+#testing this for a plant of size 5
+#pf.x(x = 8,boot.params = boot.params)
+
+# #PRODUCTION OF seedlings by X-SIZED plants that flowered the previous year
+###Here i've put in the misc bits, but not sure if this is correct - seems ok for now
+
+# f.yx.flowered=function(x,boot.params) { 		
+# 	return(pf.x.flowered(x,boot.params)*
+#     exp(boot.params$no.flow.int+boot.params$no.flow.slope*x)*
+#     boot.params$p.flower.makes.seed*
+#     boot.params$no.seeds* #this will eventually be a function??
+#     boot.params$prob.seed.germ)
+#  #is this right? I want a number of seedlings that are made.
+# }
+
+f.yx=function(x,boot.params) { 		
+	#return(pf.x(x,boot.params)*exp(boot.params$no.flow.int+boot.params$no.flow.slope*x)* exp(boot.params$no.seeds.int+boot.params$no.seeds.slope*x) *
+  return(pf.x(x,boot.params)*exp(boot.params$no.flow.int+boot.params$no.flow.slope*x)* boot.params$seeds * boot.params$prob.seed.germ)
+}
+##so this should be outputting the number of seedlings made? Yes
+#f.yx(x = 5,boot.params = boot.params)
+
+##do big plants make a million flowers?
+#exp(boot.params$no.flow.int+boot.params$no.flow.slope*8) 
+## no they make a reasonable amount
+
+
+#SIZE DISTRIBUTION OF RECRUITS - so the ones going from the 1 leaf stage into the continuous stage. I'm not sure that this is doing what I want it to - 
+recruit.size<-function(y,boot.params){
+    ## returns a *probability density distribution*
+  dnorm(y,mean=boot.params$recruit.size.mean,sd=boot.params$recruit.size.sd)
+}
+```
+
+```{r get lambdas (no bootstrap no ltre)}
 params_list <-  filter(params) %>% split(., seq(nrow(.))) #this splits up params into X rows, which I can feed into the function below
+
 
 #params_in <- params_list[1] #to test it!
 # BIGMATRIX ---------------------------------------------------------------
@@ -469,8 +748,343 @@ primula_lambda <- do.call(rbind, lamb_lists)
 
 ```
 
+```{r get bootstrapped lambdas)}
+params_list <-  filter(boot.params) %>% split(., seq(nrow(.))) #this splits up params into X rows, which I can feed into the function below
+
+
+#params_in <- params_list[1] #to test it!
+# BIGMATRIX ---------------------------------------------------------------
+#building off of code from Tom Miller:
+mat.size = 100 #dimensions of continuous matrix
+bigmatrix<-function(params_list, mat.size)
+  {
+  n<-mat.size
+  L<-min.size
+  U<-max.size
+  #these are the upper and lower integration limits
+  h<-(U-L)/n                   #Bin size
+  b<-L+c(0:n)*h;               #Lower boundaries of bins 
+  y<-0.5*(b[1:n]+b[2:(n+1)]);  #Bins' midpoints
+  #these are the boundary points (b) and mesh points (y)
+
+  # Fertility matrix
+  Fmat<-matrix(0,(n+2),(n+2))
+  
+  # top row: # seedlings produced by each size class:
+  Fmat[1,3:(n+2)]<-f.yx(y,params_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived, I think? It's what Tom has
+  
+  # Growth/survival transition matrix
+  Tmat<-matrix(0,(n+2),(n+2))
+  
+  # probability seedling becomes a 1 leaf plant
+  Tmat[2,1]<- prob.seedling.to.1leaf
+  
+   # probability 1 leaf plant stays as a 1 leaf plant
+  Tmat[2,2]<- prob.1leaf.to.1leaf
+  
+  # Graduation from 1 leaf to cts size = prob 1 leaf becomes a 2 leaf * size dist of new 2 leafers
+  Tmat[3:(n+2),2]<- prob.1leaf.to.2leaf *recruit.size(y,params_list) * h
+  
+  # Growth/survival transitions among cts sizes
+  Tmat[3:(n+2),3:(n+2)]<- t(outer(y,y,P,boot.params=params_list)) * h 
+  
+  # Put it all together
+  IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation of fertility and transition matrix
+  out_matrix <- list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y)
+  
+  out_lamb <- data.frame(lambda = lambda(IPMmat), summer.temp = params_list$summer.mean.temp,  gs.temp = params_list$grow.season.mean.temp, winter.temp = params_list$winter.mean.temp, reproduction = params_list$reproduction, trt = params_list$trt, boot.group = params_list$boot.group)
+ # return(out_matrix) #can check this to have a list of all of the matrices listed above
+  return(out_lamb) #for now, I just want lambdas
+ # return(list(out_matrix = out_matrix, out_lamb = out_lamb))
+
+}
+
+#what I want returned is lambdas
+lamb_lists <- lapply(X = params_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
+#great~! now make it a df
+boot_lambda <- do.call(rbind, lamb_lists)
+#write.csv(boot_lambda, "../tables/primula.bootstrap.climate.lambdas.2023.02.02.csv", row.names = F)
+
+
+```
+
+```{r bootstrap figures}
+quant <- boot_lambda %>% 
+  group_by(summer.temp, gs.temp, winter.temp, reproduction, trt) %>% 
+  summarize(mean.lambda = mean(lambda),
+            upper.quant = quantile(lambda, probs = 0.975),
+            lower.quant = quantile(lambda, probs = 0.025))
+
+#library(gridExtra)
+library("patchwork")
+
+
+q.gs <- quant %>% 
+  filter(summer.temp == 0 & winter.temp == 0) %>% 
+  ggplot(aes(x = gs.temp, y = mean.lambda, color = trt, linetype = reproduction))+
+  geom_line(linewidth = 1.25)+
+  geom_ribbon(aes(x = gs.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), alpha = 0.1)+
+  facet_wrap(~trt)+
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_fill_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  labs(y = expression(paste("\u03BB")), x = "Spring Temperature")+
+  theme(strip.background = element_blank(), strip.text.x = element_blank()) #remove facet wrap labels
+
+
+q.sum <- quant %>% 
+  filter(gs.temp == 0 & winter.temp == 0) %>% 
+  ggplot(aes(x = summer.temp, y = mean.lambda, color = trt, linetype = reproduction))+
+  geom_line(linewidth = 1.25)+
+  geom_ribbon(aes(x = summer.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), alpha = 0.1)+
+  facet_wrap(~trt)+
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_fill_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  labs(y = expression(paste("\u03BB")), x = "Summer Temperature")+
+  theme(strip.background = element_blank(), strip.text.x = element_blank()) #remove facet wrap labels
+
+
+q.win <- quant %>% 
+  filter(summer.temp == 0 & gs.temp == 0) %>% 
+  ggplot(aes(x = winter.temp, y = mean.lambda, color = trt, linetype = reproduction))+
+  geom_line(linewidth = 1.25)+
+  geom_ribbon(aes(x = winter.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), alpha = 0.1)+
+  facet_wrap(~trt)+
+  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_fill_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  labs(y = expression(paste("\u03BB")), x = "Winter Temperature")+
+  theme(strip.background = element_blank(), strip.text.x = element_blank()) #remove facet wrap labels
+
+boot.ipm <- q.gs + q.sum +  q.win + plot_layout(guides = "collect", ncol = 1)
+#ggsave(plot = boot.ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/ipm bootstrap.png", width = 10, height = 10, dpi = 300)
+
+
+```
+
+
+
+
+```{r LTRE functions}
+#goal: make a params vector that only includes mean temps so we can look at difference between lambda for RE;
+params_ltre <- params %>% 
+  filter(summer.mean.temp == 0,
+         winter.mean.temp == 0,
+         grow.season.mean.temp == 0, 
+         trt == control)
+ltre_list <-  filter(params_ltre) %>% split(., seq(nrow(.))) #this splits up params into X rows, which I can feed into the function below
+
+
+# BIGMATRIX ---------------------------------------------------------------
+#building off of code from Tom Miller:
+mat.size = 100 #dimensions of continuous matrix
+bigmatrix<-function(ltre_list, mat.size)
+  {
+  n<-mat.size
+  L<-min.size
+  U<-max.size
+  #these are the upper and lower integration limits
+  h<-(U-L)/n                   #Bin size
+  b<-L+c(0:n)*h;               #Lower boundaries of bins 
+  y<-0.5*(b[1:n]+b[2:(n+1)]);  #Bins' midpoints
+  #these are the boundary points (b) and mesh points (y)
+
+  # Fertility matrix
+  Fmat<-matrix(0,(n+2),(n+2))
+  
+  # top row: # seedlings produced by each size class:
+  Fmat[1,3:(n+2)]<-f.yx(y,ltre_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived, I think? It's what Tom has
+  
+  # Growth/survival transition matrix
+  Tmat<-matrix(0,(n+2),(n+2))
+  
+  # probability seedling becomes a 1 leaf plant
+  Tmat[2,1]<- prob.seedling.to.1leaf
+  
+   # probability 1 leaf plant stays as a 1 leaf plant
+  Tmat[2,2]<- prob.1leaf.to.1leaf
+  
+  # Graduation from 1 leaf to cts size = prob 1 leaf becomes a 2 leaf * size dist of new 2 leafers
+  Tmat[3:(n+2),2]<- prob.1leaf.to.2leaf *recruit.size(y,ltre_list) * h
+  
+  # Growth/survival transitions among cts sizes
+  Tmat[3:(n+2),3:(n+2)]<- t(outer(y,y,P,params=ltre_list)) * h 
+  
+  # Put it all together
+  IPMmat<-Fmat+Tmat     #Full Kernel is simply a summation of fertility and transition matrix
+  out_matrix <- list(IPMmat=IPMmat,Fmat=Fmat,Tmat=Tmat,meshpts=y)
+  
+  out_lamb <- data.frame(lambda = lambda(IPMmat), summer.temp = ltre_list$summer.mean.temp,  gs.temp = ltre_list$grow.season.mean.temp, winter.temp = ltre_list$winter.mean.temp, reproduction = ltre_list$reproduction, trt = ltre_list$trt)
+ return(out_matrix) #can check this to have a list of all of the matrices listed above
+  return(out_lamb) #for now, I just want lambdas
+  return(list(out_matrix = out_matrix, out_lamb = out_lamb))
+
+}
+
+#what I want returned is lambdas
+lamb_lists <- lapply(X = ltre_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
+
+#great~! now make it a df
+primula_lambda <- do.call(rbind, lamb_lists)
+#write.csv(primula_lambda, "../tables/primula.climate.lambdas.2023.01.09.csv", row.names = F)
+
+
+ ltre <- function(intercept){
+    #store LTREs
+    ltre.rep.control <- c()
+    ltre.veg.control <- c()
+    
+    ltre.rep.drought <- c()
+    ltre.veg.drought <- c()
+
+    ltre.rep.irrigated <- c()
+    ltre.veg.irrigated <- c()
+    
+  perturbation<-0.01
+  
+  params_ltre_pert <- params_ltre
+  params_ltre_pert[intercept]<-params_ltre[intercept] + perturbation 
+  pert.matrix <- bigmatrix(n = 500, params = params_ltre_pert)$matrix
+  perturblam=lambda(pert.matrix)
+  
+  #nitrogen intercept
+  ltre.N<-append(ltre.N,(params.N[intercept] - params.C[intercept])*((perturblam-lambda.C[i])/perturbation))
+  
+  #fenced intercept
+  ltre.H<-append(ltre.H,(params.H[intercept] - params.C[intercept])*((perturblam-lambda.C[i])/perturbation))
+  
+  #both intercept
+  ltre.NH<-append(ltre.NH,(params.NH[intercept] - params.C[intercept])*((perturblam-lambda.C[i])/perturbation))
+
+  output = list("ltreN" = ltre.N, "ltreH" =ltre.H, "ltreNH" =ltre.NH) #need the ith matrix to calculate these three terms - this avoids pasting 15 times (5 rates x 3 treatments)
+  return(output)}
+  
+  #tells it what to put in for intercept in the function
+  growthint=ltre("growthint") #this is the equivalent of saying intercept = growthint and store the output of this function as growthint
+  survint=ltre("survint")
+  flowint=ltre("flowint")
+  fertint=ltre("fertint")
+  repoutint=ltre("repoutint")
+  
+  #means of ith run
+  listoutput[[i]]=data.frame('nitrogen'=c(growthint[[1]], survint[[1]], flowint[[1]], fertint[[1]], repoutint[[1]]), 
+                             'fenced'=c(growthint[[2]], survint[[2]], flowint[[2]], fertint[[2]], repoutint[[2]]),#based on order in output statement 
+                             'both'=c(growthint[[3]], survint[[3]], flowint[[3]], fertint[[3]], repoutint[[3]]))
+ 
+
+
+ltre.df=do.call(rbind,listoutput)
+
+ltre.df$vrate=row.names(ltre.df)
+
+#####growth ltre#####
+growthint=ltre.df[grep("growthint",ltre.df$vrate),] 
+hist(growthint$nitrogen)
+mean(growthint$nitrogen)
+quantile(growthint$nitrogen, c(0.025, 0.975))
+#-5.329672e-05, CI = -0.0012116911  0.0006165014
+growthint=ltre.df[grep("growthint",ltre.df$vrate),] 
+hist(growthint$fenced)
+mean(growthint$fenced)
+quantile(growthint$fenced, c(0.025, 0.975))
+#-0.0001409152, CI = -0.0011739342  0.0006483204 
+growthint=ltre.df[grep("growthint",ltre.df$vrate),] 
+hist(growthint$both)
+mean(growthint$both)
+quantile(growthint$both, c(0.025, 0.975))
+# -0.0002628167, CI = -0.002391176  0.001137288 
+
+#####survival ltre#####
+survint=ltre.df[grep("survint",ltre.df$vrate),] 
+hist(survint$nitrogen)
+mean(survint$nitrogen)
+quantile(survint$nitrogen, c(0.025, 0.975))
+# -0.2339654, CI =-0.3162971 -0.1622143 
+survint=ltre.df[grep("survint",ltre.df$vrate),] 
+hist(survint$fenced)
+mean(survint$fenced)
+quantile(survint$fenced, c(0.025, 0.975))
+# 0.003387016, CI = -0.06843332  0.07386618
+survint=ltre.df[grep("survint",ltre.df$vrate),] 
+mean(survint$both)
+quantile(survint$both, c(0.025, 0.975))
+# -0.2455, CI =-0.3681219 -0.1268373  
+
+#####flow ltre#####
+flowint=ltre.df[grep("flowint",ltre.df$vrate),] 
+hist(flowint$nitrogen)
+mean(flowint$nitrogen)
+quantile(flowint$nitrogen, c(0.025, 0.975))
+#-2.164524e-05, CI = -0.0006638401  0.0005875821
+flowint=ltre.df[grep("flowint",ltre.df$vrate),] 
+hist(flowint$fenced)
+mean(flowint$fenced)
+quantile(flowint$fenced, c(0.025, 0.975))
+# 0.0001541924, CI = -0.0004514011  0.0011038207 
+flowint=ltre.df[grep("flowint",ltre.df$vrate),] 
+mean(flowint$both)
+quantile(flowint$both, c(0.025, 0.975))
+# 0.0004633819, CI =-0.0003460376  0.0019321087 
+
+#####fert ltre#####
+fertint=ltre.df[grep("fertint",ltre.df$vrate),] 
+hist(fertint$nitrogen)
+mean(fertint$nitrogen)
+quantile(fertint$nitrogen, c(0.025, 0.975))
+# -0.0002537499, CI = -0.001481542  0.000649442
+fertint=ltre.df[grep("fertint",ltre.df$vrate),] 
+hist(fertint$fenced)
+mean(fertint$fenced)
+quantile(fertint$fenced, c(0.025, 0.975))
+#  0.000848387, CI = -2.131169e-05  2.888305e-03
+fertint=ltre.df[grep("fertint",ltre.df$vrate),] 
+mean(fertint$both)
+quantile(fertint$both, c(0.025, 0.975))
+#   0.0009542077, CI =-0.0004013281  0.0038135281 
+
+#####repout ltre#####
+repoutint=ltre.df[grep("repoutint",ltre.df$vrate),] 
+hist(repoutint$nitrogen)
+mean(repoutint$nitrogen)
+quantile(repoutint$nitrogen, c(0.025, 0.975))
+# -0.001767512, CI =-0.0052317037 -0.0004189991
+repoutint=ltre.df[grep("repoutint",ltre.df$vrate),] 
+hist(repoutint$fenced)
+mean(repoutint$fenced)
+quantile(repoutint$fenced, c(0.025, 0.975))
+#-0.0001335385, CI = -0.0012575774  0.0008001218 
+repoutint=ltre.df[grep("repoutint",ltre.df$vrate),] 
+mean(repoutint$both)
+quantile(repoutint$both, c(0.025, 0.975))
+# -0.0005224892, CI =-0.002976771  0.001192056 
+
+#####lambda estimates#####
+lambda.C[i]
+hist(lambda.C) 
+quantile(lambda.C, c(0.025, 0.975))
+#lambda = 0.642775, CI = 0.5271378 0.6745559  
+
+lambda.N[i]
+hist(lambda.N)
+quantile(lambda.N, c(0.025, 0.975))
+#lambda =   0.4207083, CI = 0.2655970 0.4674194 
+
+lambda.H[i]
+hist(lambda.H)
+quantile(lambda.H, c(0.025, 0.975))
+#lambda = 0.6530463, CI = 0.5044639 0.7131563  
+
+lambda.NH[i]
+hist(lambda.NH)
+quantile(lambda.NH, c(0.025, 0.975))
+#lambda =    0.4850833, CI = 0.2367758 0.724911 
+
+```
+
+
+
+
+
 #just grab one of the matrices to see what's going on with the kernels
-```{r}
+```{r testing one matrix}
 save <- bigmatrix(params = params[10,], mat.size = mat.size)
 
 #this is code that works for just one set of params
@@ -512,7 +1126,7 @@ image.plot(save$IPMmat, xlab="Size (t)",ylab="Size (t+1)",
 col=topo.colors(100), main="IPM matrix")
 
 ```
-```{r}
+```{r how many seedlings produced?}
 #use this code to check and see how many seedlings are produced by each size class
 matrix <- as.data.frame(save$IPMmat)
 no.seedlings <- matrix[1,]
@@ -528,24 +1142,6 @@ new.cont <- matrix[3:102,2]
 barplot(new.cont, ylab = "Prob. 1 leaf becomes >2 leaf * size distribution of new >2 leafs", xlab = "Plant size (small to large)")
 
 ```
-
-
-```{r}
-#Jenn's eviction from townsendia
-P.A.checkevict=G.A 								# placeholder;redefine P on the next line
-for(i in 1:n) P.A.checkevict[,i]=G.A[,i]  		# growth/survival kernel, where survival now =1
-frac.evictA<-1-colSums(P.A.checkevict)
-
-
-
-par(mfrow=c(1,1))
-plot(frac.evictA~y, type="l", xaxt="n", col=colA, lwd=2,
-     xlab="rosette area", ylab="proportion 'evicted'",
-     ylim=c(0,0.1), las=1, cex.axis=0.8)
-axis(side=1, at=log(c(0.1, 0.2,0.5,1,2,5,10,20,50,100,200)), labels=c(0.1, 0.2,0.5,1,2,5, 10,20, 50, 100,200), las=1, cex.axis=0.9)
-lines(frac.evictS~y, type="l", col=colS, lwd=2)
-```
-
 
 
 ```{r}
@@ -568,7 +1164,7 @@ ggplot(primula_lambda, aes(x = summer.temp, y = gs.temp, fill = lambda)) +
 
 ```
 
-```{r}
+```{r fig. lambda per year}
 #looking at lambdas per year:
 primula_lambda %>% 
   ggplot(aes(x = year, y = lambda, color = trt, shape = reproduction))+
@@ -584,7 +1180,7 @@ primula_lambda %>%
  
 
 
-```{r}
+```{r climate lambda figures no boot}
 #summer.precip changing while summer precip, sumer temp, etc does not
 # sp <- primula_lambda %>% 
 #   filter(near(summer.temp, 0, tol = .1)) %>% 
@@ -642,76 +1238,6 @@ ggsave(plot = wt, file = "C:/Users/Jenna/OneDrive - The University Of British Co
 ```
 
 
-
-
-
-```{r}
-#this is the clunky way to do it!!
-
-#growth kernels - separate for each IDE treatment
-G.control=h*outer(y,y,g.yx.control,params=params) 	# growth kernel
-image(y,y,t(G.control),main='growth kernel - control') # plot it
-
-G.drought=h*outer(y,y,g.yx.drought,params=params) 	# growth kernel
-image(y,y,t(G.drought),main='growth kernel - drought') # plot it
-
-G.irr=h*outer(y,y,g.yx.irr,params=params) 	# growth kernel
-image(y,y,t(G.irr),main='growth kernel - irrigated') # plot it
-
-S=s.x(y,params=params) 				# survival 
-plot(y,S,type='l',main='survival')	# plot it
-
-P.control=G.control 									# placeholder;redefine P on the next line
-for(i in 1:n) P.control[,i]=G.control[,i]*S[i]  		# growth/survival kernel
-image(y,y,t(P.control),main='survival/growth kernel - control')	# plot it
-abline(0,1,lwd=3)						# plot 1:1, which represents stasis
-
-P.drought=G.drought									# placeholder;redefine P on the next line
-for(i in 1:n) P.drought[,i]=G.drought[,i]*S[i]  		# growth/survival kernel
-image(y,y,t(P.drought),main='survival/growth kernel - drought')	# plot it
-abline(0,1,lwd=3)						# plot 1:1, which represents stasis
-
-P.irr=G.irr								# placeholder;redefine P on the next line
-for(i in 1:n) P.irr[,i]=G.irr[,i]*S[i]  		# growth/survival kernel
-image(y,y,t(P.irr),main='survival/growth kernel - irrigated')	# plot it
-abline(0,1,lwd=3)						# plot 1:1, which represents stasis
-
-
-
-F.flower=h*outer(y,y,f.yx.flowered,params=params) 	# reproduction kernel
-image(y,y,t(F.flower),main='fecundity kernel for plants that flowered previous year')	# plot it
-
-F.veg=h*outer(y,y,f.yx.veg,params=params) 	# reproduction kernel
-image(y,y,t(F.veg),main='fecundity kernel for plants that did not flower previous year')	# plot it
-####
-
-K.drought.flow=P.drought+F.flower 															# full kernel for 
-image(y,y,t(K.drought.flow),main='full kernel - drought plants that flowered in year-1')			# plot it
-
-K.drought.veg=P.drought+F.veg 															# full kernel for 
-image(y,y,t(K.drought.veg),main='full kernel - drought plants that didnt flower in year-1')			# plot it
-
-K.irr.flow=P.irr+F.flower 															# full kernel for 
-image(y,y,t(K.irr.flow),main='full kernel - irr plants that flowered in year-1')			# plot it
-
-K.irr.veg=P.irr+F.veg 															# full kernel for 
-image(y,y,t(K.irr.veg),main='full kernel - irr plants that didnt flower in year-1')			# plot it
-
-K.control.flow=P.control+F.flower 															# full kernel for 
-image(y,y,t(K.control.flow),main='full kernel - control plants that flowered in year-1')			# plot it
-
-K.control.veg=P.control+F.veg 															# full kernel for 
-image(y,y,t(K.control.veg),main='full kernel - control plants that didnt flower in year-1')			# plot it
-
-lambda(K.drought.flow)
-lambda(K.drought.veg)
-lambda(K.irr.flow)
-lambda(K.irr.veg)
-lambda(K.control.flow)
-lambda(K.control.veg)
-
-
-```
 Ok! These run! Obviously some things are missing and will need to change, but at least I get some lambdas! 
 
 What does it mean to compare lambda across these? Can we just think about fitness here??
