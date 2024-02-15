@@ -572,7 +572,7 @@ Dodecatheon %>%
 Dodecatheon <- Dodecatheon %>% 
   mutate(year = as.character(year))
 
-dtable <- read.csv("../data/dormant.table.as.stages2023.csv")
+dtable <- read.csv("C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data/dormant.table.as.stages2023.csv")
 dtable <- dtable %>% select(c(tag, X2016, X2017, X2018, X2019, X2020, X2021, X2022, X2023)) %>% # now pivot longer:
   pivot_longer(!tag, names_to = "year", values_to = "state", names_prefix = "X")
 #here we have fates for each tag for each year - now to put it into the Dodecatheon df
@@ -729,6 +729,8 @@ Dodecatheon <- Dodecatheon %>%
                  flow.sum = flow.sum+no.eaten) %>% 
   group_by(tag) %>% 
   mutate(flow.sumT1 = lead(flow.sum))
+
+
                 
 #here, Sum = total number of reproductive parts the plant made, regardless of if those made seeds
 # Next step: add total number of flowers that made seeds
@@ -787,3 +789,6 @@ Dodecatheon <- Dodecatheon %>%
   arrange(tag, year) %>% 
   mutate(total.seedsT1 = lead(total.seeds))
 remove(tot.seeds)
+Dodecatheon <- Dodecatheon %>% 
+  mutate(percapseeds = total.seeds/no.flowers,
+         percapseeds = as.integer(percapseeds))

@@ -25,7 +25,7 @@ longterm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerDa
 ## MAP	mean annual precipitation (mm)
 ## they define spring as MArch, April, and May
 longterm <- longterm %>% 
-  select(c(period,Tave_sp, Tmax_sp, Tmin_sp, PPT_sp, MAP))
+  dplyr::select(period, Tave_sp, Tmax_sp, Tmin_sp, PPT_sp, MAP)
 
 ## read in cleaned, extrapolated weather station data from WeatherStnInterp_Cowichan_Aug20...
 weather <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/LoggerData/weather station/WS_cleaned/cgop_weather_daily_interp.csv")
@@ -289,15 +289,16 @@ climate_lagged <- climate
 
 #here I'm scaling the climate varibles
 climate_scale <- climate %>% 
-  select(1, c(ends_with("tot.precip"), ends_with(".temp")))
+  dplyr::select(1, c(ends_with("tot.precip"), ends_with(".temp")))
 
 j <- sapply(climate_scale, is.numeric)
 climate_scale[j] <- scale(climate_scale[j])
 climate_scale <- climate_scale %>% 
     mutate_if(is.numeric, round, 3)
+remove(j)
 
 climate <- climate %>% 
-  select(1, c(ends_with("tot.precip"), ends_with(".temp"))) %>% 
+  dplyr::select(1, c(ends_with("tot.precip"), ends_with(".temp"))) %>% 
   mutate(grow.season.tot.precip.scale = c(scale(grow.season.tot.precip)),
        grow.season.mean.temp.scale = c(scale(grow.season.mean.temp)),
        summer.tot.precip.scale = c(scale(summer.tot.precip)),
@@ -346,3 +347,44 @@ temp
 #arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
 
 remove(precip, temp, longterm, annual, climate_lagged)
+
+
+#####################################################################33
+# #histrogram for distribution of climate variables
+# histograms <- climate %>% 
+#   dplyr::select(summer.mean.temp, winter.mean.temp, grow.season.mean.temp)
+# 
+# 
+# par(mfrow=c(1,3))
+# 
+# hist(histograms$summer.mean.temp, xlab = "degrees C", main = "Summer", col = 'white', border = "black")
+# abline(v = mean(histograms$summer.mean.temp, na.rm = T),
+#        col = "steelblue", lty = 2, lwd = 4)
+# abline(v = mean(histograms$summer.mean.temp, na.rm = T) + sd(histograms$summer.mean.temp, na.rm = T),
+#        col = "grey", lty = 2, lwd = 3)
+# abline(v = mean(histograms$summer.mean.temp, na.rm = T) - sd(histograms$summer.mean.temp, na.rm = T),
+#        col = "grey", lty = 2, lwd = 3)
+# # abline(v = mean(histograms$summer.mean.temp, na.rm = T) - 2*(sd(histograms$summer.mean.temp, na.rm = T)),
+# #        col = "grey", lty = 2, lwd = 2)
+# # abline(v = mean(histograms$summer.mean.temp, na.rm = T) + 2*(sd(histograms$summer.mean.temp, na.rm = T)),
+# #        col = "grey", lty = 2, lwd = 2)
+# 
+# 
+# 
+# hist(histograms$winter.mean.temp, xlab = "degrees C", main = "Winter", col = 'white', border = "black")
+# abline(v = mean(histograms$winter.mean.temp, na.rm = T),
+#        col = "steelblue", lty = 2, lwd = 4)
+# abline(v = mean(histograms$winter.mean.temp, na.rm = T) + sd(histograms$winter.mean.temp, na.rm = T),
+#        col = "grey", lty = 2, lwd = 3)
+# abline(v = mean(histograms$winter.mean.temp, na.rm = T) - sd(histograms$winter.mean.temp, na.rm = T),
+#        col = "grey", lty = 2, lwd = 3)
+#  
+# 
+# hist(histograms$grow.season.mean.temp, xlab = "degrees C", main = "Spring", col = 'white', border = "black")
+# abline(v = mean(histograms$grow.season.mean.temp, na.rm = T),
+#        col = "steelblue", lty = 2, lwd = 4)
+# abline(v = mean(histograms$grow.season.mean.temp, na.rm = T) + sd(histograms$grow.season.mean.temp, na.rm = T),
+#        col = "grey", lty = 2, lwd = 3)
+# abline(v = mean(histograms$grow.season.mean.temp, na.rm = T) - sd(histograms$grow.season.mean.temp, na.rm = T),
+#        col = "grey", lty = 2, lwd = 3)
+# remove(histograms)
