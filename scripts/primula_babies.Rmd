@@ -7,6 +7,8 @@ _What this script does:_
 - figures out the miscellaneous bits of the IPM (doing it in a separate location so that it doesnt muck up the main IPM file - later I will just source this for all the values)
 
 ```{r read in }
+library(tidyverse)
+
 # Add in demography data:
 source("../scripts/dode_allyears_cleaned.R")
 #adding treatment
@@ -84,6 +86,8 @@ seedset21 <- cap %>%
   rename(no.successful.cap = no.success.cap,
          no.at.start = initial.flower)
 remove(clip)
+survey21.end <- cap %>% 
+  select(c(plot, tag, initial.flower, no.success.cap))
 ```
 
 
@@ -140,16 +144,13 @@ seedset23 <- seeds23 %>%
   select(c(year, plot, tag,no.successful.cap, no.at.start,seed.set)) %>% 
   group_by(tag) %>% 
   slice(1)
+survey23.end <- seedset23
 seedset <- bind_rows(seedset21, seedset22, seedset23)
 remove(seedset21, seedset22, seedset23)
 
 seeds23 <- left_join(seeds23, plots)
 seeds23 <- seeds23 %>% select(1:5, trt, year) %>% 
   mutate(cap.area = 4/3*pi*(capsule.L/2)*(capsule.W/2)*(capsule.W/2))
-```
-
-```{r}
-
 ```
 
 ```{r}
@@ -214,7 +215,7 @@ tot.seeds$total.seeds[tot.seeds$tag == 494 & tot.seeds$year == "2021"] <-98
 #          pseeds = as.character(pseeds))
 #693 did make seeds, just don't know how much
 #tot.seeds$pseeds[tot.seeds$tag == 693 & tot.seeds$year == "2021"] <-"1"
-#write.csv(tot.seeds, "C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_Seed_Counts.csv", row.names = F)
+#write.csv(tot.seeds, "C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_Seed_Counts.csv", row.names = F) #this is seed counts for 2021-2023
 tot.seeds <- tot.seeds %>% 
   mutate(plot= as.character(plot),
          year = as.character(year))
@@ -225,33 +226,7 @@ Dodecatheon <- left_join(Dodecatheon, tot.seeds) #add it to main demography file
 #tot.seeds is the end df - it has no.seeds made by all flowering plants in 2021 and 2023
 ```
 
-
-```{r}
-# (3) how many flowers get to make seeds - successful fruitset - can this be a constant or does it vary across treatments, year, etc
-test <- left_join(Dodecatheon, seedset)
-test <- test %>% filter(!is.na(seed.set))
-hist(test$seed.set)
-
-ggplot(test, aes(x = log.ros.area, y = seed.set))+
-  geom_point()+
-  #geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~trt)
-
-ggplot(test, aes(x = trt, y = seed.set))+
-  geom_boxplot()
-#what am i trying to ask here - does fruitset differ between treatments?
-
-seed.set.trt <- test %>% 
-  group_by(trt, year) %>% 
-  summarize(mean = mean(seed.set),
-            sd = sd(seed.set))
-#so seed set definitely varies by year and treatment. And is surprisingly low!
-
-
-```
-
-
-
+###
 
 ```{r}
 #if you make seeds, how many do you make
@@ -285,7 +260,13 @@ seeds <- mean(tot.seeds$total.seeds, na.rm = T) #80? seems fine for now
     - The data we have for this: this will come from a combo of the seed addition data in the plots + the        seed pots [this will likely be the absolute max possible number, ie best possible conditions]
     
 ```{r}
-
+seedgerm<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Seed Addition/2022_seed_addition_counts.csv", header=T)
+seedgerm <- seedgerm %>% select(plot, quadrant, no.primula) %>% 
+  filter(quadrant == 4 | quadrant == 6)
+av.germ <- seedgerm %>% 
+  summarize(mean = mean(no.primula, na.rm = T))
+av.germ$total <- av.germ$mean/40
+##so, for all of the plots, I took the mean number of primula seedlings, then divided it by 40 (how many seeds we added) to get an average seed germination rate pf 0.022
 ```
 
 - prob. that a flower makes seeds
@@ -294,30 +275,80 @@ seeds <- mean(tot.seeds$total.seeds, na.rm = T) #80? seems fine for now
     - Will this be plot or treatment specific? Will need to see how variable it is
     
 ```{r}
-#what this df should look like: probability - so # flowers made and # that made seeds?
-#I think 2 ways to go about it: starting number of flowers/number of capsules that have seeds OR probabilty of the plant making seeds
+#what this df should look like: probability - so # flowers made and # that made remained/ had seeds?
+# so this will come from the resurvey data from 2021-2023
 ## no.flowers started with:
-#2021: have pseeds in the last column
-survey21 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Resurveys.csv")
-survey21 <- survey21 %>% 
-  filter(!is.na(pseeds)) %>% 
-  select(c(plot, tag, pseeds)) %>% 
-  mutate(year = "2021")
-
-survey22 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_Resurveys.csv")
-survey22 <- survey22 %>% 
-  filter(!is.na(pseeds)) %>% 
-  select(c(plot, tag, pseeds)) %>% 
-  mutate(year = "2022")
-
-survey <- rbind(survey21, survey22) %>% 
-  mutate(plot = as.character(plot),
+#2019:
+survey19 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2019_Dodecatheon_Demography_Data_Resurveys.csv")
+survey19.end <- survey19 %>% 
+  group_by(tag) %>% 
+  arrange(date.surveyed) %>% 
+  slice_head(n = 1) %>% 
+  select(c(year, plot, tag, no.successful.cap)) %>% 
+  mutate(year = as.character(year),
+         plot = as.character(plot),
          tag = as.character(tag),
-         pseeds = as.character(pseeds))
+         no.successful.cap = as.numeric(no.successful.cap))
+survey19.end <- na.omit(survey19.end)
+
+
+#2021: have pseeds in the last column
+survey21.end$year <- "2021"
+survey21.end <- survey21.end %>% 
+  rename(no.successful.cap = no.success.cap)
+
+#2022:
+survey22 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_Resurveys.csv")
+survey22.end <- survey22 %>% 
+  #filter(!is.na(pseeds)) %>% 
+  #select(c(plot, tag, pseeds)) %>% 
+  #mutate(year = "2022")
+  group_by(tag) %>% 
+  arrange(survey.date) %>% 
+  slice_tail(n = 1) %>% 
+  mutate(no.successful.cap = if_else(pseeds == 1, no.capsules, 0),
+         year = "2022",
+         plot = as.character(plot),
+         tag = as.character(tag)) %>% 
+  select(c(year, plot, tag, no.successful.cap))
+survey22.end$no.successful.cap[survey22.end$tag == 839] <- 0
+
+#2023:
+survey23.end$year <-  "2023"
+survey23.end <- survey23.end %>% 
+  rename(initial.flower = no.at.start)
+
+success <- bind_rows(survey19.end, survey21.end, survey22.end, survey23.end)
+success <- success %>% 
+  select(-seed.set)
+#write.csv(success, "C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_Fruitset.csv", row.names = F) #this is showign inital flowers and how many successful capsules
+
+
+pseedset <- left_join(Dodecatheon, success)
+pseedset <- pseedset %>% 
+  filter(!is.na(no.successful.cap)) %>%
+  mutate(initial.flower = if_else(is.na(initial.flower), no.flowers, initial.flower),
+         initial.flower = if_else(initial.flower == 0, NA, initial.flower),
+         pseedset = if_else(initial.flower == 0, 0, no.successful.cap/initial.flower))
+pseedset %>% 
+  ggplot(aes(trt, pseedset))+
+  geom_boxplot()+
+  facet_wrap(~year)
+pseedset %>% 
+  ggplot(aes(log.ros.area, pseedset))+
+  geom_point()+
+  facet_wrap(~trt)
+
+pseeds.mean <- pseedset %>% 
+  group_by(trt, year) %>% 
+  summarize(pseedset = mean(pseedset, na.rm = T))
+
+
 #do these match up with the total seeds file? yes, and fills in more! 
 tot.seeds <- full_join(survey, tot.seeds) %>% 
   mutate(total.seeds = if_else(pseeds == 0, 0, total.seeds))
 tot.seeds <- left_join(tot.seeds, plots)
+#this might be skewed becuase it doesnt include plants that we didnt track (and stalks clipped etc?)
 
 #average pseeds?
 pseeds.mean <- tot.seeds %>% 
@@ -335,11 +366,15 @@ remove(survey21, survey22)
 ```{r}
 #read in one leaf plants! And get toothpick data...
 oneleaf<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_seedlings_allyears.csv", header=T)
-onleaf2022<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_OneLeaf.csv", header=T)
+oneleaf2022<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2022_Dodecatheon_OneLeaf.csv", header=T)
+oneleaf2023<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2023_Dodecatheon_OneLeaf.csv", header=T)
 
-oneleaf_final <- left_join(oneleaf, onleaf2022) %>% 
-  select(-c(no.survivedTP, no.deadTP)) %>% 
-  rename(oneleaf.no = Seedling.number)
+
+oneleaf <- oneleaf%>% 
+  rename(no.one.leaf = Seedling.number)
+
+oneleaf_final <- bind_rows(oneleaf, oneleaf2022, oneleaf2023) %>% 
+  select(-c(no.survivedTP, no.deadTP, no.placed.TP)) 
 #oneleaf_final has the number of one leaf plants across all years
 
 toothpick <- Dodecatheon %>% 
@@ -348,6 +383,57 @@ toothpick <- Dodecatheon %>%
 #the toothpick column indicates whether the new plant had a toothpick or not!
 ```
     
+Ok, so the plan here is: 
+"Can you look at how the number of one leaf plants/plot (or per treatment) varies across years - and here I would scale by area. From the above data, we can assume some fraction of them are new (⅔? ¾?). And then if we know the probability a seedling becomes a one leaf, we can back estimate how many seedlings there were the year before. Probably the most sensible thing is to calculate means per treatment. (this could go into the bootstrapping, or just keep it as the mean)
+
+After doing this, write a few sentences in the methods describing what you did." (from Jenn)
+
+```{r}
+#so, here's the number of one leaf plants per plot and per treatment across years"
+
+#one subplot is 1/4 of a sq.meter. = 0.25 sq.meters
+
+total <- oneleaf_final %>% 
+  group_by(Year, Plot) %>% 
+  summarize(sum = sum(no.one.leaf, na.rm = T),
+            non_na_count = sum(!is.na(no.one.leaf))) %>% 
+  mutate(subplot.area = 0.25,
+         area = subplot.area*non_na_count,
+         leaf.per.area = round(sum/area, 0),
+         Plot = as.factor(Plot)) %>% 
+  rename(plot = Plot,
+         year = Year) #this is accounting for the subplots that oneleafs werent counted in
+total$leaf.per.area[is.nan(total$leaf.per.area)]<-0
+
+total <- left_join(total, plots)
+#total$Year <- as.factor(total$Year)
+
+
+ggplot(total, aes(y = leaf.per.area, x = as.factor(year), color = trt))+
+  geom_boxplot()+
+    scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
+  labs(x = "Year", y = "One leaf plants per square meter")
+
+ggplot(total, aes(y = leaf.per.area, x = as.factor(year), color = trt))+
+  geom_boxplot()+
+      scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
+  labs(x = "Year", y = "One leaf plants per square meter")+
+  facet_wrap(~trt)
+ggplot(total, aes(y = leaf.per.area, x = trt, color = trt))+
+  geom_boxplot()+
+      scale_color_manual(values = c(Z[3], Z[5], Z[1]))+
+  labs(x = "", y = "One leaf plants per square meter")
+
+
+mean(total$leaf.per.area)
+tapply(total$leaf.per.area,total$trt, mean)
+
+#so on average, 12 1-leafs per meter square
+
+```
+
+
+
     
 - Probability a 1-leaf graduates to the >1 leaf class
     - The data we have for this: toothpick data from 2021-2022 and 2022-2023 (if a toothpicked one leaf           plant survived and becomes a >1-leaf plant)
@@ -367,7 +453,7 @@ toothpick <- Dodecatheon %>%
 ```
     
     
-- Size distribution of new >1 leafers
+- Size distribution of new adults  (>1 leafers)
     - Mean and SD
     - This should be straightforward - what's the size distribution of newly tagged plants each year (be careful here with number of leaves, we have plants tagged that definitely only have one leaf!)
     - Actually, maybe not so straightforward - we didnt do number of leaves every year, and didnt always tag new plants, etc (in some plots, only tagged new flowering plants in half, or for clipping experiment...ugh)
@@ -401,15 +487,45 @@ size.dist <- size.dist %>%
 
 ```
 
-- Dataframe with one leaf plants:
+- What do tooth picked plants that live do?
 
 ```{r}
-oneleaf <- left_join(oneleaf, onleaf2022) %>% 
-  select(-c(no.survivedTP, no.deadTP))
-
 toothpick <- Dodecatheon %>% 
-  filter(!is.na(toothpick)) %>% 
-  select(c(year, plot, tag, Xcoor, Ycoor, toothpick, trt, no.smleaf, no.bigleaf, log.ros.area))
+  filter(toothpick == "1") %>% 
+  select(c(year, plot, tag, Xcoor, Ycoor, toothpick, trt, no.smleaf, no.bigleaf, log.ros.area)) %>% 
+  mutate(no.leaves = sum(no.smleaf, no.bigleaf))
+
+#toothpicked plant = they were a one leaf in t, and survived in t+1. A subset of these got tagged with a tag
+#if the toothpick plant survives, X stay as 1 leaf, Y become adults (>1 leaves), there are 136 total
+
+subset(toothpick, no.leaves == 1) #57
+subset(toothpick, no.leaves >1) #79
+#41.9% stayed 1 leaf
+#58% grew to adult
+subset(toothpick, no.leaves == 1 & year == "2022") #20
+subset(toothpick, no.leaves >1& year == "2022") #55
+#in 2022: 
+#20/75 # 26.7% stayed as 1 leaf
+#55/75 # 73.3% grew into an adult
+
+subset(toothpick, no.leaves == 1 & year == "2023") #37
+subset(toothpick, no.leaves >1& year == "2023") #24
+#in 2023
+#24/61 # 39.3% stayed 1 leaf
+#37/61 # 60.7% grew to adult
+
+subset(toothpick, no.leaves == 1 & trt == "drought") #16
+subset(toothpick, no.leaves >1 & trt == "drought") #29
+
+toothpick$status <- ifelse(toothpick$no.leaves == 1, "oneleaf", "adult")
+
+chisq.test(toothpick$status, toothpick$year)
+#yes differs across years
+chisq.test(subset(toothpick, year == "2022")$status, subset(toothpick, year == "2022")$trt)
+#trts do differ in 2022
+chisq.test(subset(toothpick, year == "2023")$status, subset(toothpick, year == "2023")$trt)
+#not in 2023
+
 ```
 
 What to do with the 1-leaf data:
