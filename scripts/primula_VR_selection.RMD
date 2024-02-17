@@ -15,6 +15,7 @@ library(lme4)
 #library(lmtest)
 #library(effects)
 library(wesanderson) # for colors
+library(patchwork)
 FF <- wes_palettes$FantasticFox1
 Z <- wes_palettes$Zissou1
 R <- wes_palettes$Royal2
@@ -379,139 +380,72 @@ AIC.save <- growth_AICc %>%
 AIC.save$vitalrate <- "growth"
 
 ```
+
+```{r}
+#current best fit:
+gm.summer.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
+summary(gm.summer.av.temp.cor.trt.int6)
+```
+
 Figure for growth:
 
 ```{r}
-pred.dat <- expand.grid(log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), summer.mean.temp = c(-1, 0, 1), pflower = c("0","1"), trt = c("irrigated", "control", "drought"))
-pred.output <- predict(gm.summer.av.temp.cor.trt.int6, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
-# 
-# ggplot(subset(primula, !is.na(pflower)), aes(x = log.ros.area, y = log.ros.areaT1))+
-#   geom_point(alpha = 0.25)+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == -1  & pflower == 0 & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1), color = "lightblue2", linewidth = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == -1  & pflower == 1 & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1), color = "lightblue2", linewidth = 1)+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == -1  & pflower == 0 & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1), color = "lightblue2", linewidth = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == -1  & pflower == 1& trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1), color = "lightblue2", linewidth = 1)+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == -1  & pflower == 0 & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1), color = "lightblue2", linewidth = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == -1  & pflower == 1& trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1), color = "lightblue2", linewidth = 1)+
-#   
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 0  & pflower == 0 & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 0  & pflower == 1 & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-#     geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 0  & pflower == 0 & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 0  & pflower == 1 & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-#     geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 0  & pflower == 0 & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 0  & pflower == 1 & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey", size = 1)+
-#   
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 1   & pflower == 0 & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1), color = "indianred3", size = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 1   & pflower == 1 & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1), color = "indianred3", size = 1)+
-#     geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 1   & pflower == 0 & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1), color = "indianred3", size = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 1   & pflower == 1 & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1), color = "indianred3", size = 1)+
-#     geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 1   & pflower == 0 & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1), color = "indianred3", size = 1, linetype = "dashed")+
-#   geom_line(data = subset(pred.dat.output, summer.mean.temp.scale == 1   & pflower == 1 & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1), color = "indianred3", size = 1)+
-#     geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
-#     #facet_wrap(~pflower, labeller = label)+
-#   facet_wrap(~trt)+
-#       scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
-#   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
-#   labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
+pred.dat <- expand.grid(
+  log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), 
+  summer.mean.temp = c(-1, 0, 1), 
+  pflower = c("0","1"), 
+  trt = c("irrigated", "control", "drought"))
+pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(gm.summer.av.temp.cor.trt.int6, newdata = pred.dat, type = "response", re.form = ~0))
 
-
-irrgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha= 0.5, color = Z[1])+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp), linetype = pflower),linewidth = 1)+
-  #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c("royalblue4", "grey", "indianred3"), name = "")+
-  scale_linetype_manual(values=c("dashed", "solid")) +  
+(irrgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_point(alpha= 0.2, shape = 1)+
+  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_line(data = subset(pred.dat.output.g, trt == "irrigated"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp), linetype = pflower),linewidth = 1.25)+
+  scale_color_manual(values = c("#323697", "#94c8e0", "#f2623f"), name = "Temp.")+
+  scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
-  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")#+
+  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1", title = "Irrigated")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20), 
+        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#3b9ab2")))
+
   #annotate("text",x = .75, y = 5.75, label = "a) irrigated")#+ 
-  #theme(legend.position="none")
-irrgrowth
+#theme(legend.position="none")
+
 #ggsave(plot = irrgrowth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth irr.png", width = 6, height = 6, dpi = 300)
-cgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha= 0.5, color = Z[3])+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp), linetype = pflower),linewidth = 1)+
-  #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c("royalblue4", "grey", "indianred3"), name = "")+
-  scale_linetype_manual(values=c("dashed", "solid")) +  
+(cgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_point(alpha= 0.2, shape = 1)+
+  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_line(data = subset(pred.dat.output.g, trt == "control"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp), linetype = pflower),linewidth = 1.25)+
+  scale_color_manual(values = c("#323697", "#94c8e0", "#f2623f"), name = "Temp.")+
+  scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
-  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
- # annotate("text",x = .75, y = 5.75, label = "b) control")+ 
-  #theme(legend.position="none")
+  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1", title = "Control")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20), 
+        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#e1af00")))
 #ggsave(plot = cgrowth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth control.png", width = 6, height = 6, dpi = 300)
 
-drgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha= 0.5, color = Z[5])+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
-  geom_line(data = subset(pred.dat.output, trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp), linetype = pflower),linewidth = 1)+
-  #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c("royalblue4", "grey", "indianred3"), name = "")+
-  scale_linetype_manual(values=c("dashed", "solid")) +  
+(drgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_point(alpha= 0.2, shape = 1)+
+  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_line(data = subset(pred.dat.output.g, trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1, color = as.character(summer.mean.temp), linetype = pflower),linewidth = 1.25)+
+  scale_color_manual(values = c("#323697", "#94c8e0", "#f2623f"), name = "Temp.")+
+  scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
   scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
-  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
-  #annotate("text",x = .75, y = 5.75, label = "c) drought")+ 
-  #theme(legend.position="none")
+  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1", title = "Drought")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20), 
+        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#f22300")))
 #ggsave(plot = drgrowth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth drought.png", width = 6, height = 6, dpi = 300)
 
 #patch these together
-together <- irrgrowth + cgrowth +  drgrowth + plot_layout(guides = "collect", ncol = 3) + plot_annotation(tag_levels = 'A')
-ggsave(plot = together, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growthVR.png", width = 11, height = 6, dpi = 300)
+(together <- irrgrowth + cgrowth +  drgrowth + plot_layout(guides = "collect", axis_titles = "collect", ncol = 3))
+ggsave(plot = together, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growthVR 2-16.png", width = 16, height = 6, dpi = 300)
 
-
-temp.minus1 <- 
-  ggplot(data = subset(primula, !is.na(pflower)), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha = 0.25)+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
-  geom_line(data = subset(pred.dat.output, summer.mean.temp == -1), aes(x = log.ros.area, y = log.ros.areaT1, color = trt, linetype = pflower),size = 1)+
-  #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c(Z[1], Z[3], Z[5]))+
-  scale_linetype_manual(values=c("dashed", "solid")) +  
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
-  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
-  #annotate("text",x = .75, y = 5.75, label = "a) cool summer")
-ggsave(plot = temp.minus1, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth temp -1.png", width = 6, height = 6, dpi = 300)
-
-
-temp0 <- ggplot(data = subset(primula, !is.na(pflower)), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha = 0.25)+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, summer.mean.temp == 0), aes(x = log.ros.area, y = log.ros.areaT1, color = trt, linetype = pflower),size = 1)+
-  #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c(Z[1], Z[3], Z[5]))+
-  scale_linetype_manual(values=c("dashed", "solid")) +  
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
-  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
-   # annotate("text",x = .9, y = 5.75, label = "b) average summer")
-
-ggsave(plot = temp0, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth temp 0.png", width = 6, height = 6, dpi = 300)
-
-
-temp1 <- ggplot(data = subset(primula, !is.na(pflower)), aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_point(alpha = 0.25)+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", size = 1)+
-  geom_line(data = subset(pred.dat.output, summer.mean.temp == 1), aes(x = log.ros.area, y = log.ros.areaT1, color = trt, linetype = pflower),size = 1)+
-  #facet_wrap(~summer.mean.temp.scale)+
-  scale_color_manual(values = c(Z[1], Z[3], Z[5]))+
-  scale_linetype_manual(values=c("dashed", "solid")) +  
-  scale_y_continuous(expand = c(0, 0), limits = c(0, 6))+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+  
-  labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1")
-  #annotate("text",x = .75, y = 5.75, label = "c) hot summer")
-
-  
-ggsave(plot = temp1, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth temp 1.png", width = 6, height = 6, dpi = 300)
-
-together_flipped <- temp.minus1 + temp0 +  temp1 + plot_layout(guides = "collect", ncol = 3) + plot_annotation(tag_levels = 'A')
-ggsave(plot = together_flipped, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth together_flipped.png", width = 10, height = 6, dpi = 300)
 
 
 ```
@@ -869,113 +803,36 @@ AIC.save.flow$vitalrate <- "pflower"
 AIC.save <- rbind(AIC.save, AIC.save.flow)
 ```
 
-```{r}
+```{r best fit model}
+fm.gs.av.temp.cor.int1 <- glmer(pflowerT1 ~ log.ros.area*pflower + grow.season.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+summary(fm.gs.av.temp.cor.int1)
+```
+
+
+```{r t}
 #fm.gs.precip.cor.trt.int10
-pred.dat <-  expand.grid(log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), pflower = c("0","1"), grow.season.mean.temp = c(-1, 0, 1))
-pred.output <- predict(fm.gs.av.temp.cor.int1, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(pflowerT1 = pred.output) 
+pred.dat <- expand.grid(
+  log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), 
+  grow.season.mean.temp = c(-1, 0, 1), 
+  pflower = c("0","1"))
+pred.dat.output.f <- cbind(pred.dat, pflowerT1 = predict(fm.gs.av.temp.cor.int1, newdata = pred.dat, type = "response", re.form = ~0))
 
-pflow.irr <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower) & trt == "irrigated"), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .15, alpha = 0.5, color = Z[1]) +
-  #geom_line(data = subset(pred.dat.output, trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[1], size = 1) +
-    geom_line(data = subset(pred.dat.output, trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1, color = as.character(summer.tot.precip.scale), linetype = pflower),linewidth = 1)+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
-  scale_color_manual(values = c("darkorange3" , "grey","skyblue"))+
-  labs(x = "log(Rosette Area) in t", y = "Probability of Flowering in t + 1") +
-   annotate("text",x = .9, y = 1.25, label = "a) irrigated")+ 
-  theme(legend.position="none")+
-  scale_linetype_manual(values=c("dashed", "solid")) 
-pflow.control <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower) & trt == "control"), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .15, alpha = 0.5, color = Z[3]) +
-    geom_line(data = subset(pred.dat.output, trt == "control"), aes(x = log.ros.area, y = pflowerT1, color = as.character(summer.tot.precip.scale), linetype = pflower),linewidth = 1)+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
-  scale_color_manual(values = c("darkorange3" , "grey","skyblue"))+
-  labs(x = "log(Rosette Area) in t", y = "Probability of Flowering in t + 1") +
-   annotate("text",x = .9, y = 1.25, label = "b) control")+ 
-  theme(legend.position="none")+
-  scale_linetype_manual(values=c("dashed", "solid")) 
-pflow.drought <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower) & trt == "drought"), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .15, alpha = 0.5, color = Z[5]) +
-    geom_line(data = subset(pred.dat.output, trt == "drought"), aes(x = log.ros.area, y = pflowerT1, color = as.character(summer.tot.precip.scale), linetype = pflower),linewidth = 1)+
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
-  scale_color_manual(values = c("darkorange3" , "grey","skyblue"))+
-  labs(x = "log(Rosette Area) in t", y = "Probability of Flowering in t + 1") +
-   annotate("text",x = .9, y = 1.25, label = "c) drought")+ 
-  theme(legend.position="none")+
-  scale_linetype_manual(values=c("dashed", "solid")) 
-ggsave(plot = pflow.irr, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/3pflower precip irr.png", width = 6, height = 6, dpi = 300)
-ggsave(plot = pflow.control, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/3pflower precip ctr.png", width = 6, height = 6, dpi = 300)
-ggsave(plot = pflow.drought, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/3pflower precip dr.png", width = 6, height = 6, dpi = 300)
-
-
-
-newmodel <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower)), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .15, alpha = 0.22) +
-  #scale_color_manual(values = c("lightsteelblue3", "grey0")) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & grow.season.mean.temp == 0), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = "grey", size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & grow.season.mean.temp == 0), aes(x = log.ros.area, y = pflowerT1), color = "grey", size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & grow.season.mean.temp == 1), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = "indianred", size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & grow.season.mean.temp == 1), aes(x = log.ros.area, y = pflowerT1), color = "indianred", size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & grow.season.mean.temp == -1), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = "royalblue4", size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & grow.season.mean.temp == -1), aes(x = log.ros.area, y = pflowerT1), color = "royalblue4", size = 1) +
+(pflow <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower)), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
+  geom_jitter(height = .025, alpha = 0.05) +
+  geom_line(data = subset(pred.dat.output.f, pflower == "0" & grow.season.mean.temp == 0), aes(x = log.ros.area, y = pflowerT1), linetype = "dotted", color = "#94c8e0", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.f, pflower == "1" & grow.season.mean.temp == 0), aes(x = log.ros.area, y = pflowerT1), color = "#94c8e0", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.f, pflower == "0" & grow.season.mean.temp == 1), aes(x = log.ros.area, y = pflowerT1), linetype = "dotted", color = "#f2623f", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.f, pflower == "1" & grow.season.mean.temp == 1), aes(x = log.ros.area, y = pflowerT1), color = "#f2623f", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.f, pflower == "0" & grow.season.mean.temp == -1), aes(x = log.ros.area, y = pflowerT1), linetype = "dotted", color = "#323697", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.f, pflower == "1" & grow.season.mean.temp == -1), aes(x = log.ros.area, y = pflowerT1), color = "#323697", size = 1.5) +
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
   labs(x = "log(Rosette Area) in t", y = "Probability of Flowering in t + 1") +
    #annotate("text",x = .9, y = 1.25, label = "b) average summer")+  
-  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20))
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20)))
 
-poster <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower)), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .12, alpha = 0.2) +
-  #scale_color_manual(values = c("lightsteelblue3", "grey0")) +
-  #geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == 0 & trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[1], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == 0 & trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), color = Z[1], linewidth = 2) +
-  #geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == 0 & trt == "control"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[3], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == 0 & trt == "control"), aes(x = log.ros.area, y = pflowerT1), color = Z[3], linewidth = 2) +
-  #geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == 0 & trt == "drought"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[5], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == 0 & trt == "drought"), aes(x = log.ros.area, y = pflowerT1), color = Z[5], linewidth = 2) +
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
-  labs(x = 'plant size', y = "Probability of flowering") +
-   #annotate("text",x = .9, y = 1.25, label = "b) average summer")+  
-  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20))
-poster
-  #theme(legend.position = "none")
 
-rain.minus1 <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower)), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .15, alpha = 0.25) +
-  #scale_color_manual(values = c("lightsteelblue3", "grey0")) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == -1 & trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[1], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == -1 & trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), color = Z[1], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == -1 & trt == "control"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[3], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == -1 & trt == "control"), aes(x = log.ros.area, y = pflowerT1), color = Z[3], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == -1 & trt == "drought"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[5], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == -1 & trt == "drought"), aes(x = log.ros.area, y = pflowerT1), color = Z[5], size = 1) +
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
-  labs(x = "log(Rosette Area) in t", y = "Probability of Flowering in t + 1") +
-  annotate("text",x = .75, y = 1.25, label = "a) dry summer")
-  #theme(legend.position = "none")
+#ggsave(plot = pflow, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/5 gs temp flowering.png", width = 6, height = 6, dpi = 300)
 
-rain1 <- ggplot(subset(primula,!is.na(pflowerT1) & !is.na(pflower)), aes(x = log.ros.area, y = as.numeric(pflowerT1) - 1)) +
-  geom_jitter(height = .15, alpha = 0.25) +
-  #scale_color_manual(values = c("lightsteelblue3", "grey0")) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == 1 & trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[1], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == 1 & trt == "irrigated"), aes(x = log.ros.area, y = pflowerT1), color = Z[1], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == 1 & trt == "control"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[3], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == 1 & trt == "control"), aes(x = log.ros.area, y = pflowerT1), color = Z[3], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "0" & summer.tot.precip.scale == 1 & trt == "drought"), aes(x = log.ros.area, y = pflowerT1), linetype = "dashed", color = Z[5], size = 1) +
-  geom_line(data = subset(pred.dat.output, pflower == "1" & summer.tot.precip.scale == 1 & trt == "drought"), aes(x = log.ros.area, y = pflowerT1), color = Z[5], size = 1) +
-  scale_x_continuous(expand = c(0, 0), limits = c(0, 6)) +
-  labs(x = "log(Rosette Area) in t", y = "Probability of Flowering in t + 1") +
-  annotate("text",x = .75, y = 1.25, label = "c) wet summer")
-  #theme(legend.position = "none")
-
-rain.minus1
-rain0
-rain1
-ggsave(plot = newmodel, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/4 gs temp flowering.png", width = 6, height = 6, dpi = 300)
-ggsave(plot = rain0, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/3pflower precip 0.png", width = 6, height = 6, dpi = 300)
-ggsave(plot = rain1, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/3pflower precip 1.png", width = 6, height = 6, dpi = 300)
-ggsave(plot = poster, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/poster pflower precip 0.png", width = 7, height = 6, dpi = 300)
 ```
 
 ```{r}
@@ -1272,32 +1129,43 @@ AIC.save.surv <- survival_AICc %>%
 AIC.save.surv$vitalrate <- "survival"
 AIC.save <- rbind(AIC.save, AIC.save.surv)
 ```
+
+```{r}
+#best fit is:
+sm.gs.av.temp <- glmer(psurvivalT1 ~ log.ros.area + grow.season.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
+
+summary(	
+sm.gs.av.temp
+)
+```
+
+
 #survial figure
 ```{r}
-pred.dat <-  expand.grid(log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), grow.season.mean.temp = c(-1, 0, 1))
-pred.output <- predict(sm.gs.av.temp, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(survT1 = pred.output)
+pred.dat <- expand.grid(
+  log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), 
+  grow.season.mean.temp = c(-1, 0, 1))
+pred.dat.output.s <- cbind(pred.dat, survT1 = predict(sm.gs.av.temp, newdata = pred.dat, type = "response", re.form = ~0))
 
-survival <- 
+
+(survival <- 
 
   ggplot(subset(primula, !is.na(psurvivalT1)), aes(x = log.ros.area, y = as.numeric(psurvivalT1)-1))+
-  geom_jitter(height = .05)+
-  geom_line(data = subset(pred.dat.output, grow.season.mean.temp == -1), aes(x = log.ros.area, y = survT1), color = "royalblue4", size = 1) +
-  geom_line(data = subset(pred.dat.output, grow.season.mean.temp == 1), aes(x = log.ros.area, y = survT1), color = "indianred3", size = 1) +
-  geom_line(data = subset(pred.dat.output, grow.season.mean.temp == 0), aes(x = log.ros.area, y = survT1), color = "grey", size = 1) +
+  geom_jitter(height = .025, alpha = 0.05) +
+  geom_line(data = subset(pred.dat.output.s, grow.season.mean.temp == -1), aes(x = log.ros.area, y = survT1), color = "#323697", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.s, grow.season.mean.temp == 1), aes(x = log.ros.area, y = survT1), color = "#f2623f", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.s, grow.season.mean.temp == 0), aes(x = log.ros.area, y = survT1), color = "#94c8e0", size = 1.5) +
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
   labs(x = "log(Rosette Area) in t", y = "Survival in t+1")+
-  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20))
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20)))
 survival
-ggsave(plot = survival, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/1survival temp.fig.png", width = 6, height = 6, dpi = 300)
+ggsave(plot = survival, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/2survival temp.fig.png", width = 6, height = 6, dpi = 300)
 
 ```
 
 #no flowers
 
-```{r}
+```{r does no. flowers change across years}
 
 ggplot(data = subset(primula, flow.sumT1 > 0), aes(x = log.ros.area, y = flow.sumT1, group = year)) + 
   geom_point()+
@@ -1309,7 +1177,7 @@ ggplot(data = subset(primula, flow.sum > 0), aes(x = log.ros.area, y = flow.sum)
 ```
 
 
-```{r}
+```{r model selection}
 noflowers.base <- glmer(flow.sumT1 ~ 1 + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
 noflowers.base.size <- glmer(flow.sumT1 ~ log.ros.area + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
 noflowers.base.trt <- glmer(flow.sumT1 ~ log.ros.area + trt + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
@@ -1540,29 +1408,44 @@ AIC.save.nof$vitalrate <- "no.flowers"
 AIC.save <- rbind(AIC.save, AIC.save.nof)
 ```
 
-```{r}
-pred.dat <-  expand.grid(log.ros.area = seq(min(primula$log.ros.area, na.rm = TRUE), max(primula$log.ros.area, na.rm = TRUE), by = .1), winter.mean.temp = c(-1, 0, 1))
-pred.output <- predict(noflowers.winter.av.temp, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(noflowers = pred.output)
+```{r run best fit model}
+
+noflowers.winter.av.temp <- glmer(flow.sumT1 ~ log.ros.area + winter.mean.temp + (1|plot) + (1|year), data = subset(primula, flow.sumT1 > 0), family = "poisson")
+
+summary(noflowers.winter.av.temp)
+```
 
 
-poisson <- 
+```{r figures}
+pred.dat <- expand.grid(
+  log.ros.area = seq(1.5, 6, by = .1), 
+  winter.mean.temp = c(-1, 0, 1))
+pred.dat.output.n <- cbind(pred.dat, noflowers = predict(noflowers.winter.av.temp, newdata = pred.dat, type = "response", re.form = ~0))
+
+(poisson <- 
   ggplot(subset(primula, !is.na(flow.sumT1) & flow.sumT1>0), aes(x = log.ros.area, y = flow.sumT1))+
   #geom_jitter(height = .05)+
-  geom_point() +
-  geom_line(data = subset(pred.dat.output, winter.mean.temp == -1), aes(x = log.ros.area, y = noflowers), color = "royalblue4", size = 1) +
-  geom_line(data = subset(pred.dat.output, winter.mean.temp == 1), aes(x = log.ros.area, y = noflowers), color = "indianred3", size = 1) +
-  geom_line(data = subset(pred.dat.output, winter.mean.temp == 0), aes(x = log.ros.area, y = noflowers), color = "grey", size = 1) +
+  geom_point(alpha = 0.1) +
+  geom_line(data = subset(pred.dat.output.n, winter.mean.temp == -1), aes(x = log.ros.area, y = noflowers), color = "#323697", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.n, winter.mean.temp == 1), aes(x = log.ros.area, y = noflowers), color = "#f2623f", size = 1.5) +
+  geom_line(data = subset(pred.dat.output.n, winter.mean.temp == 0), aes(x = log.ros.area, y = noflowers), color = "#94c8e0", size = 1.5) +
   scale_x_continuous(expand = c(0, 0), limits = c(0, 6))+
+  scale_y_continuous(n.breaks = 8) +
   labs(x = "log(Rosette Area) in t", y = "Flowers in t+1")+
-    theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20))
+    theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20)))
 
 poisson
-#ggsave(plot = poisson, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/1no.flowers winter temp.fig.png", width = 5, height = 5, dpi = 300)
+ggsave(plot = poisson, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/2no.flowers winter temp.fig.png", width = 5, height = 5, dpi = 300)
 
 ```
+
+```{r put all of them together?}
+
+(others <- (survival | pflow | poisson) + plot_layout(axis_titles = "collect"))
+(all <- together/(survival +pflow + poisson) + plot_layout(guides = "collect", axis_titles = "collect") + plot_annotation(tag_levels = list(c("A", "", "", "B", "C", "D"))))
+#ggsave(plot = all, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/all2.png", width = 15, height = 10, dpi = 300)
+```
+
 
 
 ```{r}
