@@ -7,20 +7,6 @@ output:
   html_document: default
 ---
 
-To do:
-- 6/26 update: Met with Jenn, we came up with more ideas:
-  - let's take out the vegetative plants, bc we think theyre doing weird things
-  - there are more interactions that I didnt try before - we also think that the 
-  stepwise selection is wrong, theyre not nested models so it wont work
-  - change clipping trt to ln(seeds) and log(fruits produced) - a better measure of reproductive effort! 
-  We will have to treat clipping and abortion the same way, which is maybe questionable...
-  - ^we can compare which one is better
-  - Throw in soil moisture in case that fits better - daily average soil moisture
-  April-end of May
-- 7/6 update:
-  - Jenny Gremer to the rescue:
-  - Go back to LRT but do it in a different way! ( leaving the AIC things, but new stuff is before)
-
 ```{r, include = FALSE}
 #packages:
 #read
@@ -51,45 +37,23 @@ clip <- clip %>%
   mutate(tag = as.character(tag),
          plot = as.character(plot),
          initial.flower = no.flowers.at.start +no.buds.at.start)
-#clip <- clip %>% 
-#  mutate(total.seeds = if_else(no.success.cap == 0, 0, total.seeds))
-remove(cap)
-
-
-
-#adding in soil moisture data
-sm <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Students/Jenna/loggerdata/cleaned.data/SM_AprilMayavg_allyears.csv")
-sm <- sm %>% mutate(plot = as.character(plot),
-                    year = as.character(year))
 
 #add in number of seeds made
 seeds21 <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Seed_Counts.csv")
 
 #In 2021, which flowers made it to being a capsule?
-#seeds21 <- subset(seeds21, tag != "1556") # not an experiment plant
-#seeds21 <- subset(seeds21, tag != 1998) # not an experiment plant
-#seeds21 <- subset(seeds21, tag != 1813)
 seeds21 <- seeds21 %>% 
    mutate(pseeds = if_else(no.seeds > 0, 1, 0))
  seeds21$pseeds[is.na(seeds21$pseeds)] <- 1 #assuming the plants where we couldn't count capsules separately had all their capsules contribute to seed total
-# 
-# 
-
-# cap$total.seeds[cap$tag == 1556] <- 29
-# cap$total.seeds[cap$tag == 1988] <- 58
-# cap$total.seeds[cap$tag == 1988] <- 58
-# cap$total.seeds[cap$tag == 282] <- 50
-# cap$total.seeds[cap$tag == 494] <-98
-
-#adding cap to the clip df
- seeds21 <- seeds21 %>% group_by(tag, plot) %>% 
+ 
+seeds21 <- seeds21 %>% group_by(tag, plot) %>% 
    dplyr::summarize(no.success.cap = sum(pseeds),
              total.seeds = sum(no.seeds)) %>% 
-   mutate( plot = as.character(plot),
-           tag = as.character(tag))
+   mutate(plot = as.character(plot),
+          tag = as.character(tag))
 clip <- left_join(clip, seeds21) %>% 
   mutate(total.seeds = if_else(no.success.cap == 0, 0, total.seeds)) %>% 
-  select(!total.seeds)
+  select(!total.seeds) #Dodecathon df already has seeds in it
 clip$no.success.cap[is.na(clip$no.success.cap)] <- 0
 clip$initial.flower[clip$tag == 1490] <- 6
 clip$initial.flower[clip$tag == 5769] <- 5
@@ -98,62 +62,17 @@ clip$initial.flower[clip$tag == 5746] <- 5
 clip$no.success.cap[clip$tag == 540] <- 4
 clip$no.success.cap[clip$tag == 693] <- 2
 
-
-
 ############################################################################
 #add in clipping experiment treatments
 
 clip <-  left_join(clip, Dodecatheon, by = c("tag", "plot")) %>% 
   filter(year == 2021) %>% 
   mutate(fruitset = no.success.cap/initial.flower) %>% 
-  mutate(pflower = as.factor(pflower),
-         rgr = log.ros.areaT1-log.ros.area) #calc relative growth rate
+  mutate(pflower = as.factor(pflower))
 
-# these are all of the tags in the clipping experiment for 2021 and 2022
-#add soil moisture:
-#clip <- left_join(clip, sm)
-
-#subsetting - get rid of 12 and 14 (only 3 observations per plot - maybe this will help?)
+# subsetting - get rid of plots 12 and 14 (only 3 observations per plot)
 clip <- clip %>% filter(plot != "12") %>% 
   filter(plot != "14")
-
-#this is code to get the vegetative plants back in - unchecked for now
-# ###
-# # what sizes are plants in 2021 to 2022
-# Dodecatheon.21 <- Dodecatheon %>% 
-#   filter(year == "2021")
-# #of the plants that flowered in 2021, what was their min size? it doesnt look like I need to set a max size
-# ggplot(Dodecatheon.21, aes(log.ros.area, log.ros.areaT1, color = pflower)) +
-#   geom_jitter()+
-#   facet_wrap(~trt)
-# ggplot(subset(Dodecatheon.21, !is.na(pflower)), aes(log.ros.area))+
-#   geom_histogram()+
-#   facet_wrap(pflower~trt)
-# min <- Dodecatheon.21 %>% 
-#   group_by(pflower, trt) %>% 
-#   summarize(min.size = min(log.ros.area, na.rm = TRUE))
-# clip2 <- Dodecatheon.21 %>% 
-#   filter(log.ros.area > 2) %>% 
-#   mutate(pflower = as.factor(pflower))
-# join <-  left_join(clip2, clip)
-# join <- join %>% 
-#   #eft_join(join,sm, by = c("trt", "plot", "year")) %>% 
-#   mutate(treatment = if_else(is.na(treatment) & pflower == 0, "veg", if_else(is.na(treatment) & pflower == 1, "flowernt", treatment),  treatment),
-#          rgr = log.ros.areaT1-log.ros.area)
-# 
-# remove(sm, clip2, Dodecatheon, min, Dodecatheon.21)
-# 
-# #non experiment plants that flowered:
-# no.exp <- read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2021_Dodecatheon_Resurveys.csv", header=T)
-# no.exp <- no.exp %>% 
-#   filter(!is.na(pseeds)) %>% 
-#   dplyr::rename(fruitset1 = pseeds) %>% 
-#   select(c(plot, tag, fruitset1)) %>% 
-#   mutate(plot = as.character(plot),
-#          tag = as.character(tag))
-
-
-#making a decision here that I may need to change: setting pseeds = fruitset (ie assuming that for these plants, if you made seeds, all of your flowers made seeds) - I have the data to check this, but will go check this later
 
 clip <- clip %>% 
   mutate(log.cap = log(no.success.cap + 1), #because there are zeros 
@@ -168,8 +87,7 @@ clip <- clip %>%
 
 clip$trt <- fct_relevel(clip$trt, "drought", "control", "irrigated")
 
-#clip.sub filtered out the plots with very few observations
-
+remove(Dodecatheon)
 ```
 
 ```{r}
@@ -178,7 +96,7 @@ ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
   geom_smooth(method = "lm", se = F)+
   geom_abline(slope=1, intercept=0)+
   facet_wrap(~plot)
-ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
+ggplot(clip, aes(x = log.ros.area, y = as.numeric(pflowerT1)-1))+
   geom_point()+
   geom_smooth(method = "glm", method.args = list(family = binomial), se = F)+  
   geom_abline(slope=1, intercept=0)+
@@ -190,18 +108,14 @@ ggplot(clip, aes(x = log.ros.area, y = pflowerT1))+
 Boxplot for number of seeds made across clipping treatment
 
 ```{r}
-no.seeds.boxplot.trt <- 
+(no.seeds.boxplot.trt <- 
   ggplot(subset(clip, !is.na(treatment)), aes(treatment, log.total.seeds, color = trt))+
   geom_boxplot(aes(color = trt))+
   #facet_wrap(~trt)+
   scale_color_manual(values = c(Z[5], Z[3], Z[1]))+
   labs(y = "Total seeds", x = "Number of flowers clipped")+
    theme(legend.position="none")+
-    scale_y_continuous(breaks=log(c(0.25, 1,2,5,10,20,100)), labels=c(0,0,2,5, 10,20, 100))
-
-#at=log(c(0.25, 1,2,5,10,20,100)), labels=c(0.25,1,2,5, 10,20, 100)
-no.seeds.boxplot.trt
-
+    scale_y_continuous(breaks=log(c(0.25, 1,2,5,10,20,100)), labels=c(0,0,2,5, 10,20, 100)))
 #ggsave(plot = no.seeds.boxplot.trt, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.trt.png", width = 5, height = 4, dpi = 300)
 
 #no.seeds.boxplot <- 
@@ -213,9 +127,7 @@ no.seeds.boxplot
 #ggsave(plot = no.seeds.boxplot, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/round 2/no.seeds.boxplot.png", width = 5, height = 5, dpi = 300)
 ```
 
-
-
-#_ROUND 3 LRT:_
+# LRT
 Notes from Jenn's meeting with Jenny Gremer:
 "Meeting with Jenny G – July 5, 2023
 
@@ -224,8 +136,6 @@ Vital rate (in t+1) ~ size t + cliptrt (or #seeds t) + preciptrt + cliptrt* prec
 Responses: Size(t+1), p(flower t+1), number flowers(t+1), survival(t+1)
 
 Model selection vs. hypothesis testing – we really do have hypotheses! We want to know if these things matter more than we want to find the best model.
-
-Jenna also tried soil moisture reading/plot (instead of preciptrt) solve this first -->
 
 Use likelihood ratio tests (nested models) as anova. Start with big model (3 way interaction gets at the crux of what we want to know) – how does status influence costs of reproduction? Run full model, take out 3 way interaction, compare with LL ratio test. (anova (m1, m2, test=LRT?)). Take out 2 way interactions one at a time, then test each of those (models 3, 4, 5 are taking out pairwise interactions with full replacement – comparing to model with all the 2-way interactions. Save stats into table as you go (in some way or another, could be as simple as a dataframe you fill.)
 
@@ -236,12 +146,9 @@ If interactions are significant, keep main effects – this approach is good bec
 -> We used likelihood ratio tests on nested models to evaluate the significance of main effects (if p>0.05 -> coefficient removed is not significant)
 Null-hypothesis testing is (relatively) easy: just fit the nested models (with
 and without the focal parameter fixed to zero) and find the p (tail) value
-associated with χ
-2
-1
-for the deviance difference (−2 × ∆ log L) (remember
-not to use REML estimates!)
-interpretation of the results that the model with the least df gets preferred in case of a significant difference.???
+
+(remember not to use REML estimates!)
+
 likelihood ratio tests comparing two models (one with and without a predictor) should be performed to determine whether a variable of interest is statistically significant, rather than using the p-values for estimates of individual predictors from the summary() function of a linear model.
 A significant likelihood ratio test would be an indication that the model that has A as a predictor provides a better fit to your data whereas an insignificant likelihood ratio test would indicate that A is not needed to model the outcome C. 
 
@@ -249,10 +156,10 @@ A likelihood ratio test tests whether the additional parameters present in the l
 
 Significance of fixed effects was assessed with likelihood ratio tests and DAIC values comparing models with each factor added to or removed from the best fit model
 (one can estimate confidence intervals by parametric bootstrapping — that is, by simulating data from the fitted model, refitting the model, and extracting the new estimated parameters (or any other quantities of interest))
-we used likelihood ratio tests (LRTs) as an addi- tional method to quantify the difference between models with or without traits. A significant χ2 value (p< 0.05) from an LRT indicated that including trait values signifi- cantly changes model fit.
+we used likelihood ratio tests (LRTs) as an additional method to quantify the difference between models with or without traits. A significant χ2 value (p< 0.05) from an LRT indicated that including trait values significantly changes model fit.
 The inset tables show the results of a likelihood ratio test comparing a model accounting for covariates to a simpler model that ignores the covariates. P < 0.05 indicates significant support for the more complex model.
 
-The significance of each fixed effect in the best-fit model was tested using likelihood ratio tests on nested models. The
+The significance of each fixed effect in the best-fit model was tested using likelihood ratio tests on nested models.
 
 Can't use LRT for models comparing fixed effects and interactions: don’t test main effects at all in the presence of interactions (Ben Bolker) - https://bbolker.github.io/stat4c03/notes/inference.pdf
 
@@ -310,13 +217,63 @@ a9
 # 
 #write.csv(x = growth_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/growth_LRT.csv")
 
-drop1(growth_no.int,test="Chisq")
-
-#parametric bootstrapping
-#pbnmx1 <- pbnm(growth_no.int,gmmDx1,nsim=5,tasks=10,cores=2,seed=31221743)
-#summary(pbnmx1)
 ```
 
+```{r growth best fit model log.ros.area + log.total.seeds}
+#best supported model:
+growth_no.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, REML= F)
+#create df with all possible x values
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = c(0, 1, 2, 2.5, 3, 4, 5))
+pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(growth_no.trt, newdata = pred.dat, type = "response", re.form = ~0))
+
+(growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_point(aes(size = log.total.seeds), shape = 1, color = "black")+
+  #scale_color_gradientn(colours = rainbow(5))+
+  #geom_point(aes(color = log.total.seeds), size = .00000001)+
+  scale_color_gradient2(midpoint = 2.5, low = "orchid1", mid = "darkorchid2",
+                            high = "darkorchid4", space = "Lab" )+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", linewidth = 1.5)+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.5)+
+ # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.5)+
+ # geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
+  scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022", color = "log(Seeds) in 2021", size = "log(Seeds)\nin 2021")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8))
+)
+
+(growth2 <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_point(aes(size = log.total.seeds), shape = 1, color = "black")+
+  #scale_color_gradientn(colours = rainbow(5))+
+  #geom_point(aes(color = log.total.seeds), size = .00000001)+
+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1, color = log.total.seeds), linewidth = 1.5)+
+  #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 2.5), aes(x = log.ros.area, y = log.ros.areaT1, color = log.total.seeds), linetype = "longdash", linewidth = 1.5)+
+ # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  #geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1, color = log.total.seeds), linetype = "dashed", linewidth = 1.5)+
+  geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1, color = log.total.seeds), linetype = "dashed", linewidth = 1.5)+
+  scale_color_gradient2(midpoint = 2.5, low = "orchid1", mid = "darkorchid2",
+                            high = "#5e1d7e", space = "Lab", guide=guide_colourbar(reverse = TRUE) )+
+  scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022", size = "", color = "log(Seeds)\nin 2021")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20),
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8))+
+  coord_fixed(ratio=1) #makes plot square so legend doesnt warp it when saving in ggplot
+)
+growth2
+ggsave(plot = growth2, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/3growth result fig.png", width =6, height =5, dpi = 300)
+```
 
 ```{r plower}
 pflower_LRT = data.frame(var = NA,
@@ -363,8 +320,6 @@ anova(pflower_no.trt, pflower_sizealone, test="LRT")
 
 
 #write.csv(x = pflower_LRT, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/tables/clipping experiment/round 3/pflower_LRT.csv")
-
-drop1(pflower_no3way, test = "Chisq")
 ```
 
 
@@ -447,7 +402,7 @@ no.flowers_no.seeds <- glmer(no.flowersT1 ~ log.ros.area + trt + (1|plot), data 
 ```
 
 
-##_ROUND 2_
+## These are the AIC model selection anlayses - not what we ended up going with but leaving for now.
 
 #These are the vital rate models we want to build:
 
@@ -507,34 +462,6 @@ summary(growth.16)
 #rm(list = ls()[grepl("growth", ls())]) #removes these models
 ```
 
-
-```{r growth best fit model log.ros.area + log.total.seeds}
-#create df with all possible x values
-#this is for model without an interaction
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = seq(0, 5.3, by = .1))
-pred.output <- predict(growth_no.trt, newdata = pred.dat, type="response", re.form=~0) #re.form = ~0 tells it to not include random effects
-pred.output <- as.data.frame(pred.output)
-pred.dat.output <- cbind(pred.dat, pred.output) %>% 
-  rename(log.ros.areaT1 = pred.output)
-
-#graph it
-growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_abline(slope=1, intercept = 0, linetype = 2, color= "grey", linewidth = 1)+
-  geom_point()+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", linewidth = 1.25)+
-  #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.25)+
- # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.25)+
- # geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
-  scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
-  scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
-  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022")
-growth
-ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/growth result fig.png", width =5, height =5, dpi = 300)
-
-
-```
 
 ```{r growth figures - 2nd lowest AIC - log.ros.area + sm_avg + log.total.seeds}
 #create df with all possible x values
