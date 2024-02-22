@@ -782,7 +782,8 @@ remove(tiny, extiny)
 tot.seeds <- read.csv("C:/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Dodecatheon_Seed_Counts.csv")
 tot.seeds <- tot.seeds %>% 
   mutate(plot= as.character(plot),
-         year = as.character(year))
+         year = as.character(year)) %>% 
+  select(-X)
 Dodecatheon <-  left_join(Dodecatheon, tot.seeds)
 Dodecatheon <- Dodecatheon %>% 
   group_by(tag) %>%
