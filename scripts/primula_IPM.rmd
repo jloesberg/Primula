@@ -51,7 +51,7 @@ I thought a lot here about parametric versus non parametric bootstrapping - I'm 
 #can use this code even if not bootstrapping - just use fixed effects from original modls
 
 # set number of bootstrap samples:
-boot = 10
+boot = 1000
 
 #set seed so we have the same parameters each time
 set.seed(12345)
@@ -807,7 +807,7 @@ bigmatrix<-function(params_list, mat.size)
 lamb_lists <- lapply(X = params_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
 #great~! now make it a df
 boot_lambda <- do.call(rbind, lamb_lists)
-#write.csv(boot_lambda, "../tables/primula.bootstrap.climate.lambdas.2023.02.02.csv", row.names = F)
+write.csv(boot_lambda, "../tables/primula.bootstrap.climate.lambdas.2024.04.02.csv", row.names = F)
 
 
 ```
@@ -824,44 +824,53 @@ quant <- boot_lambda %>%
 (q.gs <- quant %>% 
   filter(summer.temp == 0 & winter.temp == 0) %>% 
   ggplot(aes(x = gs.temp, y = mean.lambda, color = trt, linetype = reproduction))+
-  geom_line(linewidth = 1.25)+
-  geom_ribbon(aes(x = gs.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), alpha = 0.1)+
+  geom_line(linewidth = 1.6)+
+  geom_ribbon(aes(x = gs.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), linewidth = .75, alpha = 0.1)+
   facet_wrap(~trt)+
-  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
-  scale_fill_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
+  scale_fill_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Spring Temperature")+
-  coord_cartesian(ylim = c(.75, 1))+ 
-  theme(strip.background = element_blank(), strip.text.x = element_blank())) #remove facet wrap labels
+  coord_cartesian(ylim = c(.8, 1.02))+ 
+  geom_hline(yintercept = 1, color= "black", linewidth = .2)+
+  scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
+  theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20))) #remove facet wrap labels
 
 
 (q.sum <- quant %>% 
   filter(gs.temp == 0 & winter.temp == 0) %>% 
   ggplot(aes(x = summer.temp, y = mean.lambda, color = trt, linetype = reproduction))+
-  geom_line(linewidth = 1.25)+
-  geom_ribbon(aes(x = summer.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), alpha = 0.1)+
+  geom_line(linewidth = 1.6)+
+  geom_ribbon(aes(x = summer.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), linewidth = .75, alpha = 0.1)+
   facet_wrap(~trt)+
-  scale_y_continuous(limits=c(.75,1))+ 
-  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
-  scale_fill_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_y_continuous(limits=c(.8,1.02))+ 
+  scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
+  scale_fill_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Summer Temperature")+
-  theme(strip.background = element_blank(), strip.text.x = element_blank())) #remove facet wrap labels
+  geom_hline(yintercept = 1, color= "black", linewidth = .2)+
+  scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
+  theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20))) #remove facet wrap labels
 
 
 (q.win <- quant %>% 
   filter(summer.temp == 0 & gs.temp == 0) %>% 
   ggplot(aes(x = winter.temp, y = mean.lambda, color = trt, linetype = reproduction))+
-  geom_line(linewidth = 1.25)+
-      scale_y_continuous(limits=c(.75,1))+ 
-  geom_ribbon(aes(x = winter.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), alpha = 0.1)+
+  geom_line(linewidth = 1.6)+
+  scale_y_continuous(limits=c(.8,1.02))+ 
+  geom_ribbon(aes(x = winter.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), linewidth = .75, alpha = 0.1)+
   facet_wrap(~trt)+
-  scale_color_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
-  scale_fill_manual(values = c(Z[3], Z[5], Z[1]), name = "")+
+  scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
+  scale_fill_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Winter Temperature")+
-  theme(strip.background = element_blank(), strip.text.x = element_blank())) #remove facet wrap labels
+  scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
+  geom_hline(yintercept = 1, color= "black", linewidth = .2)+
+  theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20)))
 
 #patch work package
-(boot.ipm <- q.gs + q.sum +  q.win + plot_layout(guides = "collect", ncol = 1))
-ggsave(plot = boot.ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/ipm bootstrap feb8.png", width = 10, height = 10, dpi = 300)
+(boot.ipm <- q.gs + q.sum +  q.win + plot_layout(guides = "collect", ncol = 1)+plot_annotation(tag_level = "A"))
+ggsave(plot = boot.ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/ipm bootstrap april2.png", width = 10, height = 10, dpi = 300)
 
 
 ```
