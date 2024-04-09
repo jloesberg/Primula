@@ -14,15 +14,8 @@ library(tidyverse)
 library(lubridate)
 library(AICcmodavg)
 library(lme4)
-library(car)
-library(wesanderson) # for colors
-library(lmerTest)
 
 theme_set(theme_classic()) #for ggplot
-FF <- wes_palettes$FantasticFox1
-Z <- wes_palettes$Zissou1
-R <- wes_palettes$Royal2
-I <- wes_palettes$IsleofDogs1
 ```
 
 ```{r}
@@ -223,7 +216,7 @@ a9
 #best supported model:
 growth_no.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, REML= F)
 #create df with all possible x values
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = c(0, 1, 2, 2.5, 3, 4, 5))
+pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = c(0, 1, 2, 2.5, 3, 4, 5, 5.2))
 pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(growth_no.trt, newdata = pred.dat, type = "response", re.form = ~0))
 pred.dat.output.g <- pred.dat.output.g %>% 
   mutate(total.seeds = if_else(log.total.seeds == 0, 0, round(exp(log.total.seeds))))
@@ -233,14 +226,13 @@ pred.dat.output.g <- pred.dat.output.g %>%
   geom_point(aes(size = log.total.seeds), shape = 1, color = "black")+
   #scale_color_gradientn(colours = rainbow(5))+
   #geom_point(aes(color = log.total.seeds), size = .00000001)+
-  scale_color_gradient2(midpoint = 2.5, low = "orchid1", mid = "darkorchid2",
-                            high = "darkorchid4", space = "Lab" )+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", linewidth = 1.5)+
-  #geom_line(data = subset(pred.dat.output, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
-  geom_line(data = subset(pred.dat.output, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.5)+
- # geom_line(data = subset(pred.dat.output, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  geom_line(data = subset(pred.dat.output,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.5)+
- # geom_line(data = subset(pred.dat.output, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
+  #scale_color_gradient2(midpoint = 2.5, low = "orchid1", mid = "darkorchid2", high = "darkorchid4", space = "Lab" )+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid4", linewidth = 1.5)+
+  #geom_line(data = subset(pred.dat.output.g, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 3), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.5)+
+ # geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output.g,  log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.5)+
+ # geom_line(data = subset(pred.dat.output.g, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "grey")+
   scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
   labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022", color = "log(Seeds) in 2021", size = "log(Seeds)\nin 2021")+
@@ -257,10 +249,7 @@ pred.dat.output.g <- pred.dat.output.g %>%
   geom_line(data = subset(pred.dat.output.g, log.total.seeds ==5), aes(x = log.ros.area, y = log.ros.areaT1, color = (log.total.seeds)), linewidth = 1.5)+
   #geom_line(data = subset(pred.dat.output.g, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
   geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2.5), aes(x = log.ros.area, y = log.ros.areaT1, color = (log.total.seeds)), linetype = "longdash", linewidth = 1.5)+
- # geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
-  #geom_line(data = subset(pred.dat.output.g,  log.total.seeds == 1), aes(x = log.ros.area, y = log.ros.areaT1, color = log.total.seeds), linetype = "dashed", linewidth = 1.5)+
   geom_line(data = subset(pred.dat.output.g, log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1, color = (log.total.seeds)), linetype = "dashed", linewidth = 1.5)+
-  #scale_color_manual(breaks = c(0, 2.5, 5), values = c("orchid1", "darkorchid2","#5e1d7e"), labels = c("0", "12", "150"))+
   scale_color_gradient2(midpoint =2.5, low = "orchid1", mid = "darkorchid2",
                             high = "#5e1d7e", guide = guide_colourbar(reverse = TRUE), limits = c(0, 5.02), breaks = c(0, log(2), log(5), log(10), log(20), log(40), log(80), log(150)), labels = c(0, 2, 5, 10,20, 40, 80, 150))+
   scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
@@ -272,8 +261,31 @@ pred.dat.output.g <- pred.dat.output.g %>%
         legend.text = element_text(size = 7))+
   coord_fixed(ratio=1) #makes plot square so legend doesnt warp it when saving in ggplot
 )
+
+10^5
+
+(growth3 <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
+  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_point(aes(size = total.seeds), shape = 1, color = "black", alpha = 0.75)+
+  scale_size(range=c(1.25, 2.5))+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1),color = "darkorchid4", linewidth = 1.5)+
+  #geom_line(data = subset(pred.dat.output.g, log.total.seeds == 4), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid3")+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2.5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.5)+
+ # geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid1")+
+  geom_line(data = subset(pred.dat.output.g,  log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.5)+
+  #scale_color_gradient2(midpoint =2.5, low = "orchid1", mid = "darkorchid2", high = "#5e1d7e", guide = guide_colourbar(reverse = TRUE), limits = c(0, 5.02), breaks = c(0, log(2), log(5), log(10), log(20), log(40), log(80), log(150)), labels = c(0, 2, 5, 10,20, 40, 80, 150))+
+  
+  scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
+  scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
+  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022", size = "Seeds in 2021", color = "Seeds in 2021")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
+        text = element_text(size = 20),
+        legend.title = element_text(size = 8),
+        legend.text = element_text(size = 7))+
+  coord_fixed(ratio=1) #makes plot square so legend doesnt warp it when saving in ggplot
+)
 growth2
-ggsave(plot = growth2, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/6growth result fig.png", width =6, height =5, dpi = 300)
+ggsave(plot = growth3, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/7growth result fig.png", width =6, height =5, dpi = 300)
 ```
 
 ```{r plower}

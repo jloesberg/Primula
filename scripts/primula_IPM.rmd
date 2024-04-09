@@ -120,6 +120,7 @@ prob.1leaf.to.2leaf <- .41*.58 #p that it survives and probability that it becom
 #eventually this might change if we want treatment specific size of new recruits
 new_sd <- sd(new.plants$log.ros.area)
 new_mean <- mean(new.plants$log.ros.area)
+hist(new.plants$log.ros.area)
 
 #Define the min and max size, which are the integration bounds of the IPM.
 minRealsize <- min(primula$log.ros.area, na.rm=T) 
@@ -139,6 +140,8 @@ These are for the ipm without the bootstrap
 ```{r parameters without boot, echo=FALSE}
 #this is for range of climates
 rows <- expand.grid(summer.mean.temp = seq(-2, 2, by = .5), grow.season.mean.temp = seq(-2, 2, by = .5),  winter.mean.temp = seq(-2, 2, by = .5), reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"))
+
+#rows.seeds <- expand.grid(summer.mean.temp = seq(-2, 2, by = 1), grow.season.mean.temp = seq(-2, 2, by = 1),  winter.mean.temp = seq(-2, 2, by = 1), reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"), seeds = seq(0, 25, by = 1))
 
 #rows <- expand.grid(summer.mean.temp = 0, grow.season.mean.temp = 0,  winter.mean.temp = 0, reproduction = c("veg","flowered"), trt = c("control", "drought", "irrigated"))
 
@@ -167,6 +170,7 @@ params=data.frame(
 	prob.seed.germ = NA
 )
 params <- bind_cols(params, rows)
+#params <- bind_cols(params, rows.seeds)
 ```
 
 
@@ -237,6 +241,11 @@ params$no.flow.slope <- fixef(noflowers.winter.av.temp)[2] # flower number produ
 params$seeds[params$trt == "irrigated"] <- 13
 params$seeds[params$trt == "drought"] <- 6
 params$seeds[params$trt == "control"] <- 11
+
+
+
+
+
 
 #params$no.seeds <- no.seeds
 params$prob.seed.germ <- prob.seed.germ
@@ -525,6 +534,11 @@ boot.params$seeds[boot.params$trt == "irrigated"] <- 13
 boot.params$seeds[boot.params$trt == "drought"] <- 6
 boot.params$seeds[boot.params$trt == "control"] <- 11
 
+#here to simulate number of seeds made 
+
+
+
+
 #params$no.seeds <- no.seeds
 boot.params$prob.seed.germ <- prob.seed.germ
 boot.params$recruit.size.mean <- new_mean # mean new >1 leaf plant size
@@ -532,6 +546,14 @@ boot.params$recruit.size.sd<- new_sd # sd of new >1 leaf plant size
 
 boot.params$growth.sd <- growth_var[growth_var$grp=="Residual","sdcor"] # growth sd of residuals
 ```
+
+```{r}
+
+#here to simulate number of seeds made 
+
+
+```
+
 
 # Build the model!
 
@@ -585,7 +607,7 @@ pf.x <-function(x,params){
 #pf.x(x = 8,params = params)
 
 # #PRODUCTION OF seedlings by X-SIZED plants that flowered the previous year
-###Here i've put in the misc bits, but not sure if this is correct - seems ok for now
+
 
 # f.yx.flowered=function(x,params) { 		
 # 	return(pf.x.flowered(x,params)*
@@ -875,17 +897,58 @@ ggsave(plot = boot.ipm, file = "C:/Users/Jenna/OneDrive - The University Of Brit
 
 ```
 
+```{r seed figure}
+(seed.sim <- primula_lambda %>% 
+  filter(summer.temp == 0 & gs.temp == 0 & winter.temp ==0) %>% 
+  ggplot(aes(seeds, lambda, color = trt, linetype = reproduction))+
+  geom_line(linewidth = 1.5)+
+  labs(y = expression(paste("\u03BB")), x = "Seeds produced per flower")+
+  scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
+  theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
+  text = element_text(size = 20)))
+#ggsave(plot = seed.sim, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/seed sim.png", width = 10, height = 10, dpi = 300)
+
+primula_lambda %>% 
+  filter(summer.temp == 1 & gs.temp == 1 & winter.temp ==1) %>% 
+  ggplot(aes(seeds, lambda, color = trt, linetype = reproduction))+
+  geom_line(linewidth = 1.5)+
+  labs(y = expression(paste("\u03BB")), x = "Seeds produced per flower")+
+  scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
+  theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
+  text = element_text(size = 20))
+
+primula_lambda %>% 
+  filter(summer.temp == -1 & gs.temp == -1 & winter.temp ==-1) %>% 
+  ggplot(aes(seeds, lambda, color = trt, linetype = reproduction))+
+  geom_line(linewidth = 1.5)+
+  labs(y = expression(paste("\u03BB")), x = "Seeds produced per flower")+
+  scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
+  theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
+  text = element_text(size = 20))
+
+
+
+```
+
+
+
+
+
 ```{r LTRE reproduction functions}
 #goal: make a params vector that only includes mean temps in control so we can look at difference between lambda for RE;
 #this is an ugly hard code but oh well
 perturbation <- 0.01 #perturbation
+
 
 sens.params <- params %>% 
   filter(summer.mean.temp == 0&
          winter.mean.temp == 0&
          grow.season.mean.temp == 0&
          trt == "control", 
-         reproduction == "veg")
+         reproduction == "flowered")
+sens.params$prob.seedling.to.1leaf <- prob.seedling.to.1leaf
+sens.params$prob.1leaf.to.1leaf <- prob.1leaf.to.1leaf
+sens.params$prob.1leaf.to.2leaf <- prob.1leaf.to.2leaf
 sens.params$version <- "original"
 
 sens.params.g.int <- sens.params %>% 
@@ -912,6 +975,21 @@ sens.params.no.flow.int <- sens.params %>%
 sens.params.no.flow.slope <- sens.params %>% 
   mutate(no.flow.slope = no.flow.slope + perturbation,
          version = "no.flow.slope")
+sens.params.rec.size.mean <- sens.params %>% 
+  mutate(recruit.size.mean = recruit.size.mean + perturbation,
+         version = "recruit.size.mean")
+sens.params.prob.seed.germ <- sens.params %>% 
+  mutate(prob.seed.germ = prob.seed.germ + perturbation,
+         version = "prob.seed.germ")
+sens.params.prob.seedling.to.1leaf <- sens.params %>% 
+  mutate(prob.seedling.to.1leaf = prob.seedling.to.1leaf + perturbation,
+         version = "prob.seedling.to.1leaf")
+sens.params.prob.1leaf.to.1leaf <- sens.params %>% 
+  mutate(prob.1leaf.to.1leaf = prob.1leaf.to.1leaf + perturbation,
+         version = "prob.1leaf.to.1leaf")
+sens.params.prob.1leaf.to.2leaf <- sens.params %>% 
+  mutate(prob.1leaf.to.2leaf = prob.1leaf.to.2leaf + perturbation,
+         version = "prob.1leaf.to.2leaf")
 sens <- mget(ls(pattern = "^sens.params")) #make a list of all of those models that start with ___ (^ means start with)
 
 sens <- do.call("rbind", sens)
@@ -944,13 +1022,13 @@ bigmatrix<-function(ltre_list, mat.size)
   Tmat<-matrix(0,(n+2),(n+2))
   
   # probability seedling becomes a 1 leaf plant
-  Tmat[2,1]<- prob.seedling.to.1leaf
+  Tmat[2,1]<- sens.params$prob.seedling.to.1leaf
   
    # probability 1 leaf plant stays as a 1 leaf plant
-  Tmat[2,2]<- prob.1leaf.to.1leaf
+  Tmat[2,2]<- sens.params$prob.1leaf.to.1leaf
   
   # Graduation from 1 leaf to cts size = prob 1 leaf becomes a 2 leaf * size dist of new 2 leafers
-  Tmat[3:(n+2),2]<- prob.1leaf.to.2leaf *recruit.size(y,ltre_list) * h
+  Tmat[3:(n+2),2]<- sens.params$prob.1leaf.to.2leaf *recruit.size(y,ltre_list) * h
   
   # Growth/survival transitions among cts sizes
   Tmat[3:(n+2),3:(n+2)]<- t(outer(y,y,P,params=ltre_list)) * h 
@@ -966,6 +1044,8 @@ bigmatrix<-function(ltre_list, mat.size)
 
 }
 
+
+
 #what I want returned is lambdas
 lamb_lists <- lapply(X = ltre_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
 
@@ -976,6 +1056,8 @@ ltre_lambda <- do.call("rbind", lamb_lists)
 ltre_lambda$sensitivity <- NA
 
 #sens = lambda new - lambda old / perturbation
+#SV <- (Lambda.p - Lambda) / perturbation
+
 for (i in seq_len(nrow(ltre_lambda))){
   ltre_lambda$sensitivity[i] <- (ltre_lambda$lambda[i] - ltre_lambda$lambda[1])/perturbation
    ltre_lambda$sensitivity[1] <- NA
@@ -986,8 +1068,36 @@ for (i in seq_len(nrow(ltre_lambda))){
 (sens.fig <- ltre_lambda %>% filter(version != "original") %>% 
   ggplot(aes(x = version, y = sensitivity))+
   geom_point()+
-  labs(x = "Vital Rate Coefficient", y = "Sensitivity of lambda to coefficient"))
+  labs(x = "Vital Rate Coefficient", y = "Sensitivity of lambda to coefficient")+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+)
 #ggsave(plot = sens.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/sensitivity.repro.png", width = 8, height =8, dpi = 300)
+
+original <- as.data.frame(t(sens.params)) %>% 
+  tibble::rownames_to_column("version") %>% 
+  rename(coef = V1)
+ltre_lambda <- left_join(ltre_lambda, original)
+
+#Following IPM construction, calculate sensitivity and elasticity values (Eq. 2 & 3 in text in Griffith 2017)
+#SV <- (Lambda.p - Lambda) / perturbation
+ltre_lambda$elasticity <- NA
+#EV <- SV * (VR.mod$coefficients[i] / Lambda)
+ltre_lambda <- ltre_lambda %>% 
+  mutate(elasticity = sensitivity * as.numeric(coef)/lambda)
+ltre_lambda$vr <- c("na", "growth", "growth", "fecundity", "fecundity", "fecundity", "fecundity", "discrete", "discrete", "discrete", "discrete", "discrete", "survival", "survival")
+
+#elasticity of lambda to each parameter
+(elas.fig <- ltre_lambda %>% 
+    filter(version != "original") %>% 
+  ggplot(aes(x = version, y = elasticity, fill = vr))+
+  geom_bar(stat = "identity")+
+  labs(x = "Vital Rate Coefficients and Paramters", y = "Elasticity of lambda to parameter")+
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_fill_manual(values = c("orange", "darkorchid", "#7aa560", "blue"))+
+  geom_hline(yintercept = 0)+
+  theme(legend.title=element_blank(), strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20))
+)
+ggsave(plot = elas.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/elas.repro.png", width = 8, height =8, dpi = 300)
 #what drives the differences in lambda between non reproductive and reproductive individuals?
 #the LTRE is: change in coefficient between control and treatment * sensitivity ofcoefficient in control
 
@@ -1018,7 +1128,7 @@ ltre <- ltre %>%
   geom_point()+
   labs(x = "Vital Rate Coefficient", y = "LTRE contribution (vegetative-reproductive)")+
   geom_hline(yintercept = 0, linetype = "dashed"))
-#ggsave(plot = ltre.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/ltre repo.png", width = 8, height =8, dpi = 300)
+ggsave(plot = ltre.fig, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/ltre repo.png", width = 8, height =8, dpi = 300)
 
 ```
 

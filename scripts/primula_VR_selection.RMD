@@ -408,7 +408,7 @@ pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(gm.summer.av.temp.
   labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1", title = "Irrigated")+
   theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
         text = element_text(size = 20), 
-        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#3b9ab2")))
+        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#2892c7")))
 
   #annotate("text",x = .75, y = 5.75, label = "a) irrigated")#+ 
 #theme(legend.position="none")
@@ -425,7 +425,7 @@ pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(gm.summer.av.temp.
   labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1", title = "Control")+
   theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
         text = element_text(size = 20), 
-        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#e1af00")))
+        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#5f9034")))
 #ggsave(plot = cgrowth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth control.png", width = 6, height = 6, dpi = 300)
 
 (drgrowth <- ggplot(data = subset(primula, !is.na(pflower) & trt == "drought"), aes(x = log.ros.area, y = log.ros.areaT1))+
@@ -439,11 +439,11 @@ pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(gm.summer.av.temp.
   labs(x = "log(Rosette Area) in t", y = "log(Rosette Area) in t + 1", title = "Drought")+
   theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
         text = element_text(size = 20), 
-        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#f22300")))
+        plot.title = element_text(vjust = - 5, hjust = .03, colour = "#e81014")))
 #ggsave(plot = drgrowth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growth drought.png", width = 6, height = 6, dpi = 300)
 
 #patch these together
-(together <- irrgrowth + cgrowth +  drgrowth + plot_layout(guides = "collect", axis_titles = "collect", ncol = 3))
+(together <- irrgrowth + cgrowth +  drgrowth + plot_layout(guides = "collect", axis_titles = "collect", ncol = 3)+plot_annotation(tag_level = "A"))
 ggsave(plot = together, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/growthVR 2-16.png", width = 16, height = 6, dpi = 300)
 
 
@@ -1159,7 +1159,7 @@ pred.dat.output.s <- cbind(pred.dat, survT1 = predict(sm.gs.av.temp, newdata = p
   labs(x = "log(Rosette Area) in t", y = "Survival in t+1")+
   theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20)))
 survival
-ggsave(plot = survival, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/2survival temp.fig.png", width = 6, height = 6, dpi = 300)
+#ggsave(plot = survival, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/2survival temp.fig.png", width = 6, height = 6, dpi = 300)
 
 ```
 
@@ -1435,15 +1435,19 @@ pred.dat.output.n <- cbind(pred.dat, noflowers = predict(noflowers.winter.av.tem
     theme(axis.line = element_line(colour = 'black', linewidth = 1.1), text = element_text(size = 20)))
 
 poisson
-ggsave(plot = poisson, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/2no.flowers winter temp.fig.png", width = 5, height = 5, dpi = 300)
+#ggsave(plot = poisson, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/2no.flowers winter temp.fig.png", width = 5, height = 5, dpi = 300)
 
 ```
 
 ```{r put all of them together?}
 
-(others <- (survival | pflow | poisson) + plot_layout(axis_titles = "collect"))
-(all <- together/(survival +pflow + poisson) + plot_layout(guides = "collect", axis_titles = "collect") + plot_annotation(tag_levels = list(c("A", "", "", "B", "C", "D"))))
-#ggsave(plot = all, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/all2.png", width = 15, height = 10, dpi = 300)
+(others <- (survival | pflow | poisson)+plot_annotation(tag_levels = 'A'))
+(all <- together/(survival +pflow + poisson) + plot_layout(guides = "collect", axis_titles = "collect") + plot_annotation(tag_levels = list(c("A", "", "", "B", "C", "D")))) 
+
+
+ggsave(plot = all, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/all2.png", width = 15, height = 10, dpi = 300)
+
+ggsave(plot = others, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/climate vital rate selection/vr april 3.png", width = 15, height = 8, dpi = 300)
 ```
 
 
