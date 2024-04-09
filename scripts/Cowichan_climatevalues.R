@@ -323,27 +323,27 @@ precip <- climate %>% ggplot(aes(x = year, y = grow.season.tot.precip))+
   annotate("text", x = "2020", y = PPT_sp, label = "1961-1990 Spring Precip", vjust = -0.5)+
   scale_y_continuous(expand = c(0,0), n.breaks = 15) 
 precip
-#ggsave("./Figures/climate/gs.precip.withclimateNA.png", width = 8, height = 8)
+ggsave("./Figures/climate/gs.precip.withclimateNA.3.12.24.png", width = 8, height = 8)
 TmaxSP<- longterm$Tmax_sp[[1]]
 TminSP<- longterm$Tmin_sp[[1]]
 TaveSP<- longterm$Tave_sp[[1]]
 
-temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) + 
-  geom_line(aes(group = 1, color = Z[1]), linewidth = 1.25)+
-  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = Z[5]), linewidth = 1.25)+  
-  geom_line(aes(y = grow.season.mean.temp, group = 1, color = Z[3]), linewidth = 1.25, color = Z[3])+
+(temp <- climate %>% ggplot(aes(x = year, y = grow.season.mean.max.temp)) + 
+  geom_line(aes(group = 1, color = "#f2623f"), linewidth = 1.25, color = "#f2623f")+
+  geom_line(aes(y = grow.season.mean.min.temp, group = 1, color = "#323697"), linewidth = 1.25, color = "#323697")+  
+  geom_line(aes(y = grow.season.mean.temp, group = 1, color = "#94c8e0"), linewidth = 1.25, color = "#94c8e0")+
   labs(y = "Temperature (C)", x = "Year")+
   theme(legend.position="none")+
-  geom_hline(yintercept = TmaxSP, linetype='dashed', color = Z[5])+
-  geom_hline(yintercept = TminSP, linetype='dashed', color = Z[1])+
-  geom_hline(yintercept = TaveSP, linetype='dashed', color = Z[3])+
+  geom_hline(yintercept = TmaxSP, linetype='dashed', color = "#f2623f")+
+  geom_hline(yintercept = TminSP, linetype='dashed', color = "#323697")+
+  geom_hline(yintercept = TaveSP, linetype='dashed', color = "#94c8e0")+
   annotate("text", x = "2021", y = TmaxSP, label = "1961-1990 Spring Max Temp", vjust = -0.5)+
   annotate("text", x = "2021", y = TminSP, label = "1961-1990 Spring Min Temp", vjust = -0.5)+
   annotate("text", x = "2021", y = TaveSP, label = "1961-1990 Spring Mean Temp", vjust = -0.5)+
-  scale_y_continuous(n.breaks=15)
+  scale_y_continuous(n.breaks=15))
 
 temp
-#ggsave("./Figures/climate/gs.temp.climateNA.png", width = 8, height = 8)
+ggsave("./Figures/climate/gs.temp.climateNA.updated.png", width = 8, height = 8)
 #arrange <- ggarrange(precip, temp, ncol = 2, nrow = 1)
 
 remove(precip, temp, longterm, annual, climate_lagged)
