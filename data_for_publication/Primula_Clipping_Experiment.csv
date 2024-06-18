@@ -1,0 +1,142 @@
+year,plot,Xcoor,Ycoor,tag,trt,clip.treatment,no.clipped,ht,rosetteL,rosetteW,ros.area,ros.areaT1,log.ros.area,log.ros.areaT1,no.flowers,no.flowersT1,total.seeds,log.total.seeds,no.success.cap,pseeds,total.seedsT1,pflowerT1,psurvivalT1,YrTag,life_st,life_stT1,notes
+2021,1,2,D,624,irrigated,all,4,NA,12,6,56.54866776,103.6725576,4.035101644,4.641237447,4,5,0,0,0,0,85,1,1,2016,Flowering,Flowering,
+2021,1,2,E,389,irrigated,half,2,25,11,5,43.19689899,77.75441818,3.76576871,4.353555375,4,0,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,1,buffer,buffer,5755,irrigated,all,3,NA,11,4,34.55751919,132.7322896,3.542625159,4.88833424,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In biomass 
+2021,1,10,A,578,irrigated,half,1,21,12,12,113.0973355,75.39822369,4.728248824,4.322783716,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,1,12,I,569,irrigated,none,0,24,10,6,47.1238898,80.69966129,3.852780087,4.390734378,5,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,1,15,B,5757,irrigated,none,0,23,8,6,37.69911184,NA,3.629636536,NA,4,0,0,0,0,0,NA,0,0,2021,Flowering,Dead,
+2021,1,14,C,5756,irrigated,all,3,NA,9,6,42.41150082,84.82300165,3.747419571,4.440566752,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,
+2021,1,19,H,5758,irrigated,none,0,18,9,7,49.48008429,47.1238898,3.901570251,3.852780087,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Almost in buffer
+2021,1,19,I,1734,irrigated,all,3,NA,8,6.5,40.8407045,39.26990817,3.709679243,3.67045853,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,1,buffer,buffer,5759,irrigated,none,0,21,8,7,43.98229715,49.48008429,3.783787215,3.901570251,3,2,16,2.833213344,1,1,NA,1,1,2021,Flowering,Flowering,In buffer (W side) by 5758
+2021,1,buffer,buffer,5760,irrigated,half,1,20,9,9,63.61725124,63.61725124,4.152884679,4.152884679,2,3,21,3.091042453,1,1,NA,1,1,2021,Flowering,Flowering,In buffer (W side) by 5758
+2021,1,14,H,5774,irrigated,half,1,21,11,6,51.83627878,56.54866776,3.948090267,4.035101644,3,5,43,3.784189634,2,1,34,1,1,2021,Flowering,Flowering,
+2021,2,3,I,253,control,none,0,19,8,6,37.69911184,67.15154297,3.629636536,4.206951901,2,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,2,4,J,525,control,half,1,15,7,3.5,19.242255,31.41592654,2.957108642,3.447314979,3,NA,0,0,0,0,NA,0,1,2016,Flowering,Vegetative,
+2021,2,buffer,buffer,5722,control,all,2,NA,9,4,28.27433388,39.26990817,3.341954463,3.67045853,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Biomass
+2021,2,6,H,1448,control,half,1,16.5,8,3.5,21.99114858,37.69911184,3.090640035,3.629636536,3,NA,0,0,0,0,NA,0,1,2019,Flowering,Vegetative,
+2021,2,9,E,5723,control,none,0,17.5,9.5,5,37.30641276,22.38384766,3.619165236,3.108339612,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,
+2021,2,10,D,786,control,all,5,NA,9.5,8,59.69026042,213.6283004,4.089168865,5.364237591,5,2,0,0,0,0,42,1,1,2017,Flowering,Flowering,
+2021,2,11,B,28,control,half,2,14,8.5,4,26.70353756,21.20575041,3.284796049,3.054272391,3,NA,0,0,0,0,NA,0,1,2018,Flowering,Vegetative,
+2021,2,13,B,489,control,half,1,17,7,5,27.48893572,NA,3.313783586,NA,2,0,0,0,0,0,NA,0,0,2018,Flowering,Dead,
+2021,2,15,F,125,control,all,3,NA,9,6.5,45.94579256,NA,3.827462279,NA,3,0,0,0,0,0,NA,0,0,2017,Flowering,Dead,
+2021,2,16,D,479,control,all,5,NA,5,4,15.70796327,NA,2.754167798,NA,5,0,0,0,0,0,NA,0,0,2018,Flowering,Dead,
+2021,2,16,C,66,control,none,0,16,11,8,69.11503838,11.78097245,4.235772339,2.466485726,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,2,16,C,491,control,none,0,18,11.5,5,45.1603944,76.57632093,3.810220473,4.338287903,3,NA,9,2.302585093,1,1,NA,0,1,2018,Flowering,Vegetative,
+2021,3,2,B,538,control,half,2,16.5,17,12,160.2212253,229.7289628,5.076555519,5.436900191,4,NA,10,2.397895273,1,1,NA,0,1,2018,Flowering,Vegetative,
+2021,3,2,E,774,control,all,6,NA,9,8.5,60.0829595,131.9468915,4.095726266,4.882399504,6,5,0,0,0,0,51,1,1,2017,Flowering,Flowering,
+2021,3,2,H,588,control,all,5,NA,11,8,69.11503838,130.7687942,4.235772339,4.873430834,5,7,0,0,0,0,134,1,1,2017,Flowering,Flowering,
+2021,3,4,C,540,control,none,0,26,14,11,120.9513172,212.0575041,4.795388127,5.356857484,4,NA,59,4.094344562,4,1,0,1,1,2017,Flowering,Flowering,
+2021,3,3,E,693,control,half,1,19,9.5,7,52.22897787,65.97344573,3.955637472,4.189252324,3,NA,28,3.36729583,2,1,NA,0,1,2016,Flowering,Vegetative,
+2021,3,4,F,857,control,half,2,24.5,9,5,35.34291735,77.75441818,3.565098014,4.353555375,3,NA,0,0,0,0,NA,0,1,2018,Flowering,Vegetative,
+2021,3,5,E,834,control,all,5,NA,10,9,70.68583471,77.75441818,4.258245195,4.353555375,5,4,0,0,0,0,78,1,1,2017,Flowering,Flowering,
+2021,3,3,E,514,control,all,4,NA,14,10,109.9557429,133.5176878,4.700077947,4.894233962,4,NA,0,0,0,0,0,1,1,2016,Flowering,Flowering,
+2021,3,6,C,742,control,none,0,16,12,10.5,98.96016859,51.83627878,4.594717432,3.948090267,6,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,3,8,C,839,control,half,2,14.5,12,6,56.54866776,120.9513172,4.035101644,4.795388127,4,3,0,0,0,0,57,1,1,2017,Flowering,Flowering,Multiple rosettes (>1 plant?)
+2021,3,8,F,59,control,none,0,15,6,5,23.5619449,87.9645943,3.159632906,4.476934396,4,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,3,16,H,591,control,none,0,23,13,10.5,107.2068493,164.9336143,4.674760139,5.105543055,6,5,57,4.060443011,5,1,21,1,1,2017,Flowering,Flowering,
+2021,3,3,E,718,control,none,0,22,11,10,86.39379797,56.54866776,4.458915891,4.035101644,5,NA,96,4.574710979,4,1,NA,0,1,2016,Flowering,Vegetative,
+2021,3,5,F,31,control,half,1,17,10.5,4,32.98672286,106.8141502,3.496105143,4.67109041,2,NA,24,3.218875825,1,1,NA,0,1,2017,Flowering,Vegetative,
+2021,5,buffer,buffer,5706,drought,half,2,25,11,9,77.75441818,35.34291735,4.353555375,3.565098014,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In buffer in corner by biomass
+2021,5,buffer,buffer,5704,drought,none,0,17,7,6,32.98672286,45.1603944,3.496105143,3.810220473,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Wilting. In buffer by biomass
+2021,5,buffer,buffer,5705,drought,all,2,NA,9,5.5,38.87720909,76.96902001,3.660408194,4.343403003,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In buffer by biomass
+2021,5,buffer,buffer,5701,drought,all,3,NA,6,2,9.424777961,22.38384766,2.243342175,3.108339612,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Leaves very dry
+2021,5,buffer,buffer,5702,drought,half,2,17,6,3,14.13716694,49.48008429,2.648807283,3.901570251,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Leaves very dry
+2021,5,6,D,957,drought,half,2,17,6.5,6,30.63052837,159.0431281,3.421997171,5.069175411,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,Senescing and not making capsules.
+2021,5,10,E,544,drought,none,0,NA,7,1.5,8.246680716,NA,2.109810782,NA,3,NA,0,0,0,0,NA,NA,0,2016,Flowering,Dead,Two small leaves
+2021,5,2,A,5703,drought,half,3,20.5,8,2,12.56637061,NA,2.531024247,NA,5,0,0,0,0,0,NA,0,0,2021,Flowering,Dead,"Leaves very dry, may have fungus spots"
+2021,5,12,F,156,drought,none,0,NA,9,3,21.20575041,129.590697,3.054272391,4.864380999,3,NA,0,0,0,0,NA,0,1,2018,Flowering,Vegetative,Wilting and flowers not making capsules
+2021,5,16,A,989,drought,none,0,10,6,5,23.5619449,62.83185307,3.159632906,4.140462159,1,3,0,0,0,0,30,1,1,2017,Flowering,Flowering,Wilting
+2021,5,17,B,659,drought,all,5,NA,7,6,32.98672286,NA,3.496105143,NA,5,0,0,0,0,0,NA,0,0,2018,Flowering,Dead,"Senescing, leaves very dry and brown"
+2021,5,buffer,buffer,5724,drought,all,0,NA,7.5,4,23.5619449,76.96902001,3.159632906,4.343403003,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by subplot 4
+2021,5,buffer,buffer,5761,drought,all,2,NA,10,9,70.68583471,219.9114858,4.258245195,5.393225128,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by diversity
+2021,5,buffer,buffer,5762,drought,none,0,14,8,7,43.98229715,47.1238898,3.783787215,3.852780087,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,One bud. In buffer by diversity
+2021,6,1,C,920,irrigated,all,2,NA,8.5,8,53.40707511,84.82300165,3.97794323,4.440566752,2,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,6,2,B,937,irrigated,all,4,NA,10,9,70.68583471,122.5221135,4.258245195,4.808291532,4,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,6,3,I,962,irrigated,none,0,26,13,9,91.89158512,134.3030859,4.52060946,4.900099081,6,3,185,5.225746674,6,1,17,1,1,2017,Flowering,Flowering,
+2021,6,5,E,1751,irrigated,none,0,17,13,7,71.47123287,80.11061267,4.269295031,4.383408338,3,NA,16,2.833213344,1,1,NA,0,1,2018,Flowering,Vegetative,
+2021,6,7,C,684,irrigated,all,4,NA,14,11,120.9513172,329.8672286,4.795388127,5.798690236,4,6,0,0,0,0,70,1,1,2016,Flowering,Flowering,
+2021,6,9,E,917,irrigated,half,1,14,12,5,47.1238898,153.93804,3.852780087,5.036550184,2,5,0,0,0,0,118,1,1,2017,Flowering,Flowering,
+2021,6,9,D,933,irrigated,half,1,10.5,8,8,50.26548246,213.6283004,3.917318608,5.364237591,2,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,6,16,H,5725,irrigated,half,3,20,9,5,35.34291735,36.12831552,3.565098014,3.587076921,6,NA,64,4.17438727,3,1,NA,0,1,2021,Flowering,Vegetative,Leaves bitten
+2021,6,14,G,1638,irrigated,half,1,16,9,6,42.41150082,155.5088364,3.747419571,5.046702555,2,NA,0,0,0,0,NA,0,1,2018,Flowering,Vegetative,
+2021,6,16,D,969,irrigated,none,0,19,10,5,39.26990817,65.97344573,3.67045853,4.189252324,3,NA,54,4.007333185,3,1,NA,0,1,2017,Flowering,Vegetative,
+2021,6,19,H,5770,irrigated,none,0,21,9,6,42.41150082,27.48893572,3.747419571,3.313783586,5,NA,14,2.708050201,1,1,NA,0,1,2021,Flowering,Vegetative,Leaves bitten
+2021,6,19,I,809,irrigated,all,6,22.5,10,8,62.83185307,70.68583471,4.140462159,4.258245195,6,6,0,0,0,0,108,1,1,2016,Flowering,Flowering,
+2021,6,11,E,1490,irrigated,none,NA,14,13.5,8,84.82300165,112.3119374,4.440566752,4.721280155,6,NA,58,4.077537444,4,1,NA,0,1,2018,Flowering,Vegetative,
+2021,6,15,G,5768,irrigated,none,NA,15,9,8,56.54866776,71.47123287,4.035101644,4.269295031,5,NA,31,3.465735903,4,1,NA,0,1,2021,Flowering,Vegetative,
+2021,6,19,B,773,irrigated,half,1,16.5,12,9,84.82300165,76.57632093,4.440566752,4.338287903,4,NA,34,3.555348061,1,1,0,1,1,2018,Flowering,Flowering,
+2021,6,18,I,5769,irrigated,half,NA,19,12,6,56.54866776,69.11503838,4.035101644,4.235772339,5,NA,61,4.127134385,3,1,NA,0,1,2021,Flowering,Vegetative,May be same as 809 (both in experiment)
+2021,6,16,E,1183,irrigated,none,0,15.5,11,6.5,56.15596868,97.38937226,4.028132974,4.57871709,2,NA,47,3.871201011,2,1,NA,0,1,2016,Flowering,Vegetative,May be plant 562 (562 was NT in 2021)
+2021,7,buffer,buffer,5726,drought,all,4,NA,8,7,43.98229715,75.39822369,3.783787215,4.322783716,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by biomass
+2021,7,buffer,buffer,5727,drought,all,4,NA,12,9,84.82300165,160.2212253,4.440566752,5.076555519,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by biomass
+2021,7,buffer,buffer,5728,drought,none,0,27.5,14,9,98.96016859,109.9557429,4.594717432,4.700077947,5,3,7,2.079441542,1,1,NA,1,1,2021,Flowering,Flowering,Buffer by biomass
+2021,7,buffer,buffer,5729,drought,all,3,NA,7,6,32.98672286,NA,3.496105143,NA,3,0,0,0,0,0,NA,0,0,2021,Flowering,Dead,Buffer by biomass
+2021,7,buffer,buffer,5730,drought,half,1,13,7,4,21.99114858,NA,3.090640035,NA,2,0,0,0,0,0,NA,0,0,2021,Flowering,Dead,Buffer by biomass
+2021,7,buffer,buffer,5731,drought,none,0,21,8,5,31.41592654,49.48008429,3.447314979,3.901570251,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Stalk wilting. Buffer by biomass
+2021,7,buffer,buffer,5732,drought,half,1,16,10,4,31.41592654,109.9557429,3.447314979,4.700077947,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In buffer by biomass
+2021,7,buffer,buffer,5733,drought,none,0,21,12,11,103.6725576,183.7831702,4.641237447,5.21375664,3,NA,5,1.791759469,1,1,NA,0,1,2021,Flowering,Vegetative,In biomass
+2021,7,buffer,buffer,5734,drought,all,4,24,12,7,65.97344573,86.39379797,4.189252324,4.458915891,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In biomass
+2021,7,buffer,buffer,5735,drought,half,2,25,13,7,71.47123287,129.590697,4.269295031,4.864380999,4,5,30,3.433987204,2,1,NA,1,1,2021,Flowering,Flowering,Buffer below diversity
+2021,7,9,B,1255,drought,half,2,NA,6,2,9.424777961,117.8097245,2.243342175,4.769070819,2,NA,0,0,0,0,NA,0,1,2019,Flowering,Vegetative,
+2021,7,13,H,5736,drought,none,0,17,13,12,122.5221135,69.11503838,4.808291532,4.235772339,3,NA,11,2.48490665,1,1,NA,0,1,2021,Flowering,Vegetative,In demography?
+2021,8,buffer,buffer,5707,control,none,0,14,7.5,6.5,38.28816047,267.0353756,3.645140722,5.587381142,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer corner by biomas. Senescing and 2 early capsules forming.
+2021,8,buffer,buffer,5708,control,all,2,NA,8,4.5,28.27433388,120.165919,3.341954463,4.788873446,2,2,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Buffer corner by biomass
+2021,8,buffer,buffer,5709,control,all,3,NA,9,6.5,45.94579256,268.6061719,3.827462279,5.593246262,3,1,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Senescing. Buffer corner by biomass 
+2021,8,buffer,buffer,5710,control,all,3,NA,8,9,56.54866776,150.7964474,4.035101644,5.015930897,3,2,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Buffer corner by biomass
+2021,8,buffer,buffer,5763,control,none,0,18,10,7,54.97787144,235.619449,4.006930767,5.462217999,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In biomass. Wilting and one flower becoming a capsule
+2021,8,13,E,155,control,half,2,22,10,4,31.41592654,164.9336143,3.447314979,5.105543055,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,8,18,H,50,control,half,2,19,9,5,35.34291735,120.165919,3.565098014,4.788873446,4,4,0,0,0,0,93,1,1,2017,Flowering,Flowering,
+2021,8,buffer,buffer,5737,control,none,0,21,12,6,56.54866776,91.89158512,4.035101644,4.52060946,4,NA,28,3.36729583,2,1,NA,1,1,2021,Flowering,Flowering,In demography buffer
+2021,8,buffer,buffer,5738,control,half,2,20,13,4,40.8407045,84.82300165,3.709679243,4.440566752,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In demography buffer
+2021,8,buffer,buffer,346,control,none,0,21,12,8,75.39822369,NA,4.322783716,NA,4,NA,0,0,0,0,NA,NA,0,2021,Flowering,Dead,In diversity buffer. 346 may be an old tag?
+2021,8,buffer,buffer,5766,control,all,3,NA,8,6,37.69911184,87.9645943,3.629636536,4.476934396,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by diversity
+2021,8,buffer,buffer,5765,control,half,2,20,11,8,69.11503838,313.3738672,4.235772339,5.747396942,5,3,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Buffer by diversity
+2021,8,buffer,buffer,5764,control,all,0,NA,11,10,86.39379797,240.5281875,4.458915891,5.482837287,3,3,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Buffer by diversity
+2021,8,buffer,buffer,5767,control,none,0,24,10,9,70.68583471,93.46238144,4.258245195,4.537559018,6,3,40,3.713572067,3,1,NA,1,1,2021,Flowering,Flowering,Many one-leaf neighbours
+2021,8,buffer,buffer,5771,control,none,0,16.5,10,6,47.1238898,122.5221135,3.852780087,4.808291532,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Added to experiment on 04/23/21. In biomass
+2021,9,buffer,buffer,5739,irrigated,none,0,20,11,10,86.39379797,87.9645943,4.458915891,4.476934396,3,NA,49,3.912023005,3,1,NA,0,1,2021,Flowering,Vegetative,Subplot 1 buffer
+2021,9,buffer,buffer,5740,irrigated,none,0,18,8,6,37.69911184,65.97344573,3.629636536,4.189252324,2,NA,22,3.135494216,2,1,NA,0,1,2021,Flowering,Vegetative,Subplot 1 buffer
+2021,9,buffer,buffer,5741,irrigated,half,3,22,18,7,98.96016859,109.9557429,4.594717432,4.700077947,5,5,11,2.48490665,2,1,NA,1,1,2021,Flowering,Flowering,Subplot 1 buffer
+2021,9,buffer,buffer,5742,irrigated,none,0,22.5,10,8,62.83185307,102.1017612,4.140462159,4.625969975,4,5,33,3.526360525,2,1,NA,1,1,2021,Flowering,Flowering,Subplot 5 buffer
+2021,9,buffer,buffer,5743,irrigated,half,1,21,10,9,70.68583471,57.72676501,4.258245195,4.055720931,3,4,20,3.044522438,2,1,NA,1,1,2021,Flowering,Flowering,Subplot 5 buffer
+2021,9,buffer,buffer,5744,irrigated,half,2,19,14.5,12,136.6592804,96.99667318,4.917490824,4.574676681,5,NA,20,3.044522438,1,1,NA,0,1,2021,Flowering,Vegetative,Subplot 5 buffer 
+2021,9,4,I,1492,irrigated,all,2,NA,13,13,132.7322896,169.6460033,4.88833424,5.133713932,2,NA,0,0,0,0,NA,0,1,2019,Flowering,Vegetative,
+2021,9,buffer,buffer,5745,irrigated,all,6,NA,12.5,12,117.8097245,113.0973355,4.769070819,4.728248824,6,10,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Subplot 2 buffer
+2021,9,7,B,1080,irrigated,all,3,NA,16,12,150.7964474,183.7831702,5.015930897,5.21375664,3,3,0,0,0,0,0,1,1,2018,Flowering,Flowering,
+2021,9,buffer,buffer,5746,irrigated,none,0,29.5,13,15,153.1526419,120.165919,5.031435083,4.788873446,7,4,100,4.615120517,5,1,NA,1,1,2021,Flowering,Flowering,In diversity
+2021,11,buffer,buffer,5719,control,half,2,25,14,10,109.9557429,214.4136986,4.700077947,5.36790732,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by subplot 1
+2021,11,buffer,buffer,5720,control,none,0,NA,11,4,34.55751919,53.40707511,3.542625159,3.97794323,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by subplot 1. Flowers dry
+2021,11,buffer,buffer,5721,control,none,0,NA,14,10,109.9557429,200.2765317,4.700077947,5.29969907,3,5,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Buffer by subplot 1
+2021,11,0,H,379,control,all,3,NA,12,12,113.0973355,156.6869336,4.728248824,5.054249761,3,3,0,0,0,0,38,1,1,2017,Flowering,Flowering,
+2021,11,2,G,358,control,half,2,NA,11,10,86.39379797,15.31526419,4.458915891,2.72884999,4,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,11,4,H,13,control,none,0,16,10,5,39.26990817,150.7964474,3.67045853,5.015930897,2,2,18,2.944438979,2,1,0,1,1,2017,Flowering,Flowering,
+2021,11,6,I,549,control,all,3,NA,12,9,84.82300165,68.32964022,4.440566752,4.224343643,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,
+2021,11,5,F,280,control,all,6,NA,11,8,69.11503838,50.26548246,4.235772339,3.917318608,6,8,0,0,0,0,78,1,1,2017,Flowering,Flowering,
+2021,11,17,H,171,control,none,0,20,7,7,38.48451001,43.19689899,3.650255823,3.76576871,5,3,15,2.772588722,3,1,0,1,1,2016,Flowering,Flowering,
+2021,11,17,A,841,control,half,1,17,10,7,54.97787144,27.48893572,4.006930767,3.313783586,2,NA,0,0,0,0,NA,0,1,2016,Flowering,Vegetative,Flower might not make capsules
+2021,11,17,B,1625,control,all,2,NA,13,8,81.68140899,43.98229715,4.402826424,3.783787215,2,NA,0,0,0,0,NA,0,1,2018,Flowering,Vegetative,
+2021,11,buffer,buffer,5747,control,half,1,20,10,9,70.68583471,39.26990817,4.258245195,3.67045853,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Buffer by 841 and 1625
+2021,11,19,I,1648,control,none,0,14,9,6,42.41150082,54.97787144,3.747419571,4.006930767,3,2,0,0,0,0,NA,1,1,2019,Flowering,Flowering,
+2021,11,17,H,8314,control,none,0,13,9,4,28.27433388,75.39822369,3.341954463,4.322783716,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Near tag 717. Added to experiment 04/23/21
+2021,11,11,H,207,control,none,0,17,9,4,28.27433388,45.94579256,3.341954463,3.827462279,3,4,36,3.610917913,1,1,36,1,1,2017,Flowering,Flowering,
+2021,13,buffer,buffer,5749,control,all,2,NA,9,8,56.54866776,52.22897787,4.035101644,3.955637472,2,3,0,0,0,0,0,1,1,2021,Flowering,Flowering,Buffer by subplot 1
+2021,13,3,H,282,control,none,0,17,12,8,75.39822369,91.89158512,4.322783716,4.52060946,3,NA,50,3.931825633,2,1,NA,0,1,2017,Flowering,Vegetative,"3 rosettes- split it into 3 tags. Tags are 282, 1829, 1824"
+2021,13,buffer,buffer,5750,control,all,3,14,9,6,42.41150082,90.71348787,3.747419571,4.507706055,3,6,0,0,0,0,107,1,1,2021,Flowering,Flowering,Below biomass
+2021,13,5,C,880,control,half,1,18.5,8,8,50.26548246,76.57632093,3.917318608,4.338287903,3,NA,0,0,0,0,NA,0,1,2017,Flowering,Vegetative,2 rosettes- split into 2 tags. Other tag is 1857
+2021,13,buffer,buffer,5751,control,half,2,19.5,10.5,9.5,78.3434668,69.11503838,4.36110258,4.235772339,4,4,23,3.17805383,2,1,14,1,1,2021,Flowering,Flowering,In diversity
+2021,13,buffer,buffer,5752,control,none,0,16,10.5,10,82.46680716,107.2068493,4.412395875,4.674760139,4,1,144,4.976733742,4,1,NA,1,1,2021,Flowering,Flowering,In edge of buffer by diversity. Many small leaves 
+2021,13,buffer,buffer,5772,control,all,2,11,8,3.5,21.99114858,90.32078879,3.090640035,4.503367653,2,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,2 rosettes. In diversity
+2021,15,buffer,buffer,5711,drought,half,1,29,7,6,32.98672286,31.41592654,3.496105143,3.447314979,2,NA,9,2.302585093,1,1,NA,0,1,2021,Flowering,Vegetative,Biomass by Oregon grape
+2021,15,buffer,buffer,5712,drought,all,3,NA,8,7,43.98229715,82.46680716,3.783787215,4.412395875,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In buffer (SW corner above 14-19)
+2021,15,13,E,1025,drought,half,2,22,6,4,18.84955592,27.48893572,2.936489355,3.313783586,4,NA,0,0,0,0,NA,0,1,2018,Flowering,Vegetative,Wilting and probably won't make capsules
+2021,15,13,A,872,drought,none,0,23,11,5,43.19689899,120.9513172,3.76576871,4.795388127,6,4,0,0,0,0,41,1,1,2017,Flowering,Flowering,
+2021,15,14,A,1180,drought,none,0,22,11,6,51.83627878,77.75441818,3.948090267,4.353555375,4,NA,0,0,0,0,NA,0,1,2019,Flowering,Vegetative,
+2021,15,buffer,buffer,5713,drought,none,0,18,8,7,43.98229715,87.9645943,3.783787215,4.476934396,2,3,0,0,0,0,NA,1,1,2021,Flowering,Flowering,Very wilted. In buffer (SW corner above 14-19)
+2021,15,buffer,buffer,5714,drought,all,3,NA,9,6,42.41150082,141.3716694,3.747419571,4.951392376,3,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,Very wilted. In buffer (SW corner above 14-19)
+2021,15,buffer,buffer,5715,drought,half,2,22,7,7,38.48451001,64.79534848,3.650255823,4.171233818,4,NA,0,0,0,0,NA,0,1,2021,Flowering,Vegetative,In buffer (SW corner above 14-19)
+2021,15,buffer,buffer,5716,drought,none,0,29.5,10,6,47.1238898,117.8097245,3.852780087,4.769070819,4,NA,7,2.079441542,1,1,NA,0,1,2021,Flowering,Vegetative,In buffer (SW corner above 14-19)
+2021,15,buffer,buffer,5717,drought,all,2,NA,5,4,15.70796327,69.11503838,2.754167798,4.235772339,2,2,0,0,0,0,NA,1,1,2021,Flowering,Flowering,In buffer (SW corner above 14-19)
+2021,15,buffer,buffer,5718,drought,half,1,20,8,4,25.13274123,47.1238898,3.224171428,3.852780087,3,1,0,0,0,0,NA,1,1,2021,Flowering,Flowering,In buffer (SW corner above 14-19)
+2021,15,19,H,1036,drought,all,2,NA,8,5,31.41592654,69.11503838,3.447314979,4.235772339,2,NA,0,0,0,0,NA,0,1,2019,Flowering,Vegetative,
+2021,15,buffer,buffer,5773,drought,none,0,17,12,5,47.1238898,82.07410808,3.852780087,4.407622596,2,NA,14,2.708050201,1,1,NA,0,1,2021,Flowering,Vegetative,Biomass by demog/diversity 
