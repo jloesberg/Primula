@@ -22,9 +22,9 @@ clip <- clip %>%
          plot = as.factor(plot),
          tag = as.factor(tag),
          pflowerT1 = as.factor(pflowerT1),
-         psurvivalT1 = as.factor(psurvivalT1))
-clip$trt <- fct_relevel(clip$trt, "drought", "control", "irrigated")
-
+         psurvivalT1 = as.factor(psurvivalT1), 
+         trt = as.factor(trt))
+clip$trt <- factor(clip$trt, levels = c("drought", "control", "irrigated"))
 ```
 
 # LRT
@@ -97,6 +97,14 @@ pred.dat.output.g <- pred.dat.output.g %>%
 )
 
 #ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/FINALgrowth result fig.png", width =6, height =5, dpi = 300)
+
+#for this model, find % difference in size between low/high seeds
+#for median size of plant, how much bigger are you the next year if you flower but make zero seeds versus if you flower and make a lot of seeds
+
+median(clip$log.ros.area)
+comp <- pred.dat.output.g %>% 
+  filter(log.ros.area == "3.9") %>% 
+  mutate(ros.areaT1 = exp(log.ros.areaT1))
 ```
 
 ```{r plower}
