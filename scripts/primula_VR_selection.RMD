@@ -34,18 +34,18 @@ Standardizing predictor variables:
 
 ### read in all years of Primula data and weather data from the Cowichan
 # Add in climate data:
-source("../scripts/Cowichan_climatevalues.R")
+climate_scale <- read.csv("C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/CGOP_climatevalues_scaled.csv")
 
 # Add in demography data:
-source("../scripts/dode_allyears_cleaned.R")
+primula <- read.csv("C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/Primula_Demography_Data_2016to2023.csv")
 
 ## Join climate data to demography data by year
-primula <- left_join(Dodecatheon, climate_scale, by = "year") %>%
+primula <- left_join(primula, climate_scale, by = "year") %>%
   mutate(pflower = as.factor(pflower),
          pflowerT1 = as.factor(pflowerT1),
          psurvivalT1 = as.factor(psurvivalT1))
 
-remove(climate, climate_scale, Dodecatheon)
+remove(climate_scale)
 
 # table(primula$pflower) #example to get sample sizes
 # table(primula$trt) #example to get sample sizes
