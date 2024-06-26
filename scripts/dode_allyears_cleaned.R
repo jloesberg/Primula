@@ -15,7 +15,7 @@ dode2016 <- read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_D
 
 #changed tags:
 dode2016$tag[dode2016$tag==346]<-551 #new tag in 2017
-dode2016$tag[dode2016$tag==202]<-1057 #new tag in 2019
+#dode2016$tag[dode2016$tag==202]<-1057 #new tag in 2019 2024: they are seperate
 dode2016$tag[dode2016$tag==542]<-1054 #new tag in 2019
 
 #changing formats:
@@ -41,7 +41,7 @@ dode2017 <- dode2017 %>%
          tag = as.character(tag))
 
 #changed tags
-dode2017$tag[dode2017$tag==202]<-1057 #new tag in 2019
+#dode2017$tag[dode2017$tag==202]<-1057 #new tag in 2019 #they are seperate~
 dode2017$tag[dode2017$tag==542]<-1054 #new tag in 2019
 dode2017$tag[dode2017$tag==70]<-1734 #new tag in 2019
 #965 was recorded twice in 2017, but only found in plot 6 in sudsequent years. Taking out the plot 5 tag 965, even though it has measurements:
@@ -73,7 +73,7 @@ dode2018 <- dode2018 %>%
          tag = as.character(tag))
 
 #replaced tags
-dode2018$tag[dode2018$tag==202]<-1057 #new tag in 2019
+#dode2018$tag[dode2018$tag==202]<-1057 #new tag in 2019 - no they are sperate [2024]
 dode2018$tag[dode2018$tag==542]<-1054 #new tag in 2019
 dode2018$tag[dode2018$tag==70]<-1734 #new tag in 2019
 
@@ -121,6 +121,12 @@ dode2019$YrTag[dode2019$tag == "1270"] <- "2019"
 dode2019$notes[dode2019$tag == "1270"] <- "not a replacement for 1946"
 #adding 1946 as a NPNT
 dode2019 <- dode2019 %>% add_row(year = 2019, plot = "11", Xcoor = 5, Ycoor = "J", tag = 1946, notes = "NPNT, different than 1270", YrTag = "2018")
+
+#202 and 1057: not for same plant!
+dode2019$YrTag[dode2019$tag == "1057"] <- "2019"
+dode2019$notes[dode2019$tag == "1057"] <- "not a replacement for 202"
+#adding 202 as a NPNT
+dode2019 <- dode2019 %>% add_row(year = 2019, plot = "2", Xcoor = 12, Ycoor = "J", tag = 202, notes = "NPNT, different than 1057", YrTag = "2016")
 
 
 ### tag 35 in 2019 didnt have an entry for pflower or no.flowers, I'm not certain whether it flowered or not. Leave it in?
@@ -262,6 +268,13 @@ dode2021 <- subset(dode2021, tag != "1498")
 dode2021$tag[dode2021$tag == "1452"] <- "1498"
 dode2021$notes[dode2021$tag == "1498"] <- "tag found in 2022, not replaced by 1452"
 
+# 1124 and 1581 are the same plant (2023)
+# 1124 and 1581 are the same plant - 1124 was pulled in 2024 so keep 1581
+dode2021 <- subset(dode2023, tag != "1124")
+dode2021$tag[dode2021$tag == "1581"] <- "1124"
+dode2021$YrTag[dode2021$tag == "1124"] <- "2018" #was tagged in 2018
+dode2021$notes[dode2021$tag == "1124"] <- "replaced 1581, found out in 2023"
+
 #1076 is definitely seperate from 1210 (2022), and is in 2B not 12B
 dode2021$notes[dode2021$tag == "1076"] <- "in 2B. seperate from 1210"
 dode2021$notes[dode2021$tag == "1210"] <- "NP/NT"
@@ -373,6 +386,19 @@ dode2022 <- subset(dode2022, tag != "214")
 # #change 8317 to tagged in 2017 (tag found from last year in 2018)
 dode2022$YrTag[dode2022$tag == "8317"] <- 2017
 
+#5370 is 832 - make same plant and keep 832
+dode2022 <- subset(dode2022, tag != "832")
+
+dode2022$tag[dode2022$tag == "5370"] <- "832"
+dode2022$YrTag[dode2022$tag == "832"] <- "2017"
+
+# 1124 and 1581 are the same plant (2023)
+# 1124 and 1581 are the same plant - 1124 was pulled in 2023 so keep 1581
+dode2022 <- subset(dode2022, tag != "1124")
+dode2022$tag[dode2022$tag == "1581"] <- "1124"
+dode2022$YrTag[dode2022$tag == "1124"] <- "2018" #was tagged in 2018
+dode2022$notes[dode2022$tag == "1124"] <- "replaced 1581, found out in 2023"
+
 #making a clean df for next year's datasheet
 ### taking out pulled tags
 dode2022clean <- dode2022 %>% filter(tag.pulled != "1") %>% 
@@ -419,7 +445,29 @@ dode2023$YrTag[dode2023$tag == "904.new"] <- 2023
 dode2023$tag[dode2023$tag == "1965"] <- "1965.new"
 dode2023$YrTag[dode2023$tag == "1965.new"] <- 2023
 
+#found both 1585 and 625. Same plant! good, but pulled 1585 and left 625. not a problem anymore
+dode2023$problem.tag[dode2023$tag == "1585"] <- 0
+dode2023$problem.tag[dode2023$tag == "625"] <- 0
 
+# 832 and 5370 are the same plant - 5370 was pulled in 2024 so keep 832
+dode2023 <- subset(dode2023, tag != "5370")
+dode2023$problem.tag[dode2023$tag == "832"] <- 0
+
+#202 and 1057 are different plants (one was a replacement) 
+dode2023$problem.tag[dode2023$tag == "1057"] <- 0
+
+# 1124 and 1581 are the same plant - 1124 was pulled in 2023 so keep 1581
+dode2023 <- subset(dode2023, tag != "1124")
+dode2023$tag[dode2023$tag == "1581"] <- "1124"
+dode2023$YrTag[dode2023$tag == "1124"] <- "2018" #was tagged in 2018
+dode2023$notes[dode2023$tag == "1124"] <- "replaced 1581, found out in 2023"
+
+dode2023$problem.tag[dode2023$tag == "1565"] <- 0
+dode2023$problem.tag[dode2023$tag == "56"] <- 0
+dode2023$problem.tag[dode2023$tag == "1210"] <- 0
+dode2023$problem.tag[dode2023$tag == "1076"] <- 0
+dode2023$problem.tag[dode2023$tag == "1124"] <- 0
+dode2023$problem.tag[dode2023$tag == "1794"] <- 0
 
 dode2023 <- dode2023 %>% 
   mutate(plot = as.factor(plot),
@@ -438,8 +486,10 @@ Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode202
 # it gives warnings, but looks like everything is there!
 
 # in 2021, replaced some tags. Doing this in the big df:
-# 625 was replaced with 1585
-Dodecatheon$tag[Dodecatheon$tag == "625"] <- "1585"
+# 625 was replaced with 1585. 2023 we found both and pulled 1585
+#Dodecatheon$tag[Dodecatheon$tag == "625"] <- "1585"
+#Dodecatheon$tag[Dodecatheon$tag == "1585"] <- "625"
+
 
 # 1754 was replaced by 8307
 Dodecatheon$tag[Dodecatheon$tag == "1754"] <- "8307"
@@ -793,3 +843,9 @@ remove(tot.seeds)
 Dodecatheon <- Dodecatheon %>% 
   mutate(percapseeds = total.seeds/no.flowers,
          percapseeds = as.integer(percapseeds))
+
+#write.csv(Dodecatheon, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/Primula_Demography_Data_2016to2023.csv", row.names = F)
+
+
+
+
