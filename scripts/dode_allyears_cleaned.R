@@ -2,12 +2,6 @@
 
 library(tidyverse)
 ################################################################################
-#PROBLEM: something's going on with the dormany plants when I read them back in (ie plant 1881)
-
-#Eventually to do
-
-##### - dormany problem - make reproducible and add 2022 plants
-
 
 ################################################################################
 #### 2016: ####
@@ -22,7 +16,7 @@ dode2016$tag[dode2016$tag==542]<-1054 #new tag in 2019
 dode2016 <- dode2016 %>% 
   mutate(tag = as.character(tag),
         plot = as.factor(plot),
-        YrTag = as.numeric(YrTag),
+        YrTag = as.character(YrTag),
         Xcoor = as.character(Xcoor))
 dode2016 <- dode2016 %>% 
   mutate(psurvival = 1,
@@ -51,7 +45,8 @@ dode2017 <- subset(dode2017, plot != "5" | tag != "965")
 dode2017 <- dode2017 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
-         Xcoor = as.character(Xcoor))
+         Xcoor = as.character(Xcoor),
+         YrTag = as.character(YrTag))
 
 ################################################################################
 ####2018:####
@@ -89,7 +84,8 @@ dode2018 <- subset(dode2018, plot != "5" | tag != "965")
 dode2018 <- dode2018 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
-         Xcoor = as.character(Xcoor))
+         Xcoor = as.character(Xcoor),
+         YrTag = as.character(YrTag))
 
 ################################################################################
 #### 2019:####
@@ -142,7 +138,7 @@ dode2019 <- subset(dode2019, plot != "5" | tag != "965")
 #tag 35 this year had pflower adn no flowers black - taking it out for now - note that this might mean something for dormancy at some point! it was alive!
 dode2019 <- subset(dode2019, tag != "35")
 
-dode2019 <- dode2019 %>% mutate(YrTag = as.numeric(YrTag),
+dode2019 <- dode2019 %>% mutate(YrTag = as.character(YrTag),
                                 Xcoor = as.character(Xcoor))
 
 ################################################################################
@@ -171,7 +167,7 @@ dode2020$YrTag[dode2020$tag == "1946"] <- "2018"
 dode2020 <- dode2020 %>% 
   mutate(tag = as.character(tag),
          plot = as.factor(plot),
-         YrTag = as.numeric(YrTag),
+         YrTag = as.character(YrTag),
          Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
@@ -270,7 +266,7 @@ dode2021$notes[dode2021$tag == "1498"] <- "tag found in 2022, not replaced by 14
 
 # 1124 and 1581 are the same plant (2023)
 # 1124 and 1581 are the same plant - 1124 was pulled in 2024 so keep 1581
-dode2021 <- subset(dode2023, tag != "1124")
+dode2021 <- subset(dode2021, tag != "1124")
 dode2021$tag[dode2021$tag == "1581"] <- "1124"
 dode2021$YrTag[dode2021$tag == "1124"] <- "2018" #was tagged in 2018
 dode2021$notes[dode2021$tag == "1124"] <- "replaced 1581, found out in 2023"
@@ -280,10 +276,11 @@ dode2021$notes[dode2021$tag == "1076"] <- "in 2B. seperate from 1210"
 dode2021$notes[dode2021$tag == "1210"] <- "NP/NT"
 dode2021$Xcoor[dode2021$tag == "1076"] <- 2
 
+
 dode2021 <- dode2021 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
-         YrTag = as.numeric(YrTag),
+         YrTag = as.character(YrTag),
          Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
@@ -379,12 +376,12 @@ dode2022$YrTag[dode2022$tag == "8311"] <- "2017"
 # # 562 replaced by 1183
 dode2022 <- subset(dode2022, tag != "562")
 # #change 1183 to tagged in 2016
-dode2022$YrTag[dode2022$tag == "1183"] <- 2016
+dode2022$YrTag[dode2022$tag == "1183"] <- "2016"
 
 # #214 replaced by 8317
 dode2022 <- subset(dode2022, tag != "214")
 # #change 8317 to tagged in 2017 (tag found from last year in 2018)
-dode2022$YrTag[dode2022$tag == "8317"] <- 2017
+dode2022$YrTag[dode2022$tag == "8317"] <- "2017"
 
 #5370 is 832 - make same plant and keep 832
 dode2022 <- subset(dode2022, tag != "832")
@@ -399,6 +396,12 @@ dode2022$tag[dode2022$tag == "1581"] <- "1124"
 dode2022$YrTag[dode2022$tag == "1124"] <- "2018" #was tagged in 2018
 dode2022$notes[dode2022$tag == "1124"] <- "replaced 1581, found out in 2023"
 
+#398 and 5011 are the same plant, kept 398 pulled 5011
+dode2022 <- subset(dode2022, tag != "398")
+dode2022$tag[dode2022$tag == "5011"] <- "398"
+dode2022$YrTag[dode2022$tag == "398"] <- "2017" #was tagged in 2018
+dode2022$notes[dode2022$tag == "398"] <- "same as 5011 which was removed, found out in 2024"
+
 #making a clean df for next year's datasheet
 ### taking out pulled tags
 dode2022clean <- dode2022 %>% filter(tag.pulled != "1") %>% 
@@ -410,14 +413,14 @@ remove(dode2022clean)
 dode2022 <- dode2022 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
-         YrTag = as.numeric(YrTag),
+         YrTag = as.character(YrTag),
          Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 
 ################################################################################
 
 ################################################################################
-#2022 data
+#2023 data
 dode2023<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2023_Dodecatheon_Demography_Data.csv", header=T)
 #dealing with problem tags
 
@@ -462,6 +465,12 @@ dode2023$tag[dode2023$tag == "1581"] <- "1124"
 dode2023$YrTag[dode2023$tag == "1124"] <- "2018" #was tagged in 2018
 dode2023$notes[dode2023$tag == "1124"] <- "replaced 1581, found out in 2023"
 
+#398 and 5011 are the same plant, kept 398 pulled 5011
+dode2023 <- subset(dode2023, tag != "398")
+dode2023$tag[dode2023$tag == "5011"] <- "398"
+dode2023$YrTag[dode2023$tag == "398"] <- "2017" #was tagged in 2017
+dode2023$notes[dode2023$tag == "398"] <- "same as 5011 which was removed, found out in 2024"
+
 dode2023$problem.tag[dode2023$tag == "1565"] <- 0
 dode2023$problem.tag[dode2023$tag == "56"] <- 0
 dode2023$problem.tag[dode2023$tag == "1210"] <- 0
@@ -472,7 +481,7 @@ dode2023$problem.tag[dode2023$tag == "1794"] <- 0
 dode2023 <- dode2023 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
-         YrTag = as.numeric(YrTag),
+         YrTag = as.character(YrTag),
          Xcoor = as.character(Xcoor),
          psurvival = ifelse(leaves == 0 & is.na(rosetteL), 0, 1))
 ### getting a df for clipping experiment tags: 
@@ -481,8 +490,35 @@ dode2023 <- dode2023 %>%
 #(clip.tags, "./data/clipping_experiment_tags.csv",row.names = F)
 
 ################################################################################
+#2024 data
+dode2024<-read.csv("/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/2024_Dodecatheon_Demography_Data.csv", header=T)
+#dealing with problem tags
+
+#398 and 5011 are the same plant, kept 398 pulled 5011
+dode2024 <- subset(dode2024, tag != "5011")
+
+#832 is same plant as 5370, kept 832 pulled 5370
+dode2024 <- subset(dode2024, tag != "5370")
+
+#1937 is actually 1397
+dode2024$tag[dode2024$tag == "1937"] <- 1397
+
+dode2024$problem.tag[dode2024$tag == "398"] <- 0
+dode2024$problem.tag[dode2024$tag == "832"] <- 0
+dode2024$problem.tag[dode2024$tag == "1057"] <- 0
+dode2024$problem.tag[dode2024$tag == "1397"] <- 0
+dode2024$notes[dode2024$tag == "1397"] <- ""
+
+dode2024 <- dode2024 %>% 
+  mutate(plot = as.factor(plot),
+         tag = as.character(tag),
+         YrTag = as.character(YrTag))
+
+################################################################################
 #Putting it all together:
-Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023) 
+Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023, dode2024) 
+Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023) #for up to 2023 data 
+
 # it gives warnings, but looks like everything is there!
 
 # in 2021, replaced some tags. Doing this in the big df:
@@ -566,10 +602,14 @@ which(duplicated(dode2017$tag))
 which(duplicated(dode2021$tag))
 which(duplicated(dode2022$tag))
 which(duplicated(dode2023$tag))
+which(duplicated(dode2024$tag))
+
 
 ################################################################################
 #dont need these anymore:
+remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots, dode2023, dode2024)
 remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots, dode2023)
+
 
 # 2020 problems:
 #146 = solved
@@ -614,7 +654,7 @@ Dodecatheon %>%
 
 
 
-# this is pretty atrocious, but can't think of another way!
+# this is hard coding , but can't think of another way!
 # First, open that csv in excel. Then, go through by hand and assign plants stages in each year - future Jenna will have
 # to do it over again in next years
 ## Now that we have 2022 data, I can go back and tell which plants are actually dead and when.
@@ -641,8 +681,6 @@ dor_fates <- left_join(Dodecatheon, dtable, by = c("tag", "year"))
 dor_fates$life_st[dor_fates$state == "dormant"] <- "dormant"
 #dor_fates$life_st[dor_fates$state == "underground"] <- "underground"
 dor_fates$life_st[dor_fates$state == "dead"] <- "dead"
-
-#855 is having a problem!
 
 dor_fates$psurvival[dor_fates$life_st == "dormant"] <- "1"
 dor_fates$psurvival[dor_fates$life_st == "dead"] <- "0"
@@ -715,7 +753,7 @@ Dodecatheon <- Dodecatheon %>%
          psurvivalT1 = lead(psurvival),
          psurvival = as.factor(psurvival),
          psurvivalT1 = as.factor(psurvivalT1),
-         life_stT1 = lead(life_st),
+         #life_stT1 = lead(life_st),
          ros.areaTminus1 = lag(ros.area),
          pflowerTminus1 = lag(pflower),
          no.flowersT1 = lead(no.flowers))
@@ -845,6 +883,7 @@ Dodecatheon <- Dodecatheon %>%
          percapseeds = as.integer(percapseeds))
 
 #write.csv(Dodecatheon, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/Primula_Demography_Data_2016to2023.csv", row.names = F)
+write.csv(Dodecatheon, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/chapter2/Primula_Demography_Data_2016to2024.csv", row.names = F)
 
 
 
