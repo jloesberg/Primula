@@ -75,11 +75,11 @@ growth_LRT
 growth_no.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, REML= F)
 #what are the 10 and 90% CI?
 quant <- clip %>% 
-  #group_by(trt) %>% 
-  summarize(perc10 = quantile(log.total.seeds, probs = 0.1, na.rm = T),
-            perc90 = quantile(log.total.seeds, probs = 0.9, na.rm = T))
+  filter(log.total.seeds>0) %>% 
+  summarize(perc10 = quantile(log.total.seeds, probs = 0.10, na.rm = T),
+            perc90 = quantile(log.total.seeds, probs = 0.90, na.rm = T))
 #create df with all possible x values
-pred.dat <-  expand.grid(log.ros.area = seq(min(clip$log.ros.area), 5.15, by = .1), log.total.seeds = c(0,3.71))
+pred.dat <-  expand.grid(log.ros.area = seq(min(clip$log.ros.area), 5.15, by = .1), log.total.seeds = c(0,2.31, 4.17))
 pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(growth_no.trt, newdata = pred.dat, type = "response", re.form = ~0))
 pred.dat.output.g <- pred.dat.output.g %>% 
   mutate(total.seeds = if_else(log.total.seeds == 0, 0, round(exp(log.total.seeds))))
@@ -88,7 +88,8 @@ pred.dat.output.g <- pred.dat.output.g %>%
   geom_abline(slope=1, intercept = 0, color= "darkgrey", linewidth = .4)+
   geom_point(aes(size = total.seeds), shape = 1, color = "black", alpha = 0.75)+
   scale_size(range=c(1, 2.5))+
-  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 3.71), aes(x = log.ros.area, y = log.ros.areaT1),color = "darkorchid4", linewidth = 1.25)+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 4.17), aes(x = log.ros.area, y = log.ros.areaT1),color = "darkorchid4", linewidth = 1.25)+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2.31), aes(x = log.ros.area, y = log.ros.areaT1),color = "#b035ee", linewidth = 1.25)+
   geom_line(data = subset(pred.dat.output.g,  log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linewidth = 1.25)+
   scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
