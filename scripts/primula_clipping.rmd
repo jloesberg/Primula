@@ -73,30 +73,37 @@ growth_LRT
 ```{r growth best fit model log.ros.area + log.total.seeds}
 #best supported model:
 growth_no.trt <- lmer(log.ros.areaT1 ~ log.ros.area + log.total.seeds + (1|plot), data = clip, REML= F)
+#what are the 10 and 90% CI?
+quant <- clip %>% 
+  #group_by(trt) %>% 
+  summarize(perc10 = quantile(log.total.seeds, probs = 0.1, na.rm = T),
+            perc90 = quantile(log.total.seeds, probs = 0.9, na.rm = T))
 #create df with all possible x values
-pred.dat <-  expand.grid(log.ros.area = seq(2, 5.5, by = .1), log.total.seeds = c(0, 1, 2, 2.5, 3, 4, 5, 5.2))
+pred.dat <-  expand.grid(log.ros.area = seq(min(clip$log.ros.area), 5.15, by = .1), log.total.seeds = c(0,3.71))
 pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(growth_no.trt, newdata = pred.dat, type = "response", re.form = ~0))
 pred.dat.output.g <- pred.dat.output.g %>% 
   mutate(total.seeds = if_else(log.total.seeds == 0, 0, round(exp(log.total.seeds))))
 
 (growth <- ggplot(clip, aes(x = log.ros.area, y = log.ros.areaT1))+
-  geom_abline(slope=1, intercept = 0, color= "black", linewidth = .2)+
+  geom_abline(slope=1, intercept = 0, color= "darkgrey", linewidth = .4)+
   geom_point(aes(size = total.seeds), shape = 1, color = "black", alpha = 0.75)+
-  scale_size(range=c(1.25, 2.5))+
-  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 5), aes(x = log.ros.area, y = log.ros.areaT1),color = "darkorchid4", linewidth = 1.5)+
-  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 2.5), aes(x = log.ros.area, y = log.ros.areaT1), color = "darkorchid2", linetype = "longdash", linewidth = 1.5)+
-  geom_line(data = subset(pred.dat.output.g,  log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linetype = "dashed", linewidth = 1.5)+
+  scale_size(range=c(1, 2.5))+
+  geom_line(data = subset(pred.dat.output.g, log.total.seeds == 3.71), aes(x = log.ros.area, y = log.ros.areaT1),color = "darkorchid4", linewidth = 1.25)+
+  geom_line(data = subset(pred.dat.output.g,  log.total.seeds == 0), aes(x = log.ros.area, y = log.ros.areaT1), color = "orchid1", linewidth = 1.25)+
   scale_y_continuous(expand = c(0, 0), limits = c(2, 6))+
   scale_x_continuous(expand = c(0, 0), limits = c(2, 6))+
-  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022", size = "Seeds in 2021", color = "Seeds in 2021")+
-  theme(axis.line = element_line(colour = 'black', linewidth = 1.1), 
-        text = element_text(size = 20),
-        legend.title = element_text(size = 8),
-        legend.text = element_text(size = 7))+
+  labs(x = "log(Rosette Area) in 2021", y = "log(Rosette Area) in 2022", size = "Seeds in 2021")+
+  theme(axis.line = element_line(colour = 'black', linewidth = 1), 
+        text = element_text(size = 9),
+        legend.title = element_text(size = 7),
+        legend.text = element_text(size = 6),
+        legend.position = c(.82, .15),
+        legend.background = element_rect(colour = "black"))+
+  theme(legend.key.size = unit(.25, 'cm'))+
   coord_fixed(ratio=1) #makes plot square so legend doesnt warp it when saving in ggplot
 )
 
-#ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/FINALgrowth result fig.png", width =6, height =5, dpi = 300)
+ggsave(plot = growth, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/clipping experiment/FINALgrowth result fig.png", width =3, height =3, dpi = 300)
 
 #for this model, find % difference in size between low/high seeds
 #for median size of plant, how much bigger are you the next year if you flower but make zero seeds versus if you flower and make a lot of seeds
