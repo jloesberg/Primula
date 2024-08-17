@@ -33,8 +33,12 @@ weather$Date <- parse_date_time(weather$Date, "Y-m-d") #may need to change the f
 weather$month_year <- format(as.Date(weather$Date), "%Y-%m")
 
 #because the 2012 data has NA's, only include the December values (no na's)
+#check these for chapter 1!
+#weather <- weather %>% filter(Date >= as.Date("2012-12-01"),
+#                              Date <= as.Date("2023-08-15"))
+#check this for chapt 2:
 weather <- weather %>% filter(Date >= as.Date("2012-12-01"),
-                              Date <= as.Date("2023-08-15"))
+                             Date <= as.Date("2024-02-01"))
 #get total precip, round
 # annual <- weather %>% 
 #   mutate(month = month(Date), year = year(Date)) %>%
@@ -255,8 +259,8 @@ remove(spring, summer, winter, fall, weather) # take away the dfs I dont need
 
 ###################################################################################
 
-climate <- climate %>% 
-  filter(year != "2023") #were not estign cliamte in 2023
+#climate <- climate %>% 
+#  filter(year != "2023") #were not estign cliamte in 2023
 
 #here I'm scaling the climate varibles
 climate_scale <- climate %>% 
@@ -334,7 +338,7 @@ clip.spring <- climate$spring.mean.temp[climate$year == 2021]
 clip.precip <- climate$spring.tot.precip[climate$year == 2021]
 
 
-par(mfrow=c(1,4))
+par(mfrow=c(2,2))
 
 hist(histograms$summer.mean.temp, xlab = "degrees C", main = "Summer", col = 'white', border = "black")
 abline(v = mean(histograms$summer.mean.temp, na.rm = T),
@@ -343,7 +347,7 @@ abline(v = mean(histograms$summer.mean.temp, na.rm = T) + sd(histograms$summer.m
        col = "grey", lty = 2, lwd = 3)
 abline(v = mean(histograms$summer.mean.temp, na.rm = T) - sd(histograms$summer.mean.temp, na.rm = T),
        col = "grey", lty = 2, lwd = 3)
-points(x = clip.summer, y = 0, pch = 19, col = "darkorchid4", cex = 1.5)
+points(x = clip.summer, y = 0, pch = 19, col = "darkorchid4", cex = 1.75)
  # abline(v = mean(histograms$summer.mean.temp, na.rm = T) - 2*(sd(histograms$summer.mean.temp, na.rm = T)),
  #        col = "grey", lty = 2, lwd = 2)
  # abline(v = mean(histograms$summer.mean.temp, na.rm = T) + 2*(sd(histograms$summer.mean.temp, na.rm = T)),
@@ -358,7 +362,7 @@ abline(v = mean(histograms$winter.mean.temp, na.rm = T) + sd(histograms$winter.m
        col = "grey", lty = 2, lwd = 3)
 abline(v = mean(histograms$winter.mean.temp, na.rm = T) - sd(histograms$winter.mean.temp, na.rm = T),
        col = "grey", lty = 2, lwd = 3)
-points(x = clip.winter, y = 0, pch = 19, col = "darkorchid4", cex = 1.5)
+points(x = clip.winter, y = 0, pch = 19, col = "darkorchid4", cex = 1.75)
 
 
 
@@ -369,7 +373,7 @@ abline(v = mean(histograms$spring.mean.temp, na.rm = T) + sd(histograms$spring.m
        col = "grey", lty = 2, lwd = 3)
 abline(v = mean(histograms$spring.mean.temp, na.rm = T) - sd(histograms$spring.mean.temp, na.rm = T),
        col = "grey", lty = 2, lwd = 3)
-points(x = clip.spring,y = 0, pch = 19, col = "darkorchid4", cex = 1.5)
+points(x = clip.spring,y = 0, pch = 19, col = "darkorchid4", cex = 1.75)
 
 
 hist(histograms$spring.tot.precip, xlab = "Total Precip (mm)", main = "Spring", col = 'white', border = "black")
@@ -379,9 +383,13 @@ abline(v = mean(histograms$spring.tot.precip, na.rm = T) + sd(histograms$spring.
        col = "grey", lty = 2, lwd = 3)
 abline(v = mean(histograms$spring.tot.precip, na.rm = T) - sd(histograms$spring.tot.precip, na.rm = T),
        col = "grey", lty = 2, lwd = 3)
-points(x = clip.precip,y = 0, pch = 19, col = "darkorchid4", cex = 1.5)
+points(x = clip.precip,y = 0, pch = 19, col = "darkorchid4", cex = 1.75)
 
 #remove(histograms)
 
 write.csv(climate_scale, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/CGOP_climatevalues_scaled.csv", row.names=FALSE)
 write.csv(climate, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/CGOP_climatevalues.csv", row.names=FALSE)
+
+
+write.csv(climate_scale, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/chapter2/data/CGOP_climatevalues_scaled.csv", row.names=FALSE)
+write.csv(climate, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/chapter2/data/CGOP_climatevalues.csv", row.names=FALSE)
