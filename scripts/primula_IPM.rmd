@@ -481,7 +481,7 @@ bigmatrix<-function(params_list, mat.size)
 lamb_lists <- lapply(X = params_list, FUN = bigmatrix, mat.size = mat.size) #for each row of params_list, run the big matrix function!
 #great~! now make it a df
 boot_lambda <- do.call(rbind, lamb_lists)
-#write.csv(boot_lambda, "../tables/primula.bootstrap.climate.lambdas.2024.04.02.csv", row.names = F)
+write.csv(boot_lambda, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula//tables/primula.bootstrap.climate.lambdas.2024.08.24.csv", row.names = F)
 ```
 
 ```{r bootstrap figures}
@@ -500,7 +500,7 @@ quant <- boot_lambda %>%
   scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   scale_fill_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Spring Temperature")+
-  coord_cartesian(ylim = c(.8, 1.02))+ 
+  coord_cartesian(ylim = c(.77, 1.02))+ 
   geom_hline(yintercept = 1, color= "black", linewidth = .2)+
   scale_linetype_manual(values=c("dotted", "solid"), labels = c("vegetative", "flowered"), name = "") +  
   theme(strip.background = element_blank(), strip.text.x = element_blank(), axis.line = element_line(colour = 'black', linewidth = 1.1), 
@@ -513,7 +513,7 @@ quant <- boot_lambda %>%
   geom_line(linewidth = 1.6)+
   geom_ribbon(aes(x = summer.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), linewidth = .75, alpha = 0.1)+
   facet_wrap(~trt)+
-  scale_y_continuous(limits=c(.8,1.02))+ 
+  scale_y_continuous(limits=c(.77,1.02))+ 
   scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   scale_fill_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
   labs(y = expression(paste("\u03BB")), x = "Summer Temperature")+
@@ -527,7 +527,7 @@ quant <- boot_lambda %>%
   filter(summer.temp == 0 & gs.temp == 0) %>% 
   ggplot(aes(x = winter.temp, y = mean.lambda, color = trt, linetype = reproduction))+
   geom_line(linewidth = 1.6)+
-  scale_y_continuous(limits=c(.8,1.02))+ 
+  scale_y_continuous(limits=c(.77,1.02))+ 
   geom_ribbon(aes(x = winter.temp, ymin = lower.quant, ymax = upper.quant, fill = trt), linewidth = .75, alpha = 0.1)+
   facet_wrap(~trt)+
   scale_color_manual(values = c("#5f9034", "#e81014", "#2892c7"), name = "")+
@@ -540,7 +540,7 @@ quant <- boot_lambda %>%
 
 #patch work package
 (boot.ipm <- q.gs + q.sum +  q.win + plot_layout(guides = "collect", ncol = 1)+plot_annotation(tag_level = "A"))
-#ggsave(plot = boot.ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/ipm bootstrap april2.png", width = 10, height = 10, dpi = 300)
+ggsave(plot = boot.ipm, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/ipm bootstrap aug26.png", width = 10, height = 10, dpi = 300)
 
 
 ```
@@ -1139,10 +1139,6 @@ leaf.to.adult.lambda <- tibble::rownames_to_column(leaf.to.adult.lambda, "prob.1
 #patch these together
 (together <- seed.to.leaf.lambda.fig + leaf.to.leaf.lambda.fig +leaf.to.adult.lambda.fig + plot_annotation(tag_levels = 'A') +plot_layout(ncol = 1))
 
-ggsave(plot = together, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/pest.simulations.tagged2.png", width = 6, height = 10, dpi = 300)
-
-
-
-
+#ggsave(plot = together, file = "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/Figures/IPM/pest.simulations.tagged2.png", width = 6, height = 10, dpi = 300)
 ```
 

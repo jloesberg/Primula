@@ -113,6 +113,11 @@ median(clip$log.ros.area)
 comp <- pred.dat.output.g %>% 
   filter(log.ros.area == "3.9") %>% 
   mutate(ros.areaT1 = exp(log.ros.areaT1))
+
+pred.dat <-  expand.grid(log.ros.area = seq(min(clip$log.ros.area), 5.15, by = .1), log.total.seeds = c(0,2.31, 4.17))
+pred.dat.output.g <- cbind(pred.dat, log.ros.areaT1 = predict(growth_no.trt, newdata = pred.dat, type = "response", re.form = ~0))
+pred.dat.output.g <- pred.dat.output.g %>% 
+  mutate(total.seeds = if_else(log.total.seeds == 0, 0, round(exp(log.total.seeds))))
 ```
 
 ```{r plower}
