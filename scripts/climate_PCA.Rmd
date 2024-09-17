@@ -38,7 +38,7 @@ corrplot(M, p.mat = res1$p, method="circle",type="upper",insig = "p-value", sig.
 
 Ok, the PCA!
 The goal of PCA is to explain most of the variability in the data with a smaller number of variables than the original data set.
-From Tom miller's paper: Loadings of seasonal climate variables onto PC1-3. Because climate data were standardized to mean zero and unit variance, loadings can be interpreted as the correlation between the climate variable and the PC.
+
 ```{r}
 pca_result <- prcomp(climate[,-1], scale = F) #variables are already scaled
 pca_result$rotation

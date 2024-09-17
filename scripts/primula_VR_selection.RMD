@@ -7,26 +7,14 @@ output: html_document
 
 
 ```{r packages}
-## Primula vital rates with climate data
-
 library(tidyverse)
 library(AICcmodavg)
 library(lme4)
-#library(lmtest)
-#library(effects)
-library(wesanderson) # for colors
 library(patchwork)
-FF <- wes_palettes$FantasticFox1
-Z <- wes_palettes$Zissou1
-R <- wes_palettes$Royal2
-I <- wes_palettes$IsleofDogs1
+
 theme_set(theme_classic()) #for ggplot
 ```
 
-Standardizing predictor variables:
-- The convention that you standardize predictions primarily exists so that the units of the regression coefficients are the same.
-- Standardizing consists in subtracting the mean and dividing by the standard deviation
--  What it changes is the correlation between main effects and their interactions (which seemed to be a problem previously)
 
 
 ```{r sourcing data}
@@ -196,7 +184,6 @@ growth <- mget(ls(pattern = "^gm")) #make a list of all of those models that sta
 growth_AICc<-aictab(cand.set = growth, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
 #rm(list = ls()[grepl("gm", ls())]) #removes everything with gm
-#current best fit:
 gm.summer.av.temp.cor.trt.int6 <- lmer(log.ros.areaT1 ~ log.ros.area*pflower + trt*summer.mean.temp + (1|plot) + (1|year), data = primula, REML = F)
 summary(gm.summer.av.temp.cor.trt.int6)
 
@@ -622,10 +609,6 @@ sm.winter.av.temp.cor.trt.int11 <- glmer(psurvivalT1 ~ log.ros.area + winter.mea
 sm.winter.av.temp.cor.trt.int12 <- glmer(psurvivalT1 ~ log.ros.area*trt*winter.mean.temp + pflower + (1|plot) + (1|year), data = primula, family = "binomial")
 #sm.winter.av.temp.cor.trt.int13 <- glmer(psurvivalT1 ~ log.ros.area*pflower*trt + winter.mean.temp + (1|plot) + (1|year), data = primula, family = "binomial")
 
-#sm.gs.precip.cor.int3@optinfo$conv$lme4$messages #this is !NULL, which means it did not converge
-#
-#sm.winter.av.temp.cor.trt.int7@optinfo$conv$lme4$messages #if NULL, then it converges! this is a model that converges
-
 survival <- mget(ls(pattern = "^sm")) #make a list of all of those models that start with gm (^ means start with)
 survival_AICc<-aictab(cand.set = survival, modnames = NULL,second.ord=TRUE,nobs=NULL,sort=TRUE)
 
@@ -868,44 +851,6 @@ poisson
 
 
 #no.seeds
-partitioning out successful seed set
-(1) probability of flowering (above)
-(2) if you flower, how many do you make (above)
-(3) how many seeds per flower on average (trt dependent)
-
-```{r}
-# If you make seeds, how many do you make?
-#if you make seeds, how many do you make
-#Now, make a model for number of seeds produced:
-#first some graphs
-
-  
-ggplot(subset(primula, total.seeds >0), aes(x = log.ros.area, y = total.seeds, color = trt))+
-  geom_point()+
-  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~year)
-ggplot(subset(primula, total.seeds >0), aes(x = log.ros.area, y = total.seeds))+
-  geom_point()+
-  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~trt)
-ggplot(subset(primula, total.seeds >0), aes(x = log.ros.area, y = total.seeds, color = trt))+
-  geom_point()+
-  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)
-
-  
-ggplot(subset(primula, total.seeds >0), aes(x = log.ros.area, y = percapseeds, color = trt))+
-  geom_point()+
-  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~year)
-ggplot(subset(primula, total.seeds >0), aes(x = log.ros.area, y = percapseeds))+
-  geom_point()+
-  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)+
-  facet_wrap(~trt)
-ggplot(subset(primula, total.seeds >0), aes(x = log.ros.area, y = percapseeds, color = trt))+
-  geom_point()+
-  geom_smooth(method="glm", method.args=list(family="poisson"), se = F)
-```
-
 
 ```{r}
 #TO be used in IPM: number of seeds per flower, is this treatment dependent?
@@ -930,8 +875,6 @@ pred <- cbind(pred.dat, pred)
 ggplot(data = subset(primula, total.seeds >0), aes(x=trt, y=percapseeds, color = trt))+
   geom_boxplot()
 
-# here's number of seeds per plant made on average
-seeds <- mean(primula$total.seeds, na.rm = T) #36
 ```
 
 

@@ -4,12 +4,7 @@ author: "JL"
 date: "3/2/2023"
 output: html_document
 ---
-to do before publication:
--clean up stuff i dont need (comented out things)
-update file pathways
-rerun bootstrapping
-make sure discrete thinsg are up to date
-edit appendix fig with pot experiment lines
+
 
 -
 ```{r setup, include=FALSE}
@@ -20,9 +15,6 @@ library(lme4)
 library(popbio)
 library(patchwork) #for putting plots into one
 theme_set(theme_classic()) #for ggplot
-library(wesanderson) # for colors
-Z <- wes_palettes$Zissou1
-
 ```
 
 ```{r}
@@ -50,8 +42,6 @@ new.plants <- primula %>%
   filter(leaves < 3) %>% ## can't have more than 3 leaves
   filter(!is.na(log.ros.area))
 ```
-
-I thought a lot here about parametric versus non parametric bootstrapping - I'm going with parametric because it seems easier, and we are running models that we have confidence in. Also we won't have the convergence problem that we had with the townsendia bootstrapped data (some bootstrapped data samples lead to models that wouldnt converge). It is also easier to code!
 
 ## Bootstrapped IPM for Primula data
 ```{r bootstrapping model coefficients}
@@ -449,7 +439,7 @@ bigmatrix<-function(params_list, mat.size)
   Fmat<-matrix(0,(n+2),(n+2))
   
   # top row: # seedlings produced by each size class:
-  Fmat[1,3:(n+2)]<-f.yx(y,params_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived, I think? It's what Tom has
+  Fmat[1,3:(n+2)]<-f.yx(y,params_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived
   
   # Growth/survival transition matrix
   Tmat<-matrix(0,(n+2),(n+2))
@@ -714,7 +704,7 @@ bigmatrix<-function(params_list, mat.size)
   Fmat<-matrix(0,(n+2),(n+2))
   
   # top row: # seedlings produced by each size class:
-  Fmat[1,3:(n+2)]<-f.yx(y,params_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived, I think? It's what Tom has
+  Fmat[1,3:(n+2)]<-f.yx(y,params_list) #This is a y because it is the fecundity kernel for plants that have already grown/survived
   
   # Growth/survival transition matrix
   Tmat<-matrix(0,(n+2),(n+2))
@@ -802,7 +792,6 @@ primula_lambda <- do.call(rbind, lamb_lists)
 
 ```{r sensitivity}
 #goal: examine sensitivity of parameters and discrete transition probabilities for appendix
-#this is an ugly hard code but oh well
 perturbation <- 0.01 #perturbation
 
 sens.params <- params %>% 
