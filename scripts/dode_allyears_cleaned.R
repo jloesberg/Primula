@@ -216,11 +216,11 @@ dode2021$YrTag[dode2021$tag == "8312"] <- "2017"
 # dode2021 <- subset(dode2021, tag != "81")
 # #change 1881 to tagged in 2016
 # dode2021$YrTag[dode2021$tag == "1881"] <- "2016"
-
-# # 562 replaced by 1183
- dode2021 <- subset(dode2021, tag != "562")
-# #change 1183 to tagged in 2016
- dode2021$YrTag[dode2021$tag == "1183"] <- "2016"
+# 
+# # # 562 replaced by 1183  = different plants
+#  dode2021 <- subset(dode2021, tag != "562")
+# # #change 1183 to tagged in 2016
+#  dode2021$YrTag[dode2021$tag == "1183"] <- "2016"
 
 # #214 replaced by 8317
  dode2021 <- subset(dode2021, tag != "214")
@@ -373,10 +373,10 @@ dode2022 <- subset(dode2022, tag != "215")
 #change 8311 to tagged in 2017
 dode2022$YrTag[dode2022$tag == "8311"] <- "2017"
 
-# # 562 replaced by 1183
-dode2022 <- subset(dode2022, tag != "562")
-# #change 1183 to tagged in 2016
-dode2022$YrTag[dode2022$tag == "1183"] <- "2016"
+# # # 562 replaced by 1183 - diff
+# dode2022 <- subset(dode2022, tag != "562")
+# # #change 1183 to tagged in 2016
+# dode2022$YrTag[dode2022$tag == "1183"] <- "2016"
 
 # #214 replaced by 8317
 dode2022 <- subset(dode2022, tag != "214")
@@ -428,10 +428,10 @@ dode2023 <- subset(dode2023, tag != "215")
 #change 8311 to tagged in 2017
 dode2023$YrTag[dode2023$tag == "8311"] <- 2017
 
-# # 562 replaced by 1183
-dode2023 <- subset(dode2023, tag != "562")
-# #change 1183 to tagged in 2016
-dode2023$YrTag[dode2023$tag == "1183"] <- 2016
+# # # 562 replaced by 1183 - diff
+# dode2023 <- subset(dode2023, tag != "562")
+# # #change 1183 to tagged in 2016
+# dode2023$YrTag[dode2023$tag == "1183"] <- 2016
 
 # #214 replaced by 8317
 dode2023 <- subset(dode2023, tag != "214")
@@ -503,6 +503,11 @@ dode2024 <- subset(dode2024, tag != "5370")
 #1937 is actually 1397
 dode2024$tag[dode2024$tag == "1937"] <- 1397
 
+# # # 562 replaced by 1183 ( no different plants)
+# dode2021 <- subset(dode2021, tag != "562")
+# # #change 1183 to tagged in 2016
+# dode2021$YrTag[dode2021$tag == "1183"] <- "2016"
+
 dode2024$problem.tag[dode2024$tag == "398"] <- 0
 dode2024$problem.tag[dode2024$tag == "832"] <- 0
 dode2024$problem.tag[dode2024$tag == "1057"] <- 0
@@ -512,12 +517,17 @@ dode2024$notes[dode2024$tag == "1397"] <- ""
 dode2024 <- dode2024 %>% 
   mutate(plot = as.factor(plot),
          tag = as.character(tag),
-         YrTag = as.character(YrTag))
+         YrTag = as.character(YrTag)) %>% 
+  select(!notes2023)
+dode2024_cleaned <- dode2024 %>% 
+  filter(is.na(tag.pulled))
+
+#write.csv(dode2024_cleaned, "/Users/Jenna/Dropbox/Williams' Lab/Cowichan IDE/Cowichan_DemographyData/Dodecatheon/Cleaned (use for future datasheets)/2024_Dodecatheon_Demography_Data_CLEANED.csv",row.names = F)
 
 ################################################################################
 #Putting it all together:
 Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023, dode2024) 
-Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023) #for up to 2023 data 
+#Dodecatheon<-bind_rows(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, dode2023) #for up to 2023 data 
 
 # it gives warnings, but looks like everything is there!
 
@@ -539,8 +549,8 @@ Dodecatheon$tag[Dodecatheon$tag == "864"] <- "8312"
 # #81 replaced by 1881
 # Dodecatheon$tag[Dodecatheon$tag == "81"] <- "1881"
 
-# 562 replaced by 1183
-Dodecatheon$tag[Dodecatheon$tag == "562"] <- "1183"
+# 562 replaced by 1183 = no they are seperate plants
+#Dodecatheon$tag[Dodecatheon$tag == "562"] <- "1183"
 
 # #214 replaced by 8317
  Dodecatheon$tag[Dodecatheon$tag == "214"] <- "8317"
@@ -608,7 +618,7 @@ which(duplicated(dode2024$tag))
 ################################################################################
 #dont need these anymore:
 remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots, dode2023, dode2024)
-remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots, dode2023)
+#remove(dode2016, dode2017, dode2018, dode2019, dode2020, dode2021, dode2022, plots, dode2023)
 
 
 # 2020 problems:
@@ -693,6 +703,11 @@ dor_fates$pflower[dor_fates$life_st == "dormant"] <- "0"
 Dodecatheon <- dor_fates %>% 
   select(-state) 
 
+#for 2024 data, do the survial data
+Dodecatheon <- Dodecatheon %>% 
+  mutate(leaves = no.smleaf+no.bigleaf) %>% 
+  mutate(psurvival = if_else(year == "2024", if_else(!is.na(ros.area), "1", "0"), psurvival))
+
 remove(dor_fates, dormant, dtable)
 # ################################################################################
 # #Adding in eaten data from 2019!
@@ -745,7 +760,9 @@ remove(dor_fates, dormant, dtable)
 
 Dodecatheon <- Dodecatheon %>% 
   group_by(tag) %>% 
-  mutate(ros.areaT1 = lead(ros.area),
+  mutate(pclonal = if_else(no.smleaf >0, 1, 0),
+         pclonalT1 = lead(pclonal),
+         ros.areaT1 = lead(ros.area),
          no.capsulesT1 = lead(no.capsules),
          pflowerT1 = lead(pflower),
          pflower = as.factor(pflower),
@@ -883,7 +900,7 @@ Dodecatheon <- Dodecatheon %>%
          percapseeds = as.integer(percapseeds))
 
 #write.csv(Dodecatheon, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/Primula/data_for_publication/Primula_Demography_Data_2016to2023.csv", row.names = F)
-write.csv(Dodecatheon, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/chapter2/Primula_Demography_Data_2016to2024.csv", row.names = F)
+#write.csv(Dodecatheon, "C:/Users/Jenna/OneDrive - The University Of British Columbia/Data Projects/chapter2/data/Primula_Demography_Data_2016to2024.csv", row.names = F)
 
 
 
