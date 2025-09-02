@@ -853,9 +853,8 @@ poisson
 #no.seeds
 
 ```{r}
-#TO be used in IPM: number of seeds per flower, is this treatment dependent?
-#Seeds per flower
-#these are for per capita
+#number of seeds per flower
+
 cap <- glmer(percapseeds~1+(1|plot), data = subset(primula, total.seeds >0), family = "poisson")
 cap1 <- glmer(percapseeds~log.ros.area + (1|year) + (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
 cap2  <- glmer(percapseeds~log.ros.area+trt + (1|year) + (1|plot), data = subset(primula, total.seeds >0), family = "poisson")
