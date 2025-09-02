@@ -1,0 +1,99 @@
+README for data
+
+__CGOP_climatevalues_scaled.csv__
+
+year: year of collected data
+
+remaining columns are seasonal climate variables for fall (September-November), winter (December-February), spring (March-May), and summer (June-August)
+
+climate variables are tot.precip (total precipitation), mean.max.temp (maximum temperature), mean.min.temp (minimum temperature), and mean.temp (mean temperature) for 2013-2023. Values have been scaled to a mean of 0 and standard deviation of 1
+
+__Primula_Clipping_Experiment.csv__
+
+year: year that data were collected
+
+plot: plot number of experiment
+
+tag: unique identifier for each individual plant
+
+trt: rainfall experiment treatment
+
+clip.treatment: treatment for clipping experiment (all flowers clipped, half flowers clipped, no flowers clipped)
+
+no.clipped: number of flowers clipped in experiment
+
+ht: height of flowering stalk from base of ground to top
+
+rosetteL: longest length of rosette
+
+rosetteW: width of rosette perpendicular to length measurement
+
+ros.area: area of rosette calculated as the area of an ellipse (for current in year)
+
+ros.areaT1: area of rosette calculated as the area of an ellipse (for subsequent year)
+
+log.ros.area: natural logarithm transformation of ros.area
+
+log.ros.areaT1: natural logarithm transformation of ros.areaT1
+
+no.flowers: number of flowers made by plant at start of experiment
+
+no.flowersT1: number of flowers made by plant in the following year
+
+total.seeds: number of seeds made by plant
+
+log.total.seeds:  natural logarithm transformation of total.seeds
+
+no.success.cap: number of capsules that made seeds
+
+pseeds: probability that plant made seeds (0 = did not make seeds, 1 = made seeds)
+
+total.seedsT1: number of seeds made by plant in the following year
+
+pflowerT1: probability of plant flowering the following year (0 = not flowering, 1 = flowering)
+
+psurvivalT1: probability of plant being alive the following year (0 = dead, 1 = alive)
+
+__Primula_Demography_Data_2016to2023.csv__
+
+year: year that data were collected
+
+plot: plot number of experiment
+
+tag: unique identifier for each individual plant
+
+trt: rainfall experiment treatment
+
+clipping_experiment: whether plant was in the clipping experiment (1 = yes, NA = no)
+
+rosetteL: longest length of rosette
+
+rosetteW: width of rosette perpendicular to length measurement
+
+psurvival: plant survival this year (0 = dead, 1 = alive)
+
+psurvivalT1: probability of plant being alive the following year (0 = dead, 1 = alive)
+
+pflower: whether plant is flowering this year (0 = not flowering, 1 = flowering)
+
+pflowerT1: probability of plant flowering the following year (0 = not flowering, 1 = flowering)
+
+ros.area: area of rosette calculated as the area of an ellipse (for current in year)
+
+ros.areaT1: area of rosette calculated as the area of an ellipse (for subsequent year)
+
+log.ros.area: natural logarithm transformation of ros.area
+
+log.ros.areaT1: natural logarithm transformation of ros.areaT1
+
+flow.sum: total number of reproductive structures at time of survey (buds, flowers, and capsules)
+
+flow.sumT1: total number of reproductive structures at the following survey the next year (buds, flowers, and capsules)
+
+total.seeds: number of seeds made by plant
+
+total.seedsT1: number of seeds made by plant in the following year
+
+percapseeds: per capita number of seeds produced per flower (number of seeds total divided by number of flowers
+
+life_st: life stage (V = vegetative, U = underground or dormant, F = flowering, dead = dead)
